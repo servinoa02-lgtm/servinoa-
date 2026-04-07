@@ -3,23 +3,14 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ArrowLeft, Wallet, Repeat, History, Plus } from "lucide-react";
+import Link from "next/link";
 
 interface Caja {
   id: string;
   nombre: string;
   saldo: number;
 }
-
-const cajaColors: Record<string, string> = {
-  "Pablo": "bg-blue-50 border-blue-200",
-  "Julio": "bg-purple-50 border-purple-200",
-  "Nico": "bg-green-50 border-green-200",
-  "Servinoa": "bg-red-50 border-red-200",
-  "Cheques": "bg-yellow-50 border-yellow-200",
-  "Retenciones": "bg-orange-50 border-orange-200",
-  "Macro": "bg-teal-50 border-teal-200",
-  "Mercado Pago": "bg-cyan-50 border-cyan-200",
-};
 
 export default function CajasPage() {
   const { data: session, status } = useSession();
@@ -39,61 +30,86 @@ export default function CajasPage() {
   }, []);
 
   if (status === "loading" || loading) {
-    return <div className="min-h-screen flex items-center justify-center"><p className="text-gray-500">Cargando...</p></div>;
+    return <div className="min-h-screen flex items-center justify-center bg-gray-100"><p className="text-gray-500 font-bold animate-pulse uppercase tracking-[0.2em]">Cargando Cajas...</p></div>;
   }
 
-  const totalGeneral = cajas.reduce((sum, c) => sum + c.saldo, 0);
+  const totalGeneral = cajas.reduce((sum: number, c: Caja) => sum + c.saldo, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={() => router.push("/dashboard")} className="text-gray-500 hover:text-gray-700">← Menú</button>
-          <h1 className="text-xl font-bold text-gray-900">Cajas</h1>
-        </div>
-        <div className="text-right">
-          <p className="text-xs text-gray-500">Total general</p>
-          <p className={`text-lg font-bold ${totalGeneral >= 0 ? "text-green-700" : "text-red-600"}`}>
-            ${totalGeneral.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-          </p>
+    <div className="min-h-screen bg-gray-100 flex flex-col font-sans animate-in fade-in duration-500">
+      <header className="bg-white border-b border-gray-300 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 h-24 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <Link href="/dashboard" className="p-3 text-gray-400 hover:text-red-600 hover:bg-gray-100 rounded-xl transition-all border border-transparent hover:border-gray-200">
+              <ArrowLeft size={24} />
+            </Link>
+            <div>
+              <div className="flex items-center gap-3 text-gray-400 mb-1 lg:mb-0">
+                <span className="text-xs font-black uppercase tracking-[0.3em] opacity-70">Finanzas</span>
+              </div>
+              <h1 className="text-3xl lg:text-4xl font-black text-gray-900 tracking-tighter italic uppercase">Control de Cajas</h1>
+            </div>
+          </div>
+          <div className="text-right border-l-4 border-emerald-500 pl-6 bg-emerald-50/50 py-2 pr-4 rounded-r-xl">
+            <p className="text-[10px] font-black text-emerald-800 uppercase tracking-[0.2em] mb-1">Tesorería Total</p>
+            <p className={`text-2xl lg:text-3xl font-black tabular-nums ${totalGeneral >= 0 ? "text-emerald-700" : "text-red-700"}`}>
+              ${totalGeneral.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+            </p>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto p-6">
-        {/* SubMenu */}
-        <div className="flex gap-2 mb-6">
+      <main className="flex-1 max-w-7xl mx-auto px-6 lg:px-10 py-10 w-full lg:space-y-10">
+        <div className="flex flex-wrap gap-4 mb-8">
           <button
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-teal-600 text-white"
+            className="flex items-center gap-3 px-8 py-4 rounded-xl text-sm font-black bg-red-600 text-white shadow-lg shadow-red-600/20 uppercase tracking-widest transition-all"
           >
-            Cajas
+            <Wallet size={18} /> CAJAS ACTIVAS
           </button>
           <button
             onClick={() => router.push("/cajas/transferencias")}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+            className="flex items-center gap-3 px-8 py-4 rounded-xl text-sm font-black bg-white border border-gray-300 text-gray-600 hover:text-red-600 hover:bg-gray-50 transition-all uppercase tracking-widest shadow-sm"
           >
-            Transferencias
+            <Repeat size={18} /> OPERACIONES
           </button>
           <button
             onClick={() => router.push("/cheques")}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+            className="flex items-center gap-3 px-8 py-4 rounded-xl text-sm font-black bg-white border border-gray-300 text-gray-600 hover:text-red-600 hover:bg-gray-50 transition-all uppercase tracking-widest shadow-sm"
           >
-            Cheques
+            <History size={18} /> CARTERA CHEQUES
           </button>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {cajas.map((caja) => (
             <button
               key={caja.id}
               onClick={() => router.push(`/cajas/${caja.id}`)}
-              className={`${cajaColors[caja.nombre] || "bg-gray-50 border-gray-200"} border rounded-xl p-5 text-left hover:shadow-md transition-all`}
+              className="group relative bg-white border-2 border-transparent hover:border-red-600 rounded-2xl p-6 text-left shadow-sm hover:shadow-xl transition-all bg-gradient-to-br from-white to-gray-50"
             >
-              <p className="text-sm font-semibold text-gray-700 mb-2">{caja.nombre}</p>
-              <p className={`text-xl font-bold ${caja.saldo >= 0 ? "text-gray-900" : "text-red-600"}`}>
+              <div className="flex justify-between items-start mb-6">
+                <div className="p-3 bg-gray-100 rounded-xl text-gray-400 group-hover:text-red-600 group-hover:bg-red-50 transition-colors shadow-inner">
+                  <Wallet size={24} />
+                </div>
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-lg shadow-emerald-500/20" />
+              </div>
+              <p className="text-sm font-black text-gray-500 mb-2 uppercase tracking-widest group-hover:text-gray-900 transition-colors">CAJA :: {caja.nombre}</p>
+              <p className={`text-2xl lg:text-3xl font-black tabular-nums tracking-tighter group-hover:scale-105 transition-transform origin-left ${caja.saldo >= 0 ? "text-gray-900" : "text-red-700"}`}>
                 ${caja.saldo.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
               </p>
+              <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between text-[10px] font-black text-gray-400 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                <span>GESTIONAR FONDOS</span>
+                <Repeat size={14} />
+              </div>
             </button>
           ))}
+          
+          <button className="border-2 border-dashed border-gray-300 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 text-gray-400 hover:text-red-600 hover:border-red-600/50 hover:bg-red-50/10 transition-all group">
+            <div className="p-4 bg-gray-100 rounded-full group-hover:bg-red-100">
+              <Plus size={32} />
+            </div>
+            <span className="text-xs font-black uppercase tracking-[0.2em]">Agregar Entidad</span>
+          </button>
         </div>
       </main>
     </div>

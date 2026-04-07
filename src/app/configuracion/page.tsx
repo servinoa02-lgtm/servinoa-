@@ -3,9 +3,11 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Settings, Trash2, Plus, Users, Shield, Wrench,
-  ArrowLeft, Eye, EyeOff, Check, X, Edit2, RefreshCw
+  ArrowLeft, Eye, EyeOff, Check, X, Edit2, RefreshCw,
+  AlertCircle, ChevronRight, HardHat, FileCode, Lock
 } from "lucide-react";
 
 interface Usuario {
@@ -18,17 +20,17 @@ interface Usuario {
 }
 
 const ROL_LABELS: Record<string, string> = {
-  ADMIN: "Administrador",
-  TECNICO: "Técnico",
-  CAJA: "Caja",
-  VENTAS: "Ventas",
+  ADMIN: "ADMINISTRADOR DE SISTEMA",
+  TECNICO: "OPERADOR TÉCNICO",
+  CAJA: "CONTROL DE TESORERÍA",
+  VENTAS: "GESTIÓN COMERCIAL",
 };
 
 const ROL_COLORS: Record<string, string> = {
-  ADMIN: "bg-red-100 text-red-700",
-  TECNICO: "bg-blue-100 text-blue-700",
-  CAJA: "bg-green-100 text-green-700",
-  VENTAS: "bg-orange-100 text-orange-700",
+  ADMIN: "border-red-600 text-red-600 bg-red-50/50",
+  TECNICO: "border-gray-900 text-gray-900 bg-gray-50",
+  CAJA: "border-emerald-600 text-emerald-600 bg-emerald-50/50",
+  VENTAS: "border-amber-600 text-amber-600 bg-amber-50/50",
 };
 
 type ActiveTab = "accesorios" | "usuarios";
@@ -91,7 +93,7 @@ export default function ConfiguracionPage() {
     const res = await fetch("/api/accesorios", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombre: nuevoAcc.trim() }),
+      body: JSON.stringify({ nombre: nuevoAcc.trim().toUpperCase() }),
     });
     if (res.ok) {
       const data = await res.json();
@@ -121,12 +123,12 @@ export default function ConfiguracionPage() {
   };
 
   const guardarUsuario = async () => {
-    if (!uNombre.trim() || !uEmail.trim()) { setErrorUser("Nombre y email son requeridos"); return; }
-    if (!editingUser && !uPassword.trim()) { setErrorUser("La contraseña es requerida para nuevos usuarios"); return; }
+    if (!uNombre.trim() || !uEmail.trim()) { setErrorUser("NOMBRE Y EMAIL SON REQUERIDOS"); return; }
+    if (!editingUser && !uPassword.trim()) { setErrorUser("LA CONTRASEÑA ES REQUERIDA PARA NUEVOS USUARIOS"); return; }
     setGuardandoUser(true);
     setErrorUser("");
 
-    const body: Record<string, unknown> = { nombre: uNombre, email: uEmail, rol: uRol, activo: uActivo };
+    const body: Record<string, unknown> = { nombre: uNombre.toUpperCase(), email: uEmail.toLowerCase(), rol: uRol, activo: uActivo };
     if (uPassword) body.password = uPassword;
 
     const url = editingUser ? `/api/usuarios/${editingUser.id}` : "/api/usuarios";
@@ -143,7 +145,7 @@ export default function ConfiguracionPage() {
       cargarUsuarios();
     } else {
       const err = await res.json();
-      setErrorUser(err.error || "Error al guardar");
+      setErrorUser(err.error || "ERROR CRÍTICO AL GUARDAR");
     }
     setGuardandoUser(false);
   };
@@ -159,311 +161,352 @@ export default function ConfiguracionPage() {
 
   const usuariosFiltrados = usuarios.filter((u) => showInactivos || u.activo);
 
-  if (status === "loading") return <div className="p-10 text-center animate-pulse">Cargando...</div>;
+  if (status === "loading") return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-20">
+      <div className="w-20 h-2 bg-red-600 rounded-full animate-pulse mb-8" />
+      <p className="text-gray-400 font-black animate-pulse uppercase tracking-[0.4em] italic text-center">
+        ESTABLECIENDO CONEXIÓN CON EL NÚCLEO DE CONFIGURACIÓN...
+      </p>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm sticky top-0 z-10">
-        <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/dashboard")} className="text-slate-400 hover:text-slate-700 p-2 rounded-lg hover:bg-slate-100">
-            <ArrowLeft size={18} />
-          </button>
-          <Settings className="text-slate-500" size={20} />
-          <h1 className="text-xl font-bold tracking-tight text-slate-800">Configuración del Sistema</h1>
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans animate-in fade-in duration-700">
+      {/* INDUSTRIAL HEADER */}
+      <header className="bg-white border-b-2 border-gray-200 sticky top-0 z-40 shadow-sm backdrop-blur-md bg-white/80">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 h-28 flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            <Link href="/dashboard" className="p-4 text-gray-400 hover:text-red-600 hover:bg-gray-100 rounded-2xl transition-all border-2 border-transparent hover:border-gray-200 active:scale-90">
+              <ArrowLeft size={28} />
+            </Link>
+            <div>
+              <div className="flex items-center gap-3 text-gray-400 mb-1">
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] opacity-70">Console Management</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
+              </div>
+              <h1 className="text-4xl lg:text-5xl font-black text-gray-900 tracking-tighter italic uppercase leading-none">Configuración</h1>
+            </div>
+          </div>
+          <div className="bg-gray-900 p-4 rounded-2xl border-2 border-gray-800 shadow-2xl hidden md:block">
+            <Settings size={36} className="text-red-600 animate-[spin_4s_linear_infinite]" />
+          </div>
         </div>
       </header>
 
-      {/* Tabs */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-5xl mx-auto px-6 flex gap-1 pt-3">
+      {/* INDUSTRIAL TABS */}
+      <div className="bg-white border-b-2 border-gray-200 sticky top-28 z-30 overflow-x-auto no-scrollbar">
+        <div className="max-w-7xl mx-auto px-10 flex gap-10 pt-6">
           {[
-            { key: "accesorios" as ActiveTab, label: "Catálogo de Accesorios", icon: <Wrench size={16} /> },
-            { key: "usuarios" as ActiveTab, label: "Técnicos y Usuarios", icon: <Users size={16} /> },
+            { key: "accesorios" as ActiveTab, label: "CATÁLOGO DE COMPONENTES", icon: <Wrench size={20} /> },
+            { key: "usuarios" as ActiveTab, label: "JERARQUÍA DE PERSONAL", icon: <Users size={20} /> },
           ].map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-colors ${
+              className={`flex items-center gap-4 px-10 py-6 text-[11px] font-black rounded-t-[32px] border-b-4 transition-all uppercase tracking-[0.25em] italic whitespace-nowrap ${
                 activeTab === tab.key
-                  ? "border-indigo-600 text-indigo-700 bg-indigo-50/50"
-                  : "border-transparent text-slate-500 hover:text-slate-700"
+                  ? "border-red-600 text-red-600 bg-red-50/20 shadow-[0_-10px_40px_-5px_rgba(220,38,38,0.15)]"
+                  : "border-transparent text-gray-400 hover:text-gray-900 hover:bg-gray-50/50"
               }`}
             >
-              {tab.icon}
+              <span className={`${activeTab === tab.key ? "text-red-600 animate-pulse" : "text-gray-300"}`}>{tab.icon}</span>
               {tab.label}
             </button>
           ))}
         </div>
       </div>
 
-      <main className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 max-w-7xl mx-auto px-6 lg:px-10 py-16 w-full space-y-16">
 
-        {/* TAB: ACCESORIOS */}
+        {/* TAB: ACCESORIOS V3 */}
         {activeTab === "accesorios" && (
-          <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-            <div className="mb-5">
-              <h2 className="text-lg font-bold text-slate-800">Catálogo Global de Accesorios</h2>
-              <p className="text-sm text-slate-500 mt-1">
-                Administrá las opciones de checklist al ingresar equipos nuevos en el taller.
-              </p>
-            </div>
-
-            <div className="flex gap-2 mb-6 max-w-sm">
-              <input
-                type="text"
-                value={nuevoAcc}
-                onChange={(e) => setNuevoAcc(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addAcc()}
-                className="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                placeholder="Ej: Control remoto, cable, manual..."
-              />
-              <button
-                onClick={addAcc}
-                className="bg-slate-800 text-white px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-1 hover:bg-slate-700"
-              >
-                <Plus size={16} /> Añadir
-              </button>
-            </div>
-
-            {loadingAcc ? (
-              <p className="text-sm text-slate-400 animate-pulse">Cargando accesorios...</p>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {accesorios.map((a) => (
-                  <div
-                    key={a.id}
-                    className="flex items-center justify-between bg-slate-50 border border-slate-200 px-3 py-2 rounded-lg"
+          <section className="bg-white rounded-[50px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.1)] border-2 border-gray-100 overflow-hidden animate-in slide-in-from-bottom duration-700">
+            <div className="p-12 border-b-2 border-gray-50 bg-gray-50/30 flex flex-col md:flex-row md:items-center justify-between gap-8">
+                <div>
+                  <h2 className="text-3xl font-black text-gray-900 uppercase italic tracking-tighter">Inventario de Componentes</h2>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em] mt-3 flex items-center gap-2">
+                    <FileCode size={14} className="text-red-600" /> BASE DE DATOS GLOBAL DE RECEPCIÓN
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4 w-full max-w-2xl">
+                  <input
+                    type="text"
+                    value={nuevoAcc}
+                    onChange={(e) => setNuevoAcc(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && addAcc()}
+                    className="flex-1 px-8 py-5 bg-white border-2 border-gray-200 rounded-[24px] text-lg font-black outline-none focus:border-red-600 transition-all uppercase tracking-tight italic shadow-inner placeholder:text-gray-200"
+                    placeholder="IDENTIFICAR NUEVO ITEM..."
+                  />
+                  <button
+                    onClick={addAcc}
+                    className="bg-red-600 text-white px-10 py-5 rounded-[24px] text-xs font-black flex items-center justify-center gap-3 hover:bg-red-700 transition-all shadow-2xl shadow-red-600/30 uppercase tracking-widest active:scale-95"
                   >
-                    <span className="text-sm font-medium text-slate-700 truncate">{a.nombre}</span>
-                    <button
-                      onClick={() => removeAcc(a.id)}
-                      className="text-slate-400 hover:text-rose-600 transition-colors ml-2 flex-shrink-0"
+                    <Plus size={22} /> ALTA
+                  </button>
+                </div>
+            </div>
+
+            <div className="p-12">
+              {loadingAcc ? (
+                <div className="p-20 text-center text-gray-300 font-black uppercase tracking-[0.4em] animate-pulse italic">SYNCING CATALOG...</div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {accesorios.map((a) => (
+                    <div
+                      key={a.id}
+                      className="group flex items-center justify-between bg-gray-50/50 border-2 border-transparent hover:border-red-600/20 hover:bg-white px-6 py-5 rounded-[24px] transition-all duration-300 hover:shadow-2xl shadow-gray-200/50"
                     >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                ))}
-                {accesorios.length === 0 && (
-                  <p className="text-sm text-slate-400 col-span-4">Sin accesorios registrados.</p>
-                )}
-              </div>
-            )}
+                      <div className="flex items-center gap-4 min-w-0">
+                         <div className="w-2 h-2 rounded-full bg-red-600" />
+                         <span className="text-sm font-black text-gray-900 uppercase tracking-tight italic truncate">{a.nombre}</span>
+                      </div>
+                      <button
+                        onClick={() => removeAcc(a.id)}
+                        className="p-3 text-gray-200 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    </div>
+                  ))}
+                  {accesorios.length === 0 && (
+                    <div className="col-span-full p-32 text-center bg-gray-50/50 rounded-[40px] border-4 border-dashed border-gray-100">
+                        <Wrench size={70} className="mx-auto text-gray-200 mb-8 opacity-20 animate-bounce" />
+                        <p className="text-base font-black uppercase tracking-[0.4em] text-gray-300 italic">CATÁLOGO INEXISTENTE EN MEMORIA</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </section>
         )}
 
-        {/* TAB: USUARIOS */}
+        {/* TAB: USUARIOS V3 */}
         {activeTab === "usuarios" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-slate-800">Técnicos y Usuarios del Sistema</h2>
-                <p className="text-sm text-slate-500 mt-0.5">Gestioná los accesos y roles del personal.</p>
+          <div className="space-y-16 animate-in slide-in-from-bottom duration-700">
+            <div className="flex flex-col lg:flex-row items-end justify-between gap-10">
+              <div className="space-y-4">
+                <h2 className="text-4xl lg:text-5xl font-black text-gray-900 uppercase italic tracking-tighter leading-none">Operadores de Planta</h2>
+                <div className="flex items-center gap-3 text-gray-400">
+                   <Shield size={16} className="text-red-600" />
+                   <p className="text-[10px] font-black uppercase tracking-[0.3em] italic">CONTROL DE JERARQUÍA Y PERMISOS DE CIBERSEGURIDAD</p>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <label className="flex items-center gap-2 text-sm text-slate-500 cursor-pointer">
+              <div className="flex flex-wrap items-center gap-8">
+                <label className="flex items-center gap-4 text-[10px] font-black text-gray-400 hover:text-red-600 transition-all cursor-pointer uppercase tracking-[0.2em] italic bg-white px-6 py-4 rounded-[20px] shadow-sm border-2 border-gray-100">
                   <input
                     type="checkbox"
                     checked={showInactivos}
                     onChange={(e) => setShowInactivos(e.target.checked)}
-                    className="rounded"
+                    className="w-6 h-6 rounded-lg border-2 border-gray-200 text-red-600 focus:ring-red-600 cursor-pointer"
                   />
-                  Mostrar inactivos
+                  MOSTRAR BAJAS DE PERSONAL
                 </label>
                 <button
-                  onClick={cargarUsuarios}
-                  className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg"
-                  title="Actualizar"
-                >
-                  <RefreshCw size={16} />
-                </button>
-                <button
                   onClick={abrirNuevo}
-                  className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-indigo-700 shadow-sm"
+                  className="flex items-center gap-4 bg-gray-900 text-white px-10 py-6 rounded-[28px] text-xs font-black hover:bg-red-600 transition-all shadow-2xl shadow-gray-900/20 uppercase tracking-[0.2em] group"
                 >
-                  <Plus size={16} /> Nuevo Usuario
+                  <Plus size={22} className="text-red-600 group-hover:text-white transition-colors" /> ALTA DE OPERADOR
                 </button>
               </div>
             </div>
 
-            {/* Formulario nuevo/editar */}
+            {/* Formulario Rediseñado V3 */}
             {showForm && (
-              <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-6">
-                <h3 className="text-sm font-bold text-indigo-800 uppercase tracking-wider mb-4">
-                  {editingUser ? `Editar: ${editingUser.nombre}` : "Nuevo Usuario / Técnico"}
-                </h3>
+              <div className="bg-white border-2 border-red-600 ring-[15px] ring-red-600/5 rounded-[50px] p-12 lg:p-16 shadow-2xl animate-in zoom-in duration-500 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-4 h-full bg-red-600" />
+                <div className="flex items-center gap-6 mb-12 border-b-2 border-gray-50 pb-8">
+                   <div className="bg-red-600 p-4 rounded-2xl text-white shadow-xl shadow-red-600/30">
+                      <HardHat size={32} />
+                   </div>
+                   <h3 className="text-2xl font-black text-gray-900 uppercase italic tracking-tighter">
+                      {editingUser ? `MODIFICAR EXPEDIENTE: ${editingUser.nombre.toUpperCase()}` : "EMISIÓN DE NUEVA CREDENCIAL"}
+                   </h3>
+                </div>
 
                 {errorUser && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm mb-4">
-                    {errorUser}
+                  <div className="bg-red-600 border-4 border-red-700 text-white px-8 py-6 rounded-[24px] text-sm font-black uppercase tracking-widest mb-12 animate-bounce flex items-center gap-4 shadow-2xl shadow-red-600/40">
+                    <AlertCircle size={24} /> {errorUser}
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 block mb-1.5">Nombre completo *</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] block pl-2 italic">IDENTIDAD OPERATIVA *</label>
                     <input
                       type="text"
                       value={uNombre}
                       onChange={(e) => setUNombre(e.target.value)}
-                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                      placeholder="Juan Pérez"
+                      className="w-full px-8 py-6 bg-gray-50 border-2 border-transparent focus:border-red-600 rounded-[24px] text-lg font-black italic outline-none transition-all uppercase shadow-inner"
+                      placeholder="JUAN PÉREZ"
                     />
                   </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 block mb-1.5">Email *</label>
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] block pl-2 italic">EMAIL DE ACCESO *</label>
                     <input
                       type="email"
                       value={uEmail}
                       onChange={(e) => setUEmail(e.target.value)}
-                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                      placeholder="juan@servinoa.com"
+                      className="w-full px-8 py-6 bg-gray-50 border-2 border-transparent focus:border-red-600 rounded-[24px] text-lg font-black italic outline-none transition-all uppercase shadow-inner"
+                      placeholder="USER@SERVINOA.COM"
                     />
                   </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 block mb-1.5">
-                      {editingUser ? "Nueva contraseña (dejar vacío = sin cambio)" : "Contraseña *"}
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] block pl-2 italic">
+                      {editingUser ? "RESETEAR CLAVE (SEGURIDAD)" : "PASSWORD DE SISTEMA *"}
                     </label>
                     <div className="relative">
                       <input
                         type={showPass ? "text" : "password"}
                         value={uPassword}
                         onChange={(e) => setUPassword(e.target.value)}
-                        className="w-full px-3 py-2.5 pr-10 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                        placeholder={editingUser ? "(sin cambio)" : "Mínimo 6 caracteres"}
+                        className="w-full px-8 py-6 bg-gray-50 border-2 border-transparent focus:border-red-600 rounded-[24px] text-lg font-black outline-none transition-all shadow-inner"
+                        placeholder={editingUser ? "DEJAR VACÍO..." : "MIN 6 CHARS"}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPass(!showPass)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-300 hover:text-red-600 transition-colors"
                       >
-                        {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                        {showPass ? <EyeOff size={24} /> : <Eye size={24} />}
                       </button>
                     </div>
                   </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 block mb-1.5">Rol</label>
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] block pl-2 italic">CATEGORÍA DE ACCESO (ROL)</label>
                     <select
                       value={uRol}
                       onChange={(e) => setURol(e.target.value)}
-                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                      className="w-full px-8 py-6 bg-gray-50 border-2 border-transparent focus:border-red-600 rounded-[24px] text-lg font-black outline-none transition-all uppercase italic tracking-tighter appearance-none cursor-pointer"
                     >
                       {Object.entries(ROL_LABELS).map(([val, label]) => (
-                        <option key={val} value={val}>{label}</option>
+                        <option key={val} value={val}>{label.toUpperCase()}</option>
                       ))}
                     </select>
                   </div>
                   {editingUser && (
-                    <div className="flex items-center gap-3">
-                      <label className="text-xs font-semibold text-slate-600">Estado</label>
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] block pl-2 italic">ESTADO DE OPERATIVIDAD</label>
                       <button
                         onClick={() => setUActivo(!uActivo)}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border ${uActivo ? "bg-green-50 border-green-200 text-green-700" : "bg-red-50 border-red-200 text-red-700"}`}
+                        className={`flex items-center justify-center gap-4 w-full h-[76px] rounded-[24px] text-xs font-black border-4 transition-all uppercase tracking-[0.2em] italic ${uActivo ? "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-xl shadow-emerald-500/10" : "bg-red-50 border-red-200 text-red-700 shadow-xl shadow-red-500/10"}`}
                       >
-                        {uActivo ? <><Check size={14} /> Activo</> : <><X size={14} /> Inactivo</>}
+                        {uActivo ? <><Check size={20} /> ALTA / ACTIVO</> : <><X size={20} /> BAJA / INACTIVO</>}
                       </button>
                     </div>
                   )}
                 </div>
 
-                <div className="flex gap-3 mt-5">
+                <div className="flex flex-col sm:flex-row gap-6 mt-16 pt-10 border-t-2 border-gray-50">
                   <button
                     onClick={guardarUsuario}
                     disabled={guardandoUser}
-                    className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-indigo-700 disabled:opacity-50"
+                    className="flex-1 bg-red-600 text-white px-10 py-7 rounded-[28px] text-base font-black hover:bg-red-700 transition-all shadow-2xl shadow-red-600/40 uppercase tracking-[0.3em] italic disabled:opacity-50 active:scale-95"
                   >
-                    {guardandoUser ? "Guardando..." : editingUser ? "Guardar Cambios" : "Crear Usuario"}
+                    {guardandoUser ? "SINCRONIZANDO..." : editingUser ? "ACTUALIZAR EXPEDIENTE" : "CONFIRMAR ALTA DE PERSONAL"}
                   </button>
                   <button
                     onClick={() => setShowForm(false)}
-                    className="px-5 py-2.5 border border-slate-300 text-slate-600 rounded-xl text-sm hover:bg-slate-50"
+                    className="px-10 py-7 bg-white border-2 border-gray-200 text-gray-400 rounded-[28px] text-base font-black hover:bg-gray-50 hover:text-gray-900 transition-all uppercase tracking-widest italic"
                   >
-                    Cancelar
+                    ABORTAR
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Tabla de usuarios */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            {/* TABLA DE USUARIOS V3 */}
+            <div className="bg-white rounded-[50px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.1)] border-2 border-gray-100 overflow-hidden">
               {loadingUsers ? (
-                <div className="p-8 text-center text-slate-400 animate-pulse text-sm">Cargando usuarios...</div>
+                <div className="p-32 text-center text-gray-300 font-black uppercase tracking-[0.4em] animate-pulse italic">SCANNING BIOMETRIC DATA...</div>
               ) : (
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50 border-b border-slate-200">
-                    <tr>
-                      <th className="text-left px-5 py-3 font-semibold text-slate-600">Nombre</th>
-                      <th className="text-left px-5 py-3 font-semibold text-slate-600">Email</th>
-                      <th className="text-left px-5 py-3 font-semibold text-slate-600">Rol</th>
-                      <th className="text-left px-5 py-3 font-semibold text-slate-600">Estado</th>
-                      <th className="text-right px-5 py-3 font-semibold text-slate-600">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {usuariosFiltrados.map((u) => (
-                      <tr key={u.id} className={`border-b border-slate-100 ${!u.activo ? "opacity-50" : "hover:bg-slate-50"}`}>
-                        <td className="px-5 py-3 font-medium text-slate-800">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs flex-shrink-0">
-                              {u.nombre.charAt(0).toUpperCase()}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm border-collapse">
+                    <thead>
+                      <tr className="border-b-2 border-gray-100 text-gray-400 uppercase text-[11px] font-black tracking-[0.4em] bg-gray-50/50 italic">
+                        <th className="text-left px-12 py-8">OPERADOR / ID</th>
+                        <th className="text-left px-12 py-8">CREDENCIAL</th>
+                        <th className="text-left px-12 py-8">JERARQUÍA</th>
+                        <th className="text-left px-12 py-8">ESTADO</th>
+                        <th className="text-right px-12 py-8">SISTEMA</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y-2 divide-gray-50">
+                      {usuariosFiltrados.map((u) => (
+                        <tr key={u.id} className={`hover:bg-gray-50/50 group transition-all duration-300 ${!u.activo ? "opacity-30 grayscale" : ""}`}>
+                          <td className="px-12 py-8">
+                            <div className="flex items-center gap-6">
+                              <div className="w-16 h-16 rounded-[22px] bg-gray-900 border-2 border-gray-800 flex items-center justify-center text-white font-black text-xl shadow-2xl group-hover:rotate-6 transition-all group-hover:scale-110">
+                                {u.nombre.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                  <div className="font-black text-gray-900 uppercase italic text-lg tracking-tighter leading-none flex items-center gap-3">
+                                    {u.nombre}
+                                    {u.id === (session?.user as { id?: string })?.id && (
+                                      <div className="flex items-center gap-2 text-[8px] bg-red-600 text-white px-3 py-1 rounded-full font-black animate-pulse shadow-lg shadow-red-600/30">
+                                         <Lock size={10} /> SESSION_AUTH
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="text-[9px] text-gray-300 font-black uppercase tracking-[0.3em] mt-2 group-hover:text-red-600/50 transition-colors">OPERATOR_ID: {u.id.substring(0,10).toUpperCase()}</div>
+                              </div>
                             </div>
-                            {u.nombre}
-                            {u.id === (session?.user as { id?: string })?.id && (
-                              <span className="text-xs bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded">Yo</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-5 py-3 text-slate-500">{u.email}</td>
-                        <td className="px-5 py-3">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${ROL_COLORS[u.rol] || "bg-slate-100 text-slate-600"}`}>
-                            {ROL_LABELS[u.rol] || u.rol}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${u.activo ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
-                            {u.activo ? "Activo" : "Inactivo"}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => abrirEditar(u)}
-                              className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                              title="Editar"
-                            >
-                              <Edit2 size={15} />
-                            </button>
-                            <button
-                              onClick={() => toggleActivo(u)}
-                              disabled={u.id === (session?.user as { id?: string })?.id}
-                              className={`p-1.5 rounded-lg transition-colors disabled:opacity-30 ${
-                                u.activo
-                                  ? "text-slate-400 hover:text-red-600 hover:bg-red-50"
-                                  : "text-slate-400 hover:text-green-600 hover:bg-green-50"
-                              }`}
-                              title={u.activo ? "Desactivar" : "Activar"}
-                            >
-                              {u.activo ? <X size={15} /> : <Check size={15} />}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {usuariosFiltrados.length === 0 && (
-                      <tr>
-                        <td colSpan={5} className="px-5 py-8 text-center text-slate-400">
-                          No hay usuarios registrados.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                          </td>
+                          <td className="px-12 py-8">
+                             <div className="text-sm font-black text-gray-400 italic lowercase tracking-tight group-hover:text-gray-900 transition-colors">{u.email}</div>
+                          </td>
+                          <td className="px-12 py-8">
+                             <span className={`px-6 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.25em] border-2 shadow-sm italic ${ROL_COLORS[u.rol] || "border-gray-100 text-gray-400 bg-gray-50"}`}>
+                               {ROL_LABELS[u.rol] || u.rol.toUpperCase()}
+                             </span>
+                          </td>
+                          <td className="px-12 py-8">
+                             <div className="flex items-center gap-4">
+                                <div className={`w-4 h-4 rounded-full border-2 ${u.activo ? "bg-emerald-500 border-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.4)]" : "bg-red-500 border-red-200"}`} />
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-900 italic">{u.activo ? "ENABLED" : "DISABLED"}</span>
+                             </div>
+                          </td>
+                          <td className="px-12 py-8 text-right">
+                            <div className="flex items-center justify-end gap-3">
+                              <button
+                                onClick={() => abrirEditar(u)}
+                                className="p-4 text-gray-200 hover:text-red-600 hover:bg-gray-100 rounded-2xl transition-all border-2 border-transparent hover:border-gray-200 active:scale-90"
+                              >
+                                <Edit2 size={22} />
+                              </button>
+                              <button
+                                onClick={() => toggleActivo(u)}
+                                disabled={u.id === (session?.user as { id?: string })?.id}
+                                className={`p-4 rounded-2xl transition-all disabled:opacity-20 border-2 border-transparent active:scale-90 ${
+                                  u.activo
+                                    ? "text-gray-100 hover:text-red-700 hover:bg-red-50 hover:border-red-100"
+                                    : "text-gray-100 hover:text-emerald-700 hover:bg-emerald-50 hover:border-emerald-100"
+                                }`}
+                              >
+                                {u.activo ? <X size={22} /> : <Check size={22} />}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
 
-            <p className="text-xs text-slate-400 px-1">
-              * Los usuarios desactivados no pueden iniciar sesión. No se eliminan para preservar el historial.
-            </p>
+            <div className="p-12 bg-gray-900 rounded-[40px] border-4 border-gray-800 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.5)]">
+                <div className="flex items-center gap-8">
+                   <div className="p-4 bg-red-600 rounded-2xl shadow-[0_0_30px_rgba(220,38,38,0.3)]">
+                      <AlertCircle size={32} className="text-white" />
+                   </div>
+                   <div className="space-y-2">
+                     <p className="text-xs font-black text-gray-100 uppercase tracking-[0.3em] italic">PROTOCOLO DE SEGURIDAD OPERATIVA</p>
+                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.25em] italic leading-relaxed max-w-4xl">
+                        EL BLOQUEO DE CREDENCIALES REVOCA EL ACCESO AL NÚCLEO DE DATOS DE FORMA INMEDIATA. TODAS LAS INTERVENCIONES PREVIAS DEL OPERADOR PERMANECEN ENCRIPTADAS EN EL HISTORIAL PARA TRAZABILIDAD LEGAL.
+                     </p>
+                   </div>
+                </div>
+            </div>
           </div>
         )}
       </main>

@@ -13,24 +13,27 @@ export default async function TareasPage() {
   const usuarios = await prisma.usuario.findMany({ select: { id: true, nombre: true } });
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
-              <ArrowLeft size={20} />
+    <div className="min-h-screen bg-gray-100 flex flex-col font-sans animate-in fade-in duration-500">
+      <header className="bg-white border-b border-gray-300 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 h-24 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <Link href="/dashboard" className="p-3 text-gray-400 hover:text-red-600 hover:bg-gray-100 rounded-xl transition-all border border-transparent hover:border-gray-200">
+              <ArrowLeft size={24} />
             </Link>
-            <div className="flex items-center gap-2">
-              <div className="bg-indigo-100 p-1.5 rounded-md">
-                <CheckSquare className="text-indigo-600 w-5 h-5" />
+            <div>
+              <div className="flex items-center gap-3 text-gray-400 mb-1 lg:mb-0">
+                <span className="text-xs font-black uppercase tracking-[0.3em] opacity-70">Operaciones</span>
               </div>
-              <h1 className="text-xl font-bold text-slate-900">Gestión de Tareas</h1>
+              <h1 className="text-3xl lg:text-4xl font-black text-gray-900 tracking-tighter italic uppercase">Gestión de Tareas</h1>
             </div>
+          </div>
+          <div className="bg-red-50 p-3 rounded-xl border border-red-100 hidden sm:block">
+            <CheckSquare size={32} className="text-red-600" />
           </div>
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <main className="flex-1 max-w-7xl mx-auto px-6 lg:px-10 py-10 w-full">
         <TareasClient usuarios={usuarios} />
       </main>
     </div>

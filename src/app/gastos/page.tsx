@@ -3,8 +3,14 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Trash2 } from "lucide-react";
+import Link from "next/link";
+import { 
+  Trash2, ArrowLeft, Plus, Receipt, 
+  User, Calendar, Search, Activity, 
+  Filter, ArrowUpRight
+} from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Drawer } from "@/components/ui/Drawer";
 
 interface Gasto {
   id: string;
@@ -25,7 +31,7 @@ interface Gasto {
 interface Proveedor { id: string; nombre: string; }
 interface Caja { id: string; nombre: string; }
 
-const FORMAS_PAGO = ["Efectivo", "Transferencia", "Cheque", "Tarjeta", "Mercado Pago", "Otro"];
+const FORMAS_PAGO = ["EFECTIVO", "TRANSFERENCIA", "CHEQUE", "TARJETA", "MERCADO PAGO", "OTRO"];
 
 export default function GastosPage() {
   const { data: session, status } = useSession();
@@ -38,7 +44,7 @@ export default function GastosPage() {
   const [tipo, setTipo] = useState<"GASTO_VARIOS" | "SUELDO">("GASTO_VARIOS");
   const [descripcion, setDescripcion] = useState("");
   const [importe, setImporte] = useState("");
-  const [formaPago, setFormaPago] = useState("Efectivo");
+  const [formaPago, setFormaPago] = useState("EFECTIVO");
   const [cajaId, setCajaId] = useState("");
   const [proveedorId, setProveedorId] = useState("");
   const [comprobante, setComprobante] = useState("");
@@ -50,6 +56,8 @@ export default function GastosPage() {
   const [guardando, setGuardando] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [eliminando, setEliminando] = useState(false);
+
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -85,14 +93,14 @@ export default function GastosPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         tipo,
-        descripcion: tipo === "SUELDO" ? `Sueldo ${empleado}` : descripcion,
+        descripcion: tipo === "SUELDO" ? `SUELDO ${empleado.toUpperCase()}` : descripcion.toUpperCase(),
         importe,
         formaPago,
         cajaId,
         usuarioId: (session?.user as { id?: string })?.id,
         proveedorId: proveedorId || null,
-        comprobante: comprobante || null,
-        empleado: tipo === "SUELDO" ? empleado : null,
+        comprobante: comprobante.toUpperCase() || null,
+        empleado: tipo === "SUELDO" ? empleado.toUpperCase() : null,
         desde: desde || null,
         hasta: hasta || null,
       }),
@@ -114,191 +122,239 @@ export default function GastosPage() {
       .reduce((sum, g) => sum + g.importe, 0);
   };
 
-  if (status === "loading" || loading) {
-    return <div className="min-h-screen flex items-center justify-center"><p className="text-gray-500">Cargando...</p></div>;
-  }
+  if (status === "loading" || loading) return (
+    <div className="flex flex-col items-center justify-center p-40">
+      <div className="w-12 h-1 bg-red-600 rounded-full animate-pulse mb-4" />
+      <div className="text-gray-400 font-medium text-sm animate-pulse">Cargando gastos...</div>
+    </div>
+  );
+
+  const filteredGastos = gastos.filter(g => 
+    g.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    g.empleado?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    g.proveedor?.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={() => router.push("/dashboard")} className="text-gray-500 hover:text-gray-700">← Menú</button>
-          <h1 className="text-xl font-bold text-gray-900">Gastos</h1>
-          <span className="text-sm text-gray-500">Este mes: <strong className="text-red-600">${totalDelMes().toLocaleString("es-AR", { minimumFractionDigits: 2 })}</strong></span>
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <Link href="/dashboard" className="p-2 text-gray-400 hover:text-red-600 hover:bg-gray-50 rounded-xl transition-all">
+              <ArrowLeft size={24} />
+            </Link>
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Tesorería</p>
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Control de Gastos</h1>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-6">
+             <div className="hidden md:block bg-red-50 px-4 py-2 rounded-xl border border-red-100">
+                <p className="text-[9px] font-bold text-red-600 uppercase tracking-wider mb-0.5">Total del Mes</p>
+                <p className="text-lg font-bold tabular-nums text-red-700">
+                   ${totalDelMes().toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                </p>
+             </div>
+             <button
+              onClick={() => setMostrarForm(true)}
+              className="bg-red-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/10 flex items-center gap-2"
+            >
+              <Plus size={18} /> Registrar Gasto
+            </button>
+          </div>
         </div>
-        <button
-          onClick={() => setMostrarForm(true)}
-          className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700"
-        >
-          + Nuevo Gasto
-        </button>
       </header>
 
-      <main className="max-w-7xl mx-auto p-6">
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Fecha</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Tipo</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Descripción</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-600">Importe</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Forma de pago</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Caja</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Registrado por</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {gastos.map((g) => (
-                <tr key={g.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="px-4 py-3">{new Date(g.fecha).toLocaleDateString("es-AR")}</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${g.tipo === "SUELDO" ? "bg-blue-100 text-blue-700" : "bg-red-100 text-red-700"}`}>
-                      {g.tipo === "SUELDO" ? "Sueldo" : "Gasto"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-700">
-                    {g.descripcion}
-                    {g.proveedor && <span className="text-xs text-gray-400 ml-1">({g.proveedor.nombre})</span>}
-                    {g.desde && g.hasta && (
-                      <span className="text-xs text-gray-400 ml-1">
-                        {new Date(g.desde).toLocaleDateString("es-AR")} - {new Date(g.hasta).toLocaleDateString("es-AR")}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold text-red-600">
-                    ${g.importe.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                  </td>
-                  <td className="px-4 py-3 text-gray-500">{g.formaPago}</td>
-                  <td className="px-4 py-3 text-gray-500">{g.caja?.nombre || "-"}</td>
-                  <td className="px-4 py-3 text-gray-400 text-xs">{g.usuario?.nombre}</td>
-                  <td className="px-4 py-3">
-                    <button
+      <main className="flex-1 max-w-6xl mx-auto px-6 py-10 w-full space-y-8">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+           <div className="relative w-full max-w-lg">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <input 
+                type="text" 
+                placeholder="Buscar por descripción, empleado o proveedor..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-4 py-2.5 bg-gray-50 border border-transparent focus:border-red-600 rounded-xl text-sm font-medium outline-none transition-all"
+              />
+           </div>
+           <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50 px-3 py-2 rounded-lg border border-gray-100 italic">
+              {filteredGastos.length} gastos encontrados
+           </div>
+        </div>
+
+        <div className="space-y-4">
+          {filteredGastos.map((g, idx) => (
+            <div 
+              key={g.id} 
+              className="group bg-white p-6 rounded-2xl border border-gray-200 hover:shadow-md transition-all flex items-center gap-6"
+            >
+              <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center text-red-600 shrink-0">
+                <Receipt size={24} />
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-base font-bold text-gray-900 group-hover:text-red-600 transition-colors uppercase leading-tight">
+                      {g.descripcion}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3 mt-1.5">
+                       <span className="text-[10px] font-bold text-gray-400 uppercase bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
+                          {new Date(g.fecha).toLocaleDateString("es-AR")}
+                       </span>
+                       <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${g.tipo === "SUELDO" ? "border-gray-900 text-gray-900" : "border-red-100 text-red-600 bg-red-50"}`}>
+                          {g.tipo === "SUELDO" ? "Sueldo" : "Gasto Varios"}
+                       </span>
+                       {g.proveedor && <span className="text-[10px] font-bold text-gray-400 uppercase">Prov: {g.proveedor.nombre}</span>}
+                       {g.caja && <span className="text-[10px] font-bold text-emerald-600 uppercase italic">Caja: {g.caja.nombre}</span>}
+                    </div>
+                  </div>
+                  
+                  <div className="text-right">
+                     <p className="text-xl font-bold tabular-nums text-red-600">
+                        ${g.importe.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                     </p>
+                     <div className="text-[9px] font-bold text-gray-400 uppercase mt-1">
+                        {g.usuario?.nombre}
+                     </div>
+                  </div>
+                </div>
+                
+                <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
+                   <div className="text-[9px] font-bold text-gray-300 uppercase tracking-widest tabular-nums italic">
+                      ID: {g.id.substring(0,8).toUpperCase()}
+                   </div>
+                   <button
                       onClick={() => setConfirmDelete(g.id)}
-                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Eliminar"
+                      className="p-1 px-2 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1 text-[10px] font-bold uppercase"
                     >
-                      <Trash2 size={15} />
+                      <Trash2 size={14} /> Eliminar
                     </button>
-                  </td>
-                </tr>
-              ))}
-              {gastos.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">No hay gastos registrados</td></tr>
-              )}
-            </tbody>
-          </table>
+                </div>
+              </div>
+            </div>
+          ))}
+          {filteredGastos.length === 0 && (
+            <div className="py-20 text-center bg-white rounded-3xl border-2 border-dashed border-gray-100">
+               <Receipt size={48} className="text-gray-100 mx-auto mb-4" />
+               <p className="text-gray-400 font-medium">No hay gastos registrados</p>
+            </div>
+          )}
         </div>
       </main>
 
-      {/* Panel lateral nuevo gasto */}
-      {mostrarForm && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="fixed inset-0 bg-black/30" onClick={() => setMostrarForm(false)} />
-          <div className="relative bg-white w-full max-w-md shadow-2xl flex flex-col h-full">
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="font-semibold text-gray-900">Nuevo Gasto / Pago</h2>
-              <button onClick={() => setMostrarForm(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {/* Tipo */}
-              <div className="flex gap-2">
+      <Drawer 
+        isOpen={mostrarForm} 
+        onClose={() => setMostrarForm(false)} 
+        title="Registrar Egreso"
+      >
+        <div className="p-1 space-y-6">
+          <div className="space-y-2">
+             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Tipo de Egreso</label>
+             <div className="grid grid-cols-2 gap-3">
                 {(["GASTO_VARIOS", "SUELDO"] as const).map((t) => (
-                  <button key={t} onClick={() => setTipo(t)}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium border-2 transition-colors ${tipo === t ? "border-red-500 bg-red-50 text-red-700" : "border-gray-200 text-gray-500"}`}>
-                    {t === "SUELDO" ? "Sueldo" : "Gastos Varios"}
+                  <button 
+                    key={t} 
+                    onClick={() => setTipo(t)}
+                    className={`py-3 rounded-xl text-xs font-bold transition-all border ${tipo === t ? "border-red-600 bg-red-600 text-white shadow-lg shadow-red-600/20" : "border-gray-200 bg-gray-50 text-gray-400 hover:bg-gray-100"}`}>
+                    {t === "SUELDO" ? "Sueldo / Personal" : "Gastos Varios"}
                   </button>
                 ))}
-              </div>
-
-              {tipo === "GASTO_VARIOS" ? (
-                <>
-                  <div>
-                    <label className="text-xs text-gray-500 block mb-1">Proveedor (opcional)</label>
-                    <select value={proveedorId} onChange={(e) => setProveedorId(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none">
-                      <option value="">Sin proveedor</option>
-                      {proveedores.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-500 block mb-1">Descripción *</label>
-                    <input type="text" value={descripcion} onChange={(e) => setDescripcion(e.target.value)}
-                      placeholder="Descripción del gasto..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-500" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-500 block mb-1">N° Comprobante</label>
-                    <input type="text" value={comprobante} onChange={(e) => setComprobante(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none" />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div>
-                    <label className="text-xs text-gray-500 block mb-1">Empleado *</label>
-                    <input type="text" value={empleado} onChange={(e) => setEmpleado(e.target.value)}
-                      placeholder="Nombre del empleado..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-500" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs text-gray-500 block mb-1">Desde</label>
-                      <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500 block mb-1">Hasta</label>
-                      <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none" />
-                    </div>
-                  </div>
-                </>
-              )}
-
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Importe *</label>
-                <input type="number" min="0" step="0.01" value={importe} onChange={(e) => setImporte(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-500" />
-              </div>
-
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Forma de pago</label>
-                <select value={formaPago} onChange={(e) => setFormaPago(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none">
-                  {FORMAS_PAGO.map((f) => <option key={f}>{f}</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Caja *</label>
-                <select value={cajaId} onChange={(e) => setCajaId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none">
-                  <option value="">Seleccionar caja...</option>
-                  {cajas.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-                </select>
-              </div>
-            </div>
-
-            <div className="px-6 py-4 border-t border-gray-200">
-              <button
-                onClick={guardar}
-                disabled={guardando || !importe || !cajaId}
-                className="w-full bg-red-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50"
-              >
-                {guardando ? "Guardando..." : "Registrar Gasto"}
-              </button>
             </div>
           </div>
+
+          <div className="space-y-6">
+            {tipo === "GASTO_VARIOS" ? (
+              <>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Proveedor (Opcional)</label>
+                  <select value={proveedorId} onChange={(e) => setProveedorId(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none uppercase appearance-none cursor-pointer">
+                    <option value="">SIN PROVEEDOR ASOCIADO</option>
+                    {proveedores.map((p) => <option key={p.id} value={p.id}>{p.nombre.toUpperCase()}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Descripción *</label>
+                  <textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)}
+                    placeholder="Detalle el motivo del gasto..."
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-medium outline-none min-h-[80px] resize-none" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">N° Comprobante (Opcional)</label>
+                  <input type="text" value={comprobante} onChange={(e) => setComprobante(e.target.value)}
+                    placeholder="Factura, Recibo, etc..."
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-medium outline-none uppercase" />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Operario / Beneficiario *</label>
+                  <input type="text" value={empleado} onChange={(e) => setEmpleado(e.target.value)}
+                    placeholder="Nombre completo..."
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-medium outline-none uppercase" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Desde</label>
+                    <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Hasta</label>
+                    <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none" />
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Método Pago</label>
+                <select value={formaPago} onChange={(e) => setFormaPago(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold outline-none appearance-none cursor-pointer">
+                  {FORMAS_PAGO.map((f) => <option key={f} value={f}>{f}</option>)}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-red-600 uppercase tracking-wider ml-1">Caja Salida *</label>
+                <select value={cajaId} onChange={(e) => setCajaId(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-900 text-red-500 border border-transparent rounded-xl text-sm font-bold outline-none appearance-none cursor-pointer">
+                  {cajas.map((c) => <option key={c.id} value={c.id}>{c.nombre.toUpperCase()}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="p-6 bg-gray-950 rounded-2xl border-b-4 border-red-600 space-y-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-red-600 text-center block">Importe a Pagar *</label>
+              <div className="relative">
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-700">$</span>
+                <input type="number" min="0" step="0.01" value={importe} onChange={(e) => setImporte(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full bg-transparent text-white text-3xl font-bold outline-none text-center tabular-nums" />
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-6">
+            <button
+              onClick={guardar}
+              disabled={guardando || !importe || !cajaId}
+              className="w-full bg-red-600 text-white py-4 rounded-xl text-sm font-bold hover:bg-red-700 disabled:opacity-50 transition-all shadow-lg shadow-red-600/20 active:scale-[0.98]"
+            >
+              {guardando ? "Procesando..." : "Confirmar Egreso"}
+            </button>
+          </div>
         </div>
-      )}
+      </Drawer>
 
       <ConfirmDialog
         isOpen={!!confirmDelete}
-        title="Eliminar gasto"
-        message="¿Estás seguro? El movimiento de caja asociado también será eliminado. Esta acción no se puede deshacer."
+        title="Anular Gasto"
+        message="¿Estás seguro de eliminar este registro? Esta acción impactará en el balance de la caja seleccionada."
         confirmLabel={eliminando ? "Eliminando..." : "Sí, eliminar"}
         onCancel={() => setConfirmDelete(null)}
         onConfirm={() => confirmDelete && eliminarGasto(confirmDelete)}

@@ -11,14 +11,14 @@ interface CardProps {
 
 export function Card({ children, className = "", title, subtitle, icon, action }: CardProps) {
   return (
-    <div className={`bg-surface border border-border-custom rounded-2xl shadow-sm overflow-hidden ${className}`}>
+    <div className={`bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden ${className}`}>
       {(title || icon || action) && (
-        <div className="px-6 py-4 border-b border-border-custom flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/30">
           <div className="flex items-center gap-3">
-            {icon && <div className="text-secondary">{icon}</div>}
+            {icon && <div className="text-red-600">{icon}</div>}
             <div>
-              {title && <h3 className="text-sm font-bold text-foreground tracking-tight">{title}</h3>}
-              {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+              {title && <h3 className="text-sm font-bold text-gray-900 tracking-tight uppercase">{title}</h3>}
+              {subtitle && <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{subtitle}</p>}
             </div>
           </div>
           {action && <div>{action}</div>}
@@ -39,34 +39,34 @@ export function StatCard({ label, value, trend, icon, color = "primary" }: {
   color?: "primary" | "emerald" | "rose" | "amber";
 }) {
   const colorMap = {
-    primary: "text-brand-primary bg-brand-primary/10",
-    emerald: "text-emerald-400 bg-emerald-400/10",
-    rose: "text-rose-400 bg-rose-400/10",
-    amber: "text-amber-400 bg-amber-400/10",
+    primary: "text-red-600 bg-red-50 border-red-100",
+    emerald: "text-emerald-600 bg-emerald-50 border-emerald-100",
+    rose: "text-rose-600 bg-rose-50 border-rose-100",
+    amber: "text-amber-600 bg-amber-50 border-amber-100",
   };
 
   const textColorMap = {
-    primary: "text-brand-primary",
-    emerald: "text-emerald-400",
-    rose: "text-rose-400",
-    amber: "text-amber-400",
+    primary: "text-gray-900",
+    emerald: "text-emerald-600",
+    rose: "text-rose-600",
+    amber: "text-amber-600",
   };
 
   return (
-    <div className="bg-surface border border-border-custom rounded-2xl p-5 shadow-sm hover:shadow-md transition-all group">
+    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:border-gray-300 transition-all group">
       <div className="flex items-center justify-between mb-4">
-        <div className={`p-2.5 rounded-xl ${colorMap[color]} group-hover:scale-110 transition-transform`}>
+        <div className={`p-2.5 rounded-lg border ${colorMap[color]}`}>
           {icon}
         </div>
         {trend && (
-          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${trend.positive ? 'bg-emerald-400/10 text-emerald-400' : 'bg-rose-400/10 text-rose-400'}`}>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${trend.positive ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
             {trend.value}
           </span>
         )}
       </div>
       <div>
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">{label}</p>
-        <h4 className={`text-2xl font-black tracking-tight ${textColorMap[color]}`}>{value}</h4>
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{label}</p>
+        <h4 className={`text-2xl font-bold tabular-nums ${textColorMap[color]}`}>{value}</h4>
       </div>
     </div>
   );

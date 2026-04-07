@@ -3,8 +3,9 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, ArrowLeft, Plus, Search, FileText, Printer, ChevronRight } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import Link from "next/link";
 
 interface Presupuesto {
   id: string;
@@ -21,26 +22,26 @@ interface Presupuesto {
 }
 
 const estadoColors: Record<string, string> = {
-  BORRADOR: "bg-gray-100 text-gray-600",
-  PRESUPUESTADO: "bg-blue-100 text-blue-700",
-  APROBADO: "bg-green-100 text-green-700",
-  RECHAZADO: "bg-red-100 text-red-700",
+  BORRADOR: "border-gray-200 text-gray-400 bg-white",
+  PRESUPUESTADO: "border-blue-600 text-blue-600 bg-blue-50",
+  APROBADO: "border-emerald-600 text-emerald-600 bg-emerald-50",
+  RECHAZADO: "border-red-600 text-red-600 bg-red-50",
 };
 
 const cobroColors: Record<string, string> = {
-  PENDIENTE: "bg-gray-100 text-gray-500",
-  APROBACION_PENDIENTE: "bg-orange-100 text-orange-700",
-  COBRO_PENDIENTE: "bg-yellow-100 text-yellow-700",
-  COBRADO: "bg-green-100 text-green-700",
-  PARCIAL: "bg-blue-100 text-blue-700",
+  PENDIENTE: "text-gray-400",
+  APROBACION_PENDIENTE: "text-orange-600",
+  COBRO_PENDIENTE: "text-red-600",
+  COBRADO: "text-emerald-600",
+  PARCIAL: "text-blue-600",
 };
 
 const cobroLabel: Record<string, string> = {
-  PENDIENTE: "Pendiente",
-  APROBACION_PENDIENTE: "Aprobación pendiente",
-  COBRO_PENDIENTE: "Cobro pendiente",
-  COBRADO: "Cobrado",
-  PARCIAL: "Parcial",
+  PENDIENTE: "PND",
+  APROBACION_PENDIENTE: "VALIDACIÓN",
+  COBRO_PENDIENTE: "PAGO PND",
+  COBRADO: "LIQUIDADO",
+  PARCIAL: "A CUENTA",
 };
 
 function formatNumero(numero: number, fecha: string) {
@@ -80,7 +81,7 @@ export default function PresupuestosPage() {
     const data = await res.json();
     setEliminando(false);
     if (!res.ok) {
-      setErrorDelete(data.error || "Error al eliminar");
+      setErrorDelete(data.error || "ERROR AL ELIMINAR REGISTRO");
       return;
     }
     setConfirmDelete(null);
@@ -99,132 +100,178 @@ export default function PresupuestosPage() {
   });
 
   if (status === "loading" || loading) {
-    return <div className="min-h-screen flex items-center justify-center"><p className="text-gray-500">Cargando...</p></div>;
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center font-black uppercase tracking-[0.3em] text-gray-400 animate-pulse">
+        Sincronizando Libro de Presupuestos...
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={() => router.push("/dashboard")} className="text-gray-500 hover:text-gray-700">← Menú</button>
-          <h1 className="text-xl font-bold text-gray-900">Presupuestos</h1>
+    <div className="min-h-screen bg-gray-100 flex flex-col font-sans animate-in fade-in duration-500">
+      
+      {/* Header Industrial */}
+      <header className="bg-white border-b border-gray-300 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 h-24 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <Link href="/dashboard" className="p-3 text-gray-400 hover:text-red-600 hover:bg-gray-100 rounded-xl transition-all border border-transparent hover:border-gray-200">
+              <ArrowLeft size={24} />
+            </Link>
+            <div>
+              <div className="flex items-center gap-3 text-gray-400 mb-1">
+                <span className="text-xs font-black uppercase tracking-[0.3em] opacity-70">Administración</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
+                <span className="text-[10px] font-bold text-red-600 uppercase tracking-widest">FLUJO DE CAJA ESTIMADO</span>
+              </div>
+              <h1 className="text-3xl lg:text-4xl font-black text-gray-900 tracking-tighter italic uppercase">Gestión de Presupuestos</h1>
+            </div>
+          </div>
+          <button
+            onClick={() => router.push("/presupuestos/nuevo")}
+            className="flex items-center gap-3 bg-red-600 text-white px-10 py-5 rounded-2xl text-xs font-black hover:bg-red-700 transition-all shadow-xl shadow-red-600/40 uppercase tracking-[0.2em] active:scale-95"
+          >
+            <Plus size={20} />
+            <span className="hidden sm:inline">NUEVA COTIZACIÓN</span>
+          </button>
         </div>
-        <button
-          onClick={() => router.push("/presupuestos/nuevo")}
-          className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700"
-        >
-          + Nuevo Presupuesto
-        </button>
       </header>
 
-      <main className="max-w-7xl mx-auto p-6">
-        <div className="flex gap-3 mb-4">
-          <input
-            type="text"
-            placeholder="Buscar por N°, cliente, empresa, factura..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm"
-          />
-          <select
-            value={filtroEstado}
-            onChange={(e) => setFiltroEstado(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none"
-          >
-            <option value="">Todos los estados</option>
-            <option value="BORRADOR">Borrador</option>
-            <option value="PRESUPUESTADO">Presupuestado</option>
-            <option value="APROBADO">Aprobado</option>
-            <option value="RECHAZADO">Rechazado</option>
-          </select>
+      <main className="flex-1 max-w-7xl mx-auto px-6 lg:px-10 py-10 w-full lg:space-y-12">
+        
+        {/* Barra de Filtros Industrial */}
+        <div className="flex flex-col lg:row items-center gap-8 bg-white p-8 rounded-[32px] border-2 border-gray-100 shadow-sm">
+          <div className="relative flex-1 group w-full">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-red-600 transition-colors" size={24} />
+            <input
+              type="text"
+              placeholder="BUSCAR PPTO, CLIENTE, EMPRESA O FACTURA..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="w-full pl-16 pr-6 py-6 bg-gray-50 border-2 border-transparent focus:border-red-600 rounded-2xl text-base text-gray-900 placeholder:text-gray-300 outline-none transition-all shadow-inner font-black uppercase tracking-tight italic"
+            />
+          </div>
+          <div className="flex flex-col sm:flex-row gap-6 w-full lg:w-auto">
+            <div className="relative">
+                <select
+                value={filtroEstado}
+                onChange={(e) => setFiltroEstado(e.target.value)}
+                className="w-full sm:w-72 px-8 py-6 bg-gray-900 text-white border-none rounded-2xl text-xs font-black outline-none hover:bg-black transition-all shadow-xl shadow-gray-900/10 uppercase tracking-widest italic appearance-none cursor-pointer"
+                >
+                <option value="">TODOS LOS ESTADOS</option>
+                <option value="BORRADOR">BORRADOR</option>
+                <option value="PRESUPUESTADO">ENVIADO</option>
+                <option value="APROBADO">APROBADOS</option>
+                <option value="RECHAZADO">RECHAZADOS</option>
+                </select>
+                <ChevronRight size={16} className="absolute right-6 top-1/2 -translate-y-1/2 text-red-600 rotate-90 pointer-events-none" />
+            </div>
+            <div className="flex items-center justify-center text-[10px] font-black text-gray-400 bg-gray-50 px-8 py-4 rounded-2xl border-2 border-dashed border-gray-200 uppercase tracking-[0.3em] whitespace-nowrap">
+              {filtrados.length} REGISTROS INDEXADOS
+            </div>
+          </div>
         </div>
 
-        <div className="text-sm text-gray-500 mb-4">{filtrados.length} presupuesto{filtrados.length !== 1 ? "s" : ""}</div>
-
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">N° Ppto</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Fecha</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Cliente</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">OT</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-600">Importe</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-600">Saldo</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Estado</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Cobro</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtrados.map((p) => (
-                <tr
-                  key={p.id}
-                  className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
-                  onClick={() => router.push(`/presupuestos/${p.id}`)}
-                >
-                  <td className="px-4 py-3 font-medium text-green-700">{formatNumero(p.numero, p.fecha)}</td>
-                  <td className="px-4 py-3 text-gray-600">{new Date(p.fecha).toLocaleDateString("es-AR")}</td>
-                  <td className="px-4 py-3">
-                    {p.cliente?.empresa?.nombre
-                      ? `${p.cliente.empresa.nombre} - ${p.cliente.nombre}`
-                      : p.cliente?.nombre}
-                  </td>
-                  <td className="px-4 py-3 text-gray-500">
-                    {p.orden ? `OT-${p.orden.numero}` : "-"}
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold">
-                    ${p.total?.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                  </td>
-                  <td className={`px-4 py-3 text-right font-semibold ${p.saldo > 0 ? "text-red-600" : "text-green-600"}`}>
-                    ${p.saldo?.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${estadoColors[p.estado] || "bg-gray-100"}`}>
-                      {p.estado}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${cobroColors[p.estadoCobro] || "bg-gray-100"}`}>
-                      {cobroLabel[p.estadoCobro] || p.estadoCobro}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={() => { setErrorDelete(null); setConfirmDelete({ id: p.id, numero: p.numero, fecha: p.fecha }); }}
-                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Eliminar"
+        <div className="bg-white border-2 border-gray-100 rounded-[40px] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="overflow-x-auto">
+            <table className="w-full border-separate border-spacing-0">
+                <thead>
+                <tr className="bg-gray-50 border-b-2 border-gray-100 text-gray-400 uppercase text-[10px] font-black tracking-[0.3em]">
+                    <th className="text-left px-8 py-6">ID Documento</th>
+                    <th className="text-left px-8 py-6">Vencimiento</th>
+                    <th className="text-left px-8 py-6">Operativa Comercial</th>
+                    <th className="text-left px-8 py-6">Vínculo</th>
+                    <th className="text-right px-8 py-6">Importe Líquido</th>
+                    <th className="text-right px-8 py-6">Saldo</th>
+                    <th className="text-center px-8 py-6">Protocolo</th>
+                    <th className="text-right px-8 py-6">...</th>
+                </tr>
+                </thead>
+                <tbody className="divide-y-2 divide-gray-100">
+                {filtrados.map((p) => (
+                    <tr
+                    key={p.id}
+                    className="hover:bg-red-50/30 transition-all cursor-pointer group"
+                    onClick={() => router.push(`/presupuestos/${p.id}`)}
                     >
-                      <Trash2 size={15} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {filtrados.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-gray-400">No se encontraron presupuestos</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                    <td className="px-8 py-8 font-black text-red-600 italic text-xl tracking-tighter">
+                        {formatNumero(p.numero, p.fecha)}
+                    </td>
+                    <td className="px-8 py-8 text-gray-400 font-black font-mono text-xs tabular-nums tracking-widest">
+                        {new Date(p.fecha).toLocaleDateString("es-AR")}
+                    </td>
+                    <td className="px-8 py-8">
+                        <div className="font-black text-gray-900 uppercase text-sm tracking-tight leading-tight group-hover:text-red-700 transition-colors">
+                        {p.cliente?.empresa?.nombre || "ENTIDAD PARTICULAR"}
+                        </div>
+                        {p.cliente?.nombre && (
+                        <div className="text-[10px] text-gray-400 uppercase font-black italic mt-1.5 opacity-60">RESPONSABLE: {p.cliente.nombre}</div>
+                        )}
+                    </td>
+                    <td className="px-8 py-8 font-black text-gray-500 italic text-[11px] uppercase tracking-widest font-mono">
+                        {p.orden ? `OT #${p.orden.numero}` : "EXTERNO"}
+                    </td>
+                    <td className="px-8 py-8 text-right font-black text-lg italic tracking-tighter text-gray-900 tabular-nums">
+                        ${p.total?.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className={`px-8 py-8 text-right font-black text-lg italic tracking-tighter tabular-nums ${p.saldo > 0 ? "text-red-700 bg-red-50/50" : "text-emerald-700 bg-emerald-50/50"}`}>
+                        ${p.saldo?.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="px-8 py-8 text-center space-y-2">
+                        <div className={`px-4 py-1 rounded-lg text-[9px] font-black uppercase tracking-[0.2em] border-2 shadow-sm inline-block ${estadoColors[p.estado] || "border-gray-200 text-gray-400"}`}>
+                        {p.estado}
+                        </div>
+                        <div className={`text-[9px] font-black uppercase tracking-widest block opacity-70 ${cobroColors[p.estadoCobro] || "text-gray-400"}`}>
+                        {cobroLabel[p.estadoCobro] || p.estadoCobro}
+                        </div>
+                    </td>
+                    <td className="px-8 py-8 text-right" onClick={(e) => e.stopPropagation()}>
+                        <button
+                        onClick={() => { setErrorDelete(null); setConfirmDelete({ id: p.id, numero: p.numero, fecha: p.fecha }); }}
+                        className="p-4 text-gray-200 hover:text-red-600 hover:bg-white rounded-2xl transition-all border border-transparent hover:border-gray-200 hover:shadow-lg active:scale-90"
+                        title="ELIMINAR"
+                        >
+                        <Trash2 size={20} />
+                        </button>
+                    </td>
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+          </div>
+          
+          {filtrados.length === 0 && (
+            <div className="px-8 py-32 text-center">
+                <div className="flex flex-col items-center gap-6 opacity-20">
+                    <FileText size={80} className="text-gray-400" />
+                    <span className="text-xs font-black uppercase tracking-[0.5em] text-gray-500 italic">BASE DE DATOS SIN REGISTROS COMPATIBLES</span>
+                </div>
+            </div>
+          )}
         </div>
       </main>
 
       <ConfirmDialog
         isOpen={!!confirmDelete}
-        title="Eliminar presupuesto"
-        message={`¿Eliminar presupuesto ${confirmDelete ? formatNumero(confirmDelete.numero, confirmDelete.fecha) : ""}? Esta acción no se puede deshacer.`}
-        confirmLabel={eliminando ? "Eliminando..." : "Sí, eliminar"}
+        title="Protocolo de Eliminación"
+        message={`¿CONFIRMA LA ELIMINACIÓN PERMANENTE DEL PRESUPUESTO ${confirmDelete ? formatNumero(confirmDelete.numero, confirmDelete.fecha) : ""}? ESTA ACCIÓN NO TIENE RETORNO.`}
+        confirmLabel={eliminando ? "BORRANDO..." : "SÍ, ELIMINAR REGISTRO"}
         onCancel={() => { setConfirmDelete(null); setErrorDelete(null); }}
         onConfirm={() => confirmDelete && eliminarPresupuesto(confirmDelete.id)}
       />
 
       {errorDelete && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white text-sm px-5 py-3 rounded-xl shadow-lg">
-          {errorDelete}
-          <button onClick={() => setErrorDelete(null)} className="ml-3 underline">Cerrar</button>
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 bg-gray-900 border-2 border-red-600 text-red-600 px-8 py-5 rounded-[24px] shadow-2xl shadow-red-600/20 font-black uppercase tracking-[0.2em] italic flex items-center gap-4 animate-in slide-in-from-bottom duration-500">
+           <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+           {errorDelete}
+           <button onClick={() => setErrorDelete(null)} className="ml-6 py-2 px-4 hover:bg-red-600/10 rounded-lg transition-all underline text-[10px]">CERRAR</button>
         </div>
       )}
+      
+      <footer className="max-w-7xl mx-auto w-full px-6 lg:px-10 py-10">
+         <div className="border-t-2 border-gray-200 pt-8 flex flex-col md:flex-row items-center justify-between gap-6">
+            <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.4em] italic leading-relaxed text-center md:text-left">SISTEMA DE GESTIÓN INDUSTRIAL — SERVINOA V3.0<br/>MODULO ADMINISTRATIVO — PROTECCIÓN DE DATOS ACTIVA</p>
+         </div>
+      </footer>
     </div>
   );
 }

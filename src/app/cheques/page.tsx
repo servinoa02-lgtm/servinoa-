@@ -3,6 +3,14 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { 
+  ArrowLeft, Search, Plus, CreditCard, Landmark, 
+  History, AlertCircle, Calendar,
+  User, Building2, Timer
+} from "lucide-react";
+import { Drawer } from "@/components/ui/Drawer";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 
 interface Cheque {
   id: string;
@@ -23,15 +31,6 @@ interface Cheque {
 
 interface Cliente { id: string; nombre: string; empresa?: { nombre: string } | null; }
 
-const estadoColors: Record<string, string> = {
-  EN_CARTERA: "bg-blue-100 text-blue-700",
-  DEPOSITADO: "bg-green-100 text-green-700",
-  ENDOSADO: "bg-purple-100 text-purple-700",
-  COBRADO: "bg-gray-100 text-gray-600",
-  RECHAZADO: "bg-red-100 text-red-700",
-  VENCIDO: "bg-orange-100 text-orange-700",
-};
-
 export default function ChequesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -41,7 +40,6 @@ export default function ChequesPage() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [busqueda, setBusqueda] = useState("");
 
-  // Form
   const [clienteId, setClienteId] = useState("");
   const [numeroCheque, setNumeroCheque] = useState("");
   const [banco, setBanco] = useState("");
@@ -67,7 +65,7 @@ export default function ChequesPage() {
     fetch("/api/clientes").then((r) => r.json()).then(setClientes);
   }, []);
 
-  const filtrados = cheques.filter((c) => {
+  const filtrados = cheques.filter((c: Cheque) => {
     const texto = busqueda.toLowerCase();
     return (
       (c.numeroCheque || "").includes(texto) ||
@@ -83,7 +81,18 @@ export default function ChequesPage() {
     await fetch("/api/cheques", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ clienteId: clienteId || null, numeroCheque, banco, librador, importe, fechaEmision, fechaCobro, endosadoA, descripcion, estado: estadoForm }),
+      body: JSON.stringify({ 
+        clienteId: clienteId || null, 
+        numeroCheque, 
+        banco: banco.toUpperCase(), 
+        librador: librador.toUpperCase(), 
+        importe, 
+        fechaEmision, 
+        fechaCobro, 
+        endosadoA, 
+        descripcion: (descripcion || "").toUpperCase(), 
+        estado: estadoForm 
+      }),
     });
     setMostrarForm(false);
     setNumeroCheque(""); setBanco(""); setLibrador(""); setImporte(""); setFechaEmision(""); setFechaCobro(""); setEndosadoA(""); setDescripcion(""); setClienteId("");
@@ -91,170 +100,194 @@ export default function ChequesPage() {
     cargar();
   };
 
-  if (status === "loading" || loading) {
-    return <div className="min-h-screen flex items-center justify-center"><p className="text-gray-500">Cargando...</p></div>;
-  }
+  if (status === "loading" || loading) return (
+    <div className="flex flex-col items-center justify-center p-40">
+      <div className="w-12 h-1 bg-amber-600 rounded-full animate-pulse mb-4" />
+      <div className="text-gray-400 font-medium text-sm animate-pulse">Cargando cheques...</div>
+    </div>
+  );
 
   const totalCartera = cheques
-    .filter((c) => c.estado === "EN_CARTERA")
-    .reduce((sum, c) => sum + c.importe, 0);
+    .filter((c: Cheque) => c.estado === "EN_CARTERA")
+    .reduce((sum: number, c: Cheque) => sum + c.importe, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={() => router.push("/cajas")} className="text-gray-500 hover:text-gray-700">← Cajas</button>
-          <h1 className="text-xl font-bold text-gray-900">Cheques</h1>
-          <span className="text-sm text-gray-500">En cartera: <strong className="text-yellow-700">${totalCartera.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</strong></span>
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <Link href="/cajas" className="p-2 text-gray-400 hover:text-red-600 hover:bg-gray-50 rounded-xl transition-all">
+              <ArrowLeft size={24} />
+            </Link>
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Tesorería</p>
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Cartera de Cheques</h1>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-6">
+             <div className="hidden md:block bg-amber-50 px-4 py-2 rounded-xl border border-amber-100">
+                <p className="text-[9px] font-bold text-amber-600 uppercase tracking-wider mb-0.5">Total en Cartera</p>
+                <p className="text-lg font-bold tabular-nums text-amber-700">
+                  ${totalCartera.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                </p>
+             </div>
+             <button
+              onClick={() => setMostrarForm(true)}
+              className="bg-red-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/10 flex items-center gap-2"
+            >
+              <Plus size={18} /> Recibir Cheque
+            </button>
+          </div>
         </div>
-        <button
-          onClick={() => setMostrarForm(true)}
-          className="bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-yellow-600"
-        >
-          + Nuevo Cheque
-        </button>
       </header>
 
-      <main className="max-w-7xl mx-auto p-6">
-        <input
-          type="text"
-          placeholder="Buscar por N° cheque, librador, banco, cliente..."
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 text-sm focus:ring-2 focus:ring-yellow-500 outline-none"
-        />
+      <main className="flex-1 max-w-6xl mx-auto px-6 py-10 w-full space-y-8">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+           <div className="relative w-full max-w-lg">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <input 
+                type="text" 
+                placeholder="Buscar por n°, librador, banco o cliente..." 
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="w-full pl-12 pr-4 py-2.5 bg-gray-50 border border-transparent focus:border-red-600 rounded-xl text-sm font-medium outline-none transition-all"
+              />
+           </div>
+           <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50 px-3 py-2 rounded-lg border border-gray-100 italic">
+              {filtrados.length} valores encontrados
+           </div>
+        </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left px-3 py-3 font-medium text-gray-600">Cliente</th>
-                <th className="text-left px-3 py-3 font-medium text-gray-600">Librador</th>
-                <th className="text-left px-3 py-3 font-medium text-gray-600">N° Cheque</th>
-                <th className="text-left px-3 py-3 font-medium text-gray-600">Banco</th>
-                <th className="text-left px-3 py-3 font-medium text-gray-600">F. Ingreso</th>
-                <th className="text-left px-3 py-3 font-medium text-gray-600">F. Cobro</th>
-                <th className="text-right px-3 py-3 font-medium text-gray-600">Importe</th>
-                <th className="text-left px-3 py-3 font-medium text-gray-600">Estado</th>
-                <th className="text-left px-3 py-3 font-medium text-gray-600">Vencimiento</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtrados.map((c) => (
-                <tr key={c.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="px-3 py-3 text-gray-600">
+        <div className="space-y-4">
+          {filtrados.map((c: Cheque) => (
+            <div 
+              key={c.id} 
+              className="group bg-white p-6 rounded-2xl border border-gray-200 hover:shadow-md transition-all relative overflow-hidden"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                <div className="md:col-span-4">
+                   <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Origen / Cliente</p>
+                   <p className="text-base font-bold text-gray-900 leading-tight uppercase">
                     {c.cliente?.empresa?.nombre
                       ? `${c.cliente.empresa.nombre} - ${c.cliente.nombre}`
-                      : c.cliente?.nombre || "-"}
-                  </td>
-                  <td className="px-3 py-3">{c.librador || "-"}</td>
-                  <td className="px-3 py-3 font-medium">{c.numeroCheque || "-"}</td>
-                  <td className="px-3 py-3 text-gray-500">{c.banco || "-"}</td>
-                  <td className="px-3 py-3 text-gray-500">{new Date(c.fechaIngreso).toLocaleDateString("es-AR")}</td>
-                  <td className="px-3 py-3 text-gray-500">{c.fechaCobro ? new Date(c.fechaCobro).toLocaleDateString("es-AR") : "-"}</td>
-                  <td className="px-3 py-3 text-right font-semibold">${c.importe.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
-                  <td className="px-3 py-3">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${estadoColors[c.estado] || "bg-gray-100"}`}>
-                      {c.estado.replace(/_/g, " ")}
-                    </span>
-                  </td>
-                  <td className={`px-3 py-3 text-xs font-medium ${c.diasVencimiento !== null && c.diasVencimiento !== undefined && c.diasVencimiento < 0 ? "text-red-600" : c.diasVencimiento !== null && c.diasVencimiento !== undefined && c.diasVencimiento <= 7 ? "text-orange-600" : "text-gray-500"}`}>
-                    {c.vencimientoTexto || "-"}
-                  </td>
-                </tr>
-              ))}
-              {filtrados.length === 0 && (
-                <tr><td colSpan={9} className="px-4 py-8 text-center text-gray-400">No hay cheques</td></tr>
-              )}
-            </tbody>
-          </table>
+                      : c.cliente?.nombre || "Emisor Particular"}
+                   </p>
+                   <div className="flex items-center gap-1.5 mt-2 text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 w-fit text-[10px] font-bold uppercase">
+                      <Landmark size={12} /> {c.banco || "S/D"}
+                   </div>
+                </div>
+
+                <div className="md:col-span-3">
+                   <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Librador / N°</p>
+                   <p className="text-sm font-bold text-gray-600 uppercase">{c.librador || "N/A"}</p>
+                   <p className="text-[10px] font-medium text-gray-400 mt-1 uppercase">N°: {c.numeroCheque || "----"}</p>
+                </div>
+
+                <div className="md:col-span-2">
+                   <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Fecha Cobro</p>
+                   <p className="text-sm font-bold text-gray-900">
+                      {c.fechaCobro ? new Date(c.fechaCobro).toLocaleDateString("es-AR") : "Inmediata"}
+                   </p>
+                   <div className="flex items-center gap-1.5 mt-1">
+                       <Timer size={12} className={c.diasVencimiento != null && c.diasVencimiento < 0 ? "text-red-500" : "text-gray-300"} />
+                       <span className={`text-[10px] font-bold uppercase ${c.diasVencimiento != null && c.diasVencimiento < 0 ? "text-red-600" : "text-gray-400"}`}>
+                          {c.vencimientoTexto || "S/D"}
+                       </span>
+                   </div>
+                </div>
+
+                <div className="md:col-span-3 text-right">
+                   <p className="text-xl font-bold tabular-nums text-gray-900 mb-2">
+                      ${c.importe.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                   </p>
+                   <StatusBadge status={c.estado} />
+                </div>
+              </div>
+            </div>
+          ))}
+          {filtrados.length === 0 && (
+            <div className="py-20 text-center bg-white rounded-3xl border-2 border-dashed border-gray-100">
+               <Landmark size={48} className="text-gray-100 mx-auto mb-4" />
+               <p className="text-gray-400 font-medium">No se encontraron cheques</p>
+            </div>
+          )}
         </div>
       </main>
 
-      {/* Panel lateral nuevo cheque */}
-      {mostrarForm && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="fixed inset-0 bg-black/30" onClick={() => setMostrarForm(false)} />
-          <div className="relative bg-white w-full max-w-md shadow-2xl flex flex-col h-full">
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="font-semibold text-gray-900">Nuevo Cheque</h2>
-              <button onClick={() => setMostrarForm(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Cliente (opcional)</label>
-                <select value={clienteId} onChange={(e) => setClienteId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none">
-                  <option value="">Sin cliente</option>
-                  {clientes.map((c) => <option key={c.id} value={c.id}>{c.empresa ? `${c.empresa.nombre} - ${c.nombre}` : c.nombre}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Librador</label>
-                <input type="text" value={librador} onChange={(e) => setLibrador(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-yellow-500" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">N° de Cheque</label>
-                  <input type="text" value={numeroCheque} onChange={(e) => setNumeroCheque(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none" />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Banco</label>
-                  <input type="text" value={banco} onChange={(e) => setBanco(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none" />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Importe *</label>
-                <input type="number" min="0" step="0.01" value={importe} onChange={(e) => setImporte(e.target.value)}
+      <Drawer 
+        isOpen={mostrarForm} 
+        onClose={() => setMostrarForm(false)} 
+        title="Recibir Cheque"
+      >
+        <div className="p-1 space-y-6">
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Cliente / Origen</label>
+            <select 
+              value={clienteId} onChange={e => setClienteId(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none uppercase appearance-none cursor-pointer"
+            >
+              <option value="">SIN CLIENTE ASIGNADO</option>
+              {clientes.map((c) => <option key={c.id} value={c.id}>{c.empresa ? `${c.empresa.nombre} - ${c.nombre}`.toUpperCase() : c.nombre.toUpperCase()}</option>)}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Importe del Cheque</label>
+             <div className="relative">
+                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
+                <input 
+                  type="number" min="0" step="0.01" value={importe} onChange={(e) => setImporte(e.target.value)}
                   placeholder="0.00"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-yellow-500" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Fecha Emisión</label>
-                  <input type="date" value={fechaEmision} onChange={(e) => setFechaEmision(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none" />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Fecha Cobro</label>
-                  <input type="date" value={fechaCobro} onChange={(e) => setFechaCobro(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none" />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Endosado a</label>
-                <input type="text" value={endosadoA} onChange={(e) => setEndosadoA(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none" />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Estado</label>
-                <select value={estadoForm} onChange={(e) => setEstadoForm(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none">
-                  <option value="EN_CARTERA">En Cartera</option>
-                  <option value="DEPOSITADO">Depositado</option>
-                  <option value="ENDOSADO">Endosado</option>
-                  <option value="COBRADO">Cobrado</option>
-                  <option value="RECHAZADO">Rechazado</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Descripción</label>
-                <textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none resize-none" />
-              </div>
-            </div>
-            <div className="px-6 py-4 border-t border-gray-200">
-              <button onClick={guardar} disabled={guardando || !importe}
-                className="w-full bg-yellow-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-yellow-600 disabled:opacity-50">
-                {guardando ? "Guardando..." : "Guardar Cheque"}
-              </button>
-            </div>
+                  className="w-full pl-10 pr-5 py-4 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-xl font-bold outline-none transition-all placeholder:text-gray-200" 
+                />
+             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+             <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">N° Cheque</label>
+                <input type="text" value={numeroCheque} onChange={e => setNumeroCheque(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none" />
+             </div>
+             <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Banco</label>
+                <input type="text" value={banco} onChange={e => setBanco(e.target.value)}
+                  placeholder="Banco emisor..."
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none uppercase placeholder:text-gray-300" />
+             </div>
+          </div>
+
+          <div className="space-y-2">
+             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Librador (Firmante)</label>
+             <input type="text" value={librador} onChange={e => setLibrador(e.target.value)}
+               placeholder="Nombre de quien firma..."
+               className="w-full px-5 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none uppercase placeholder:text-gray-300" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+             <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Fecha Emisión</label>
+                <input type="date" value={fechaEmision} onChange={e => setFechaEmision(e.target.value)}
+                  className="w-full bg-white border border-gray-200 p-2 rounded-lg text-sm outline-none" />
+             </div>
+             <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-red-600">Fecha Cobro</label>
+                <input type="date" value={fechaCobro} onChange={e => setFechaCobro(e.target.value)}
+                  className="w-full bg-white border border-red-200 p-2 rounded-lg text-sm outline-none" />
+             </div>
+          </div>
+
+          <div className="pt-6">
+            <button
+              onClick={guardar} disabled={guardando || !importe}
+              className="w-full py-4 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20 active:scale-[0.98]"
+            >
+              {guardando ? "Procesando..." : "Confirmar Recepción"}
+            </button>
           </div>
         </div>
-      )}
+      </Drawer>
     </div>
   );
 }

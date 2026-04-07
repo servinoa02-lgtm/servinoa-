@@ -3,6 +3,12 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { 
+  ArrowLeft, ArrowRightLeft, History, 
+  Calendar, ArrowRight, ArrowUpRight, ArrowDownLeft 
+} from "lucide-react";
+import { Drawer } from "@/components/ui/Drawer";
 
 interface Transferencia {
   id: string;
@@ -17,7 +23,7 @@ interface Transferencia {
 
 interface Caja { id: string; nombre: string; }
 
-const FORMAS_PAGO = ["Efectivo", "Transferencia", "Cheque", "Tarjeta", "Mercado Pago", "Otro"];
+const FORMAS_PAGO = ["EFECTIVO", "TRANSFERENCIA", "CHEQUE", "TARJETA", "MERCADO PAGO", "OTRO"];
 
 export default function TransferenciasPage() {
   const { data: session, status } = useSession();
@@ -30,8 +36,8 @@ export default function TransferenciasPage() {
   const [cajaDestinoId, setCajaDestinoId] = useState("");
   const [monto, setMonto] = useState("");
   const [descripcion, setDescripcion] = useState("");
-  const [formaPagoOrigen, setFormaPagoOrigen] = useState("Efectivo");
-  const [formaPagoDestino, setFormaPagoDestino] = useState("Efectivo");
+  const [formaPagoOrigen, setFormaPagoOrigen] = useState("EFECTIVO");
+  const [formaPagoDestino, setFormaPagoDestino] = useState("EFECTIVO");
   const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
@@ -39,7 +45,10 @@ export default function TransferenciasPage() {
   }, [status, router]);
 
   const cargar = () => {
-    fetch("/api/cajas/transferencias").then((r) => r.json()).then((d) => { setTransferencias(d); setLoading(false); }).catch(() => setLoading(false));
+    fetch("/api/cajas/transferencias")
+      .then((r) => r.json())
+      .then((d) => { setTransferencias(d); setLoading(false); })
+      .catch(() => setLoading(false));
   };
 
   useEffect(() => { cargar(); }, []);
@@ -58,7 +67,14 @@ export default function TransferenciasPage() {
     await fetch("/api/cajas/transferencias", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cajaOrigenId, cajaDestinoId, monto, descripcion, formaPagoOrigen, formaPagoDestino }),
+      body: JSON.stringify({ 
+        cajaOrigenId, 
+        cajaDestinoId, 
+        monto, 
+        descripcion: (descripcion || "Transferencia operativa").toUpperCase(), 
+        formaPagoOrigen, 
+        formaPagoDestino 
+      }),
     });
 
     setMostrarForm(false);
@@ -67,118 +83,162 @@ export default function TransferenciasPage() {
     cargar();
   };
 
-  if (status === "loading" || loading) {
-    return <div className="min-h-screen flex items-center justify-center"><p className="text-gray-500">Cargando...</p></div>;
-  }
+  if (status === "loading" || loading) return (
+    <div className="flex flex-col items-center justify-center p-40">
+      <div className="w-12 h-1 bg-red-600 rounded-full animate-pulse mb-4" />
+      <div className="text-gray-400 font-medium text-sm animate-pulse">Cargando transferencias...</div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={() => router.push("/cajas")} className="text-gray-500 hover:text-gray-700">← Cajas</button>
-          <h1 className="text-xl font-bold text-gray-900">Transferencias entre Cajas</h1>
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <Link href="/cajas" className="p-2 text-gray-400 hover:text-red-600 hover:bg-gray-50 rounded-xl transition-all">
+              <ArrowLeft size={24} />
+            </Link>
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Tesorería</p>
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Transferencias entre Cajas</h1>
+            </div>
+          </div>
+          <button
+            onClick={() => setMostrarForm(true)}
+            className="bg-red-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/10 flex items-center gap-2"
+          >
+            <ArrowRightLeft size={18} /> Nueva Transferencia
+          </button>
         </div>
-        <button
-          onClick={() => setMostrarForm(true)}
-          className="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700"
-        >
-          + Nueva Transferencia
-        </button>
       </header>
 
-      <main className="max-w-4xl mx-auto p-6">
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Fecha</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Origen</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Destino</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-600">Monto</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Descripción</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transferencias.map((t) => (
-                <tr key={t.id} className="border-b border-gray-100">
-                  <td className="px-4 py-3">{new Date(t.fecha).toLocaleDateString("es-AR")}</td>
-                  <td className="px-4 py-3 text-red-600 font-medium">{t.cajaOrigen.nombre}</td>
-                  <td className="px-4 py-3 text-green-600 font-medium">{t.cajaDestino.nombre}</td>
-                  <td className="px-4 py-3 text-right font-semibold">${t.monto.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
-                  <td className="px-4 py-3 text-gray-500">{t.descripcion || "-"}</td>
-                </tr>
-              ))}
-              {transferencias.length === 0 && (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">Sin transferencias</td></tr>
-              )}
-            </tbody>
-          </table>
+      <main className="flex-1 max-w-5xl mx-auto px-6 py-10 w-full space-y-8">
+        <div className="space-y-4">
+          {transferencias.map((t, idx) => (
+            <div 
+              key={t.id} 
+              className="group bg-white p-6 rounded-2xl border border-gray-200 hover:shadow-md transition-all"
+            >
+              <div className="flex flex-col md:flex-row md:items-center gap-6">
+                <div className="flex items-center gap-4">
+                   <div className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-center min-w-[120px]">
+                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Origen</p>
+                      <p className="text-sm font-bold text-gray-900 uppercase">{t.cajaOrigen.nombre}</p>
+                   </div>
+                   <ArrowRight size={20} className="text-gray-300" />
+                   <div className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-center min-w-[120px]">
+                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Destino</p>
+                      <p className="text-sm font-bold text-gray-900 uppercase">{t.cajaDestino.nombre}</p>
+                   </div>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-base font-bold text-gray-900 group-hover:text-red-600 transition-colors uppercase">
+                        {t.descripcion || "Transferencia Operativa"}
+                      </p>
+                      <div className="flex items-center gap-3 mt-1">
+                         <div className="flex items-center gap-1.5 text-gray-400 text-[10px] font-medium uppercase">
+                            <Calendar size={12} />
+                            {new Date(t.fecha).toLocaleDateString("es-AR")}
+                         </div>
+                         <span className="text-[10px] text-gray-300 font-bold uppercase">{t.formaPagoOrigen} <ArrowRight size={10} className="inline mx-0.5" /> {t.formaPagoDestino}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="text-right">
+                       <p className="text-xl font-bold tabular-nums text-gray-900">
+                          ${t.monto.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                       </p>
+                       <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">Confirmado</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+          {transferencias.length === 0 && (
+            <div className="py-20 text-center bg-white rounded-3xl border-2 border-dashed border-gray-100">
+               <ArrowRightLeft size={48} className="text-gray-200 mx-auto mb-4" />
+               <p className="text-gray-400 font-medium">No hay transferencias registradas</p>
+            </div>
+          )}
         </div>
       </main>
 
-      {/* Panel lateral */}
-      {mostrarForm && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="fixed inset-0 bg-black/30" onClick={() => setMostrarForm(false)} />
-          <div className="relative bg-white w-full max-w-md shadow-2xl flex flex-col h-full">
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="font-semibold text-gray-900">Nueva Transferencia</h2>
-              <button onClick={() => setMostrarForm(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
-            </div>
-            <div className="flex-1 p-6 space-y-4">
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Caja Origen</label>
-                <select value={cajaOrigenId} onChange={(e) => setCajaOrigenId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none">
-                  {cajas.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Forma de pago origen</label>
-                <select value={formaPagoOrigen} onChange={(e) => setFormaPagoOrigen(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none">
-                  {FORMAS_PAGO.map((f) => <option key={f}>{f}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Caja Destino</label>
-                <select value={cajaDestinoId} onChange={(e) => setCajaDestinoId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none">
-                  {cajas.filter((c) => c.id !== cajaOrigenId).map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Forma de pago destino</label>
-                <select value={formaPagoDestino} onChange={(e) => setFormaPagoDestino(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none">
-                  {FORMAS_PAGO.map((f) => <option key={f}>{f}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Monto *</label>
-                <input type="number" min="0" step="0.01" value={monto} onChange={(e) => setMonto(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Descripción</label>
-                <input type="text" value={descripcion} onChange={(e) => setDescripcion(e.target.value)}
-                  placeholder="Motivo de la transferencia..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none" />
-              </div>
-            </div>
-            <div className="px-6 py-4 border-t border-gray-200">
-              <button
-                onClick={guardar}
-                disabled={guardando || !monto || cajaOrigenId === cajaDestinoId}
-                className="w-full bg-teal-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-teal-700 disabled:opacity-50"
+      <Drawer 
+        isOpen={mostrarForm} 
+        onClose={() => setMostrarForm(false)} 
+        title="Nueva Transferencia"
+      >
+        <div className="p-1 space-y-8">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Caja Origen</label>
+              <select 
+                value={cajaOrigenId} onChange={e => setCajaOrigenId(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none appearance-none cursor-pointer"
               >
-                {guardando ? "Guardando..." : "Confirmar Transferencia"}
-              </button>
+                {cajas.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Caja Destino</label>
+              <select 
+                value={cajaDestinoId} onChange={e => setCajaDestinoId(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none appearance-none cursor-pointer"
+              >
+                {cajas.filter((c) => c.id !== cajaOrigenId).map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+              </select>
             </div>
           </div>
+
+          <div className="space-y-2">
+             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Monto a Transferir</label>
+             <div className="relative">
+                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
+                <input 
+                  type="number" min="0" step="0.01" value={monto} onChange={(e) => setMonto(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full pl-10 pr-5 py-4 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-lg font-bold outline-none transition-all placeholder:text-gray-200" 
+                />
+             </div>
+          </div>
+
+          <div className="space-y-2">
+             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Descripción (Opcional)</label>
+             <input 
+               type="text" value={descripcion} onChange={e => setDescripcion(e.target.value)}
+               placeholder="Motivo de la transferencia..."
+               className="w-full px-5 py-4 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-medium outline-none" 
+             />
+          </div>
+
+          <div className="p-5 bg-gray-50 rounded-2xl border border-gray-200 space-y-4">
+             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Métodos de Pago</p>
+             <div className="grid grid-cols-2 gap-4">
+                <select value={formaPagoOrigen} onChange={e => setFormaPagoOrigen(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-xs font-bold outline-none uppercase appearance-none cursor-pointer">
+                  {FORMAS_PAGO.map((f) => <option key={f} value={f}>{f}</option>)}
+                </select>
+                <select value={formaPagoDestino} onChange={e => setFormaPagoDestino(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-xs font-bold outline-none uppercase appearance-none cursor-pointer">
+                  {FORMAS_PAGO.map((f) => <option key={f} value={f}>{f}</option>)}
+                </select>
+             </div>
+          </div>
+
+          <div className="pt-6">
+            <button
+              onClick={guardar} disabled={guardando || !monto || cajaOrigenId === cajaDestinoId}
+              className="w-full py-4 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 transition-all active:scale-[0.98] shadow-lg shadow-red-600/20"
+            >
+              {guardando ? "Procesando..." : "Confirmar Transferencia"}
+            </button>
+          </div>
         </div>
-      )}
+      </Drawer>
     </div>
   );
 }

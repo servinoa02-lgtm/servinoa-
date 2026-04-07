@@ -24,7 +24,7 @@ export default function LoginPage() {
     });
 
     if (result?.error) {
-      setError("Credenciales inválidas. Por favor verifique sus datos.");
+      setError("Credenciales inválidas");
       setLoading(false);
     } else {
       router.push("/dashboard");
@@ -32,49 +32,48 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-brand-primary/10 rounded-full blur-[120px]" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-brand-primary/5 rounded-full blur-[120px]" />
-
-      <div className="w-full max-w-md px-6 relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="bg-surface border border-border-custom rounded-[32px] shadow-2xl p-10 backdrop-blur-sm">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 font-sans">
+      <div className="w-full max-w-md px-6">
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-xl p-10 relative overflow-hidden">
+          {/* Top accent bar */}
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-red-600" />
+          
           <div className="text-center mb-10">
-            <h1 className="text-4xl font-black text-white tracking-tighter mb-2">
-              Servi<span className="text-brand-primary drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]">NOA</span>
+            <h1 className="text-4xl font-bold text-gray-900 tracking-tight">
+              Servi<span className="text-red-600">NOA</span>
             </h1>
-            <p className="text-slate-500 font-bold text-xs uppercase tracking-[0.2em]">Ingeniería Operativa</p>
+            <p className="text-gray-500 text-sm mt-2 font-medium">Ingeniería Operativa</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                Correo Electrónico
+              <label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">
+                Usuario
               </label>
               <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-brand-primary transition-colors" size={18} />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-red-600 transition-colors" size={18} />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-white/[0.03] border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-700 outline-none focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary/30 transition-all"
-                  placeholder="admin@servinoa.com"
+                  className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-600/10 focus:border-red-600 transition-all font-medium"
+                  placeholder="ejemplo@servinoa.com"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+              <label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">
                 Contraseña
               </label>
               <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-brand-primary transition-colors" size={18} />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-red-600 transition-colors" size={18} />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-white/[0.03] border border-white/10 rounded-2xl text-sm text-white placeholder:text-slate-700 outline-none focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary/30 transition-all"
+                  className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-600/10 focus:border-red-600 transition-all font-medium"
                   placeholder="••••••••"
                   required
                 />
@@ -82,29 +81,29 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3">
-                <p className="text-rose-400 text-[11px] font-bold text-center uppercase tracking-tight">{error}</p>
+              <div className="bg-red-50 border border-red-100 p-4 rounded-xl">
+                <p className="text-red-600 text-xs font-bold text-center">{error}</p>
               </div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-brand-primary text-white rounded-2xl font-black text-sm hover:translate-y-[-2px] hover:shadow-xl hover:shadow-brand-primary/20 transition-all active:scale-95 disabled:opacity-50 disabled:translate-y-0 flex items-center justify-center gap-2"
+              className="w-full py-4 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-red-600/20"
             >
               {loading ? (
                 <Loader2 className="animate-spin" size={20} />
               ) : (
                 <>
-                  INGRESAR AL PANEL <ChevronRight size={18} />
+                  Ingresar al Sistema <ChevronRight size={18} />
                 </>
               )}
             </button>
           </form>
 
-          <div className="mt-8 pt-8 border-t border-white/5 text-center">
-            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.1em]">
-              © {new Date().getFullYear()} ServiNOA — v2.0 Modern
+          <div className="mt-10 pt-6 border-t border-gray-100 text-center">
+            <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">
+              © {new Date().getFullYear()} ServiNOA — v3.0.0
             </p>
           </div>
         </div>

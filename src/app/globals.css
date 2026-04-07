@@ -1,12 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0b0e14;
-  --foreground: #f8fafc;
-  --surface: #11141b;
-  --border: #1e293b;
-  --primary: #6366f1;
-  --secondary: #a855f7;
+  --background: #fdfdfd;
+  --foreground: #111827;
+  --surface: #ffffff;
+  --border: #d1d5db;
+  --primary: #dc2626;
+  --secondary: #4b5563;
 }
 
 @theme inline {
@@ -26,26 +26,26 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Glassmorphism utility */
+/* Updated Glassmorphism for Industrial Tech Mode (High Transparency) */
 .glass {
-  background: rgba(17, 20, 27, 0.7);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-/* Custom Scrollbar for better UI */
+/* Industrial Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--background);
+  background: #f3f4f6;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 4px;
+  background: #9ca3af;
+  border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #6b7280;
 }

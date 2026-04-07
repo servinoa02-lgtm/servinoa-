@@ -3,8 +3,14 @@
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
-import { Trash2 } from "lucide-react";
+import Link from "next/link";
+import { 
+  Trash2, ArrowLeft, Plus, Search, Receipt, 
+  User, Wallet, Briefcase, FileText, CheckCircle2,
+  Activity, Calendar, ArrowUpRight, TrendingUp
+} from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Drawer } from "@/components/ui/Drawer";
 
 interface Cobranza {
   id: string;
@@ -24,7 +30,7 @@ interface Cliente { id: string; nombre: string; empresa?: { nombre: string } | n
 interface Presupuesto { id: string; numero: number; total: number; cobrado: number; saldo: number; fecha: string; }
 interface Caja { id: string; nombre: string; }
 
-const FORMAS_PAGO = ["Efectivo", "Transferencia", "Cheque", "Tarjeta", "Mercado Pago", "Otro"];
+const FORMAS_PAGO = ["EFECTIVO", "TRANSFERENCIA", "CHEQUE", "TARJETA", "MERCADO PAGO", "OTRO"];
 
 function CobranzasContent() {
   const { data: session, status } = useSession();
@@ -46,7 +52,7 @@ function CobranzasContent() {
   const [cajaId, setCajaId] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [importe, setImporte] = useState("");
-  const [formaPago, setFormaPago] = useState("Efectivo");
+  const [formaPago, setFormaPago] = useState("EFECTIVO");
   
   // Datos Cheque
   const [chequeNumero, setChequeNumero] = useState("");
@@ -59,6 +65,8 @@ function CobranzasContent() {
   const [eliminando, setEliminando] = useState(false);
   const [pptoCargando, setPptoCargando] = useState(false);
   const [pptoInfo, setPptoInfo] = useState<Presupuesto | null>(null);
+  
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -128,12 +136,17 @@ function CobranzasContent() {
         tipo,
         clienteId: clienteId || null,
         presupuestoId: tipo === "PRESUPUESTO" ? presupuestoId : null,
-        descripcion: descripcion || null,
+        descripcion: (descripcion || "Cobranza operativa").toUpperCase(),
         importe,
         formaPago,
         cajaId,
         usuarioId: (session?.user as { id?: string })?.id,
-        ...(formaPago === "Cheque" && { chequeNumero, chequeBanco, chequeFechaEmision, chequeFechaCobro })
+        ...(formaPago === "CHEQUE" && { 
+            chequeNumero: chequeNumero.toUpperCase(), 
+            chequeBanco: chequeBanco.toUpperCase(), 
+            chequeFechaEmision, 
+            chequeFechaCobro 
+        })
       }),
     });
 
@@ -144,249 +157,274 @@ function CobranzasContent() {
     cargar();
   };
 
-  if (status === "loading" || loading) {
-    return <div className="min-h-screen flex items-center justify-center"><p className="text-gray-500">Cargando...</p></div>;
-  }
+  if (status === "loading" || loading) return (
+    <div className="flex flex-col items-center justify-center p-40">
+      <div className="w-12 h-1 bg-emerald-600 rounded-full animate-pulse mb-4" />
+      <div className="text-gray-400 font-medium text-sm animate-pulse">Cargando cobranzas...</div>
+    </div>
+  );
+
+  const filteredCobranzas = cobranzas.filter(c => 
+    (c.cliente?.nombre?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (c.cliente?.empresa?.nombre?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (c.descripcion?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (c.presupuesto?.numero.toString().includes(searchTerm))
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={() => router.push("/dashboard")} className="text-gray-500 hover:text-gray-700">← Menú</button>
-          <h1 className="text-xl font-bold text-gray-900">Cobranzas</h1>
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <Link href="/dashboard" className="p-2 text-gray-400 hover:text-red-600 hover:bg-gray-50 rounded-xl transition-all">
+              <ArrowLeft size={24} />
+            </Link>
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Finanzas</p>
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Gestión de Cobros</h1>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-6">
+             <div className="hidden md:flex flex-col items-end bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100">
+                <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider mb-0.5">Total Cobrado</p>
+                <div className="flex items-center gap-2 text-emerald-700">
+                   <TrendingUp size={14} />
+                   <p className="text-lg font-bold tabular-nums">
+                     ${cobranzas.reduce((sum, c) => sum + c.importe, 0).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                   </p>
+                </div>
+             </div>
+             <button
+              onClick={() => { setMostrarForm(true); setTipo("PRESUPUESTO"); }}
+              className="bg-red-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/10 flex items-center gap-2"
+            >
+              <Plus size={18} /> Nuevo Cobro
+            </button>
+          </div>
         </div>
-        <button
-          onClick={() => { setMostrarForm(true); setTipo("PRESUPUESTO"); }}
-          className="bg-amber-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-600"
-        >
-          + Nueva Cobranza
-        </button>
       </header>
 
-      <main className="max-w-7xl mx-auto p-6">
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Fecha</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Cliente</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Descripción / Ppto</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-600">Monto Ppto</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-600">Cobrado</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Forma de pago</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Caja</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {cobranzas.map((c) => (
-                <tr key={c.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="px-4 py-3">{new Date(c.fecha).toLocaleDateString("es-AR")}</td>
-                  <td className="px-4 py-3">
-                    {c.cliente?.empresa?.nombre
-                      ? `${c.cliente.empresa.nombre} - ${c.cliente.nombre}`
-                      : c.cliente?.nombre || "-"}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {c.presupuesto
-                      ? `Ppto ${new Date(cobranzas[0]?.fecha || "").getFullYear()}-${c.presupuesto.numero.toString().padStart(5, "0")}${c.presupuesto.orden ? ` / OT-${c.presupuesto.orden.numero}` : ""}`
-                      : c.descripcion || "Cobro varios"}
-                  </td>
-                  <td className="px-4 py-3 text-right text-gray-500">
-                    {c.montoPresupuesto != null ? `$${c.montoPresupuesto.toLocaleString("es-AR", { minimumFractionDigits: 2 })}` : "-"}
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold text-green-700">
-                    ${c.importe.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                  </td>
-                  <td className="px-4 py-3 text-gray-500">{c.formaPago}</td>
-                  <td className="px-4 py-3 text-gray-500">{c.caja?.nombre || "-"}</td>
-                  <td className="px-4 py-3">
-                    <button
+      <main className="flex-1 max-w-6xl mx-auto px-6 py-10 w-full space-y-8">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+           <div className="relative w-full max-w-lg">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <input 
+                type="text" 
+                placeholder="Buscar cliente, empresa o n° ppto..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-4 py-2.5 bg-gray-50 border border-transparent focus:border-red-600 rounded-xl text-sm font-medium outline-none transition-all"
+              />
+           </div>
+           <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50 px-3 py-2 rounded-lg border border-gray-100 italic">
+              {filteredCobranzas.length} cobros verificados
+           </div>
+        </div>
+
+        <div className="space-y-4">
+          {filteredCobranzas.map((c, idx) => (
+            <div 
+              key={c.id} 
+              className="group bg-white p-6 rounded-2xl border border-gray-200 hover:shadow-md transition-all flex items-center gap-6"
+            >
+              <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                <Receipt size={24} />
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-base font-bold text-gray-900 group-hover:text-emerald-600 transition-colors uppercase leading-tight">
+                      {c.cliente?.empresa?.nombre ? c.cliente.empresa.nombre : c.cliente?.nombre || "Cobro vario"}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3 mt-1.5">
+                       <span className="text-[10px] font-bold text-gray-400 uppercase bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
+                          {new Date(c.fecha).toLocaleDateString("es-AR")}
+                       </span>
+                       <span className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border border-gray-100 text-gray-500 bg-white">
+                          <FileText size={10} />
+                          {c.presupuesto
+                            ? `Ppto #${c.presupuesto.numero}`
+                            : c.descripcion || "Sin ref"}
+                       </span>
+                       {c.caja && <span className="text-[10px] font-bold text-emerald-600 uppercase italic">Dest: {c.caja.nombre}</span>}
+                    </div>
+                  </div>
+                  
+                  <div className="text-right">
+                     <p className="text-xl font-bold tabular-nums text-emerald-600">
+                        +${c.importe.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                     </p>
+                     <div className="flex items-center justify-end gap-1.5 mt-1">
+                        <span className="text-[10px] font-bold text-gray-300 uppercase">{c.formaPago}</span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                     </div>
+                  </div>
+                </div>
+                
+                <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
+                   <div className="text-[9px] font-bold text-gray-300 uppercase tracking-widest tabular-nums italic">
+                      ID: {c.id.substring(0,8).toUpperCase()}
+                   </div>
+                   <button
                       onClick={() => setConfirmDelete(c.id)}
-                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Eliminar"
+                      className="p-1 px-2 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1 text-[10px] font-bold uppercase"
                     >
-                      <Trash2 size={15} />
+                      <Trash2 size={14} /> Eliminar
                     </button>
-                  </td>
-                </tr>
-              ))}
-              {cobranzas.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">No hay cobranzas registradas</td></tr>
-              )}
-            </tbody>
-          </table>
+                </div>
+              </div>
+            </div>
+          ))}
+          {filteredCobranzas.length === 0 && (
+            <div className="py-20 text-center bg-white rounded-3xl border-2 border-dashed border-gray-100">
+               <Receipt size={48} className="text-gray-100 mx-auto mb-4" />
+               <p className="text-gray-400 font-medium">No se encontraron cobranzas</p>
+            </div>
+          )}
         </div>
       </main>
 
-      {/* Panel lateral nueva cobranza */}
-      {mostrarForm && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="fixed inset-0 bg-black/30" onClick={() => setMostrarForm(false)} />
-          <div className="relative bg-white w-full max-w-md shadow-2xl flex flex-col h-full">
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="font-semibold text-gray-900">Nueva Cobranza</h2>
-              <button onClick={() => setMostrarForm(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {/* Tipo */}
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Tipo</label>
-                <div className="flex gap-2">
-                  {(["PRESUPUESTO", "COBRANZA_VARIA"] as const).map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setTipo(t)}
-                      className={`flex-1 py-2 rounded-lg text-sm font-medium border-2 transition-colors ${tipo === t ? "border-amber-500 bg-amber-50 text-amber-700" : "border-gray-200 text-gray-500"}`}
-                    >
-                      {t === "PRESUPUESTO" ? "Presupuesto" : "Cobros Varios"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {tipo === "PRESUPUESTO" ? (
-                <>
-                  <div>
-                    <label className="text-xs text-gray-500 block mb-1">Cliente</label>
-                    <select value={clienteId} onChange={(e) => { setClienteId(e.target.value); setPresupuestoId(""); setPptoInfo(null); }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none">
-                      <option value="">Seleccionar cliente...</option>
-                      {clientes.map((c) => (
-                        <option key={c.id} value={c.id}>{c.empresa ? `${c.empresa.nombre} - ${c.nombre}` : c.nombre}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {clienteId && (
-                    <div>
-                      <label className="text-xs text-gray-500 block mb-1">Presupuesto (aprobados con saldo)</label>
-                      {pptoCargando ? <p className="text-xs text-gray-400">Cargando...</p> : (
-                        <select value={presupuestoId} onChange={(e) => {
-                          setPresupuestoId(e.target.value);
-                          const p = presupuestos.find((x) => x.id === e.target.value);
-                          setPptoInfo(p || null);
-                          if (p) setImporte(p.saldo.toString());
-                        }}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none">
-                          <option value="">Seleccionar presupuesto...</option>
-                          {presupuestos.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {new Date(p.fecha).getFullYear()}-{p.numero.toString().padStart(5, "0")} — Saldo: ${p.saldo.toLocaleString("es-AR", { maximumFractionDigits: 0 })}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                      {presupuestos.length === 0 && !pptoCargando && clienteId && (
-                        <p className="text-xs text-orange-600 mt-1">No hay presupuestos aprobados con saldo pendiente</p>
-                      )}
-                    </div>
-                  )}
-
-                  {pptoInfo && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Total presupuesto</span>
-                        <span className="font-medium">${pptoInfo.total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Ya cobrado</span>
-                        <span className="font-medium text-green-700">${pptoInfo.cobrado.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</span>
-                      </div>
-                      <div className="flex justify-between font-bold">
-                        <span>Saldo pendiente</span>
-                        <span className="text-red-600">${pptoInfo.saldo.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</span>
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div>
-                    <label className="text-xs text-gray-500 block mb-1">Cliente (opcional)</label>
-                    <select value={clienteId} onChange={(e) => setClienteId(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none">
-                      <option value="">Sin cliente</option>
-                      {clientes.map((c) => (
-                        <option key={c.id} value={c.id}>{c.empresa ? `${c.empresa.nombre} - ${c.nombre}` : c.nombre}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-500 block mb-1">Descripción *</label>
-                    <input type="text" value={descripcion} onChange={(e) => setDescripcion(e.target.value)}
-                      placeholder="Descripción del cobro..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-amber-500" />
-                  </div>
-                </>
-              )}
-
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Importe a cobrar *</label>
-                <input type="number" min="0" step="0.01" value={importe} onChange={(e) => setImporte(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-amber-500" />
-              </div>
-
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Forma de pago</label>
-                <select value={formaPago} onChange={(e) => setFormaPago(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none">
-                  {FORMAS_PAGO.map((f) => <option key={f}>{f}</option>)}
-                </select>
-              </div>
-
-              {formaPago === "Cheque" && (
-                <div className="grid grid-cols-2 gap-3 bg-amber-50 p-3 rounded-lg border border-amber-200">
-                   <div className="col-span-2">
-                     <label className="text-xs font-semibold text-amber-800 block mb-1">Datos del Cheque</label>
-                   </div>
-                   <div>
-                     <label className="text-[10px] uppercase font-bold text-amber-700 block mb-1">N° Cheque *</label>
-                     <input type="text" value={chequeNumero} onChange={e => setChequeNumero(e.target.value)} className="w-full px-2 py-1.5 border border-amber-300 rounded text-sm"/>
-                   </div>
-                   <div>
-                     <label className="text-[10px] uppercase font-bold text-amber-700 block mb-1">Banco *</label>
-                     <input type="text" value={chequeBanco} onChange={e => setChequeBanco(e.target.value)} className="w-full px-2 py-1.5 border border-amber-300 rounded text-sm"/>
-                   </div>
-                   <div>
-                     <label className="text-[10px] uppercase font-bold text-amber-700 block mb-1">Emisión</label>
-                     <input type="date" value={chequeFechaEmision} onChange={e => setChequeFechaEmision(e.target.value)} className="w-full px-2 py-1.5 border border-amber-300 rounded text-sm"/>
-                   </div>
-                   <div>
-                     <label className="text-[10px] uppercase font-bold text-amber-700 block mb-1">Vencimiento (Cobro) *</label>
-                     <input type="date" value={chequeFechaCobro} onChange={e => setChequeFechaCobro(e.target.value)} className="w-full px-2 py-1.5 border border-amber-300 rounded text-sm"/>
-                   </div>
-                </div>
-              )}
-
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Caja destino *</label>
-                <select value={cajaId} onChange={(e) => setCajaId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none">
-                  <option value="">Seleccionar caja...</option>
-                  {cajas.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-                </select>
-              </div>
-            </div>
-
-            <div className="px-6 py-4 border-t border-gray-200">
-              <button
-                onClick={guardar}
-                disabled={guardando || !importe || !cajaId || (tipo === "PRESUPUESTO" ? !presupuestoId : !descripcion)}
-                className="w-full bg-amber-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-amber-600 disabled:opacity-50"
-              >
-                {guardando ? "Guardando..." : "Registrar Cobranza"}
-              </button>
+      <Drawer 
+        isOpen={mostrarForm} 
+        onClose={() => setMostrarForm(false)} 
+        title="Registrar Cobro"
+      >
+        <div className="p-1 space-y-6">
+          <div className="space-y-2">
+             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Origen del Ingreso</label>
+             <div className="grid grid-cols-2 gap-3">
+                {(["PRESUPUESTO", "COBRANZA_VARIA"] as const).map((t) => (
+                  <button 
+                    key={t} 
+                    onClick={() => { setTipo(t); setPptoInfo(null); setPresupuestoId(""); }}
+                    className={`py-3 rounded-xl text-xs font-bold transition-all border ${tipo === t ? "border-emerald-600 bg-emerald-600 text-white shadow-lg shadow-emerald-600/20" : "border-gray-200 bg-gray-50 text-gray-400 hover:bg-gray-100"}`}>
+                    {t === "PRESUPUESTO" ? "Presupuesto" : "Cobro Vario"}
+                  </button>
+                ))}
             </div>
           </div>
+
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Cliente *</label>
+              <select value={clienteId} onChange={(e) => { setClienteId(e.target.value); setPresupuestoId(""); setPptoInfo(null); }}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-emerald-600 rounded-xl text-sm font-bold outline-none uppercase appearance-none cursor-pointer">
+                <option value="">Seleccionar cliente...</option>
+                {clientes.map((c) => <option key={c.id} value={c.id}>{c.empresa ? `${c.empresa.nombre} - ${c.nombre}`.toUpperCase() : c.nombre.toUpperCase()}</option>)}
+              </select>
+            </div>
+
+            {tipo === "PRESUPUESTO" ? (
+              <div className="space-y-6">
+                {clienteId && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-emerald-600 uppercase tracking-wider ml-1">Presupuesto Pendiente</label>
+                    {pptoCargando ? <div className="p-4 bg-gray-50 rounded-xl flex items-center justify-center gap-3"><Activity size={16} className="text-emerald-500 animate-spin" /><span className="text-xs font-bold text-gray-400 uppercase">Buscando presupuestos...</span></div> : (
+                      <select value={presupuestoId} onChange={(e) => {
+                        setPresupuestoId(e.target.value);
+                        const p = presupuestos.find((x) => x.id === e.target.value);
+                        setPptoInfo(p || null);
+                        if (p) setImporte(p.saldo.toString());
+                      }}
+                        className="w-full px-4 py-3 bg-gray-900 text-emerald-400 border-transparent rounded-xl text-sm font-bold outline-none appearance-none cursor-pointer">
+                        <option value="">Vincular presupuesto...</option>
+                        {presupuestos.map((p) => <option key={p.id} value={p.id}>Ppto #{p.numero} — Saldo: ${p.saldo.toLocaleString("es-AR")}</option>)}
+                      </select>
+                    )}
+                    {presupuestos.length === 0 && !pptoCargando && clienteId && (
+                      <p className="text-[10px] font-bold text-red-500 uppercase ml-1 flex items-center gap-1">
+                         <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> El cliente no tiene presupuestos con saldo pendiente
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {pptoInfo && (
+                  <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 grid grid-cols-2 gap-4">
+                     <div>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total</p>
+                        <p className="text-base font-bold text-gray-900">${pptoInfo.total.toLocaleString("es-AR")}</p>
+                     </div>
+                     <div className="text-right">
+                        <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">Ya Cobrado</p>
+                        <p className="text-base font-bold text-emerald-600">${pptoInfo.cobrado.toLocaleString("es-AR")}</p>
+                     </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Descripción *</label>
+                <input type="text" value={descripcion} onChange={(e) => setDescripcion(e.target.value)}
+                  placeholder="Motivo del cobro..."
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-emerald-600 rounded-xl text-sm font-medium outline-none uppercase" />
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Medio de Pago</label>
+                <select value={formaPago} onChange={(e) => setFormaPago(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-emerald-600 rounded-xl text-sm font-bold outline-none appearance-none cursor-pointer">
+                  {FORMAS_PAGO.map((f) => <option key={f} value={f}>{f}</option>)}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-emerald-600 uppercase tracking-wider ml-1">Caja Destino *</label>
+                <select value={cajaId} onChange={(e) => setCajaId(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-900 text-emerald-500 border-transparent rounded-xl text-sm font-bold outline-none appearance-none cursor-pointer">
+                  {cajas.map((c) => <option key={c.id} value={c.id}>{c.nombre.toUpperCase()}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {formaPago === "CHEQUE" && (
+              <div className="p-5 bg-gray-950 rounded-2xl space-y-4 border border-emerald-500/20">
+                 <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest text-center">Datos del Cheque</p>
+                 <div className="grid grid-cols-2 gap-4">
+                    <input type="text" placeholder="N° Cheque" value={chequeNumero} onChange={e => setChequeNumero(e.target.value)} className="w-full px-3 py-2.5 bg-gray-900 border border-gray-800 rounded-lg text-white font-bold text-xs outline-none uppercase"/>
+                    <input type="text" placeholder="Banco" value={chequeBanco} onChange={e => setChequeBanco(e.target.value)} className="w-full px-3 py-2.5 bg-gray-900 border border-gray-800 rounded-lg text-white font-bold text-xs outline-none uppercase"/>
+                    <div className="space-y-1">
+                       <label className="text-[9px] font-bold text-gray-500 uppercase ml-1">Emisión</label>
+                       <input type="date" value={chequeFechaEmision} onChange={e => setChequeFechaEmision(e.target.value)} className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-white font-bold text-[10px] outline-none"/>
+                    </div>
+                    <div className="space-y-1">
+                       <label className="text-[9px] font-bold text-emerald-500 uppercase ml-1">Cobro</label>
+                       <input type="date" value={chequeFechaCobro} onChange={e => setChequeFechaCobro(e.target.value)} className="w-full px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-white font-bold text-[10px] outline-none"/>
+                    </div>
+                 </div>
+              </div>
+            )}
+
+            <div className="p-6 bg-gray-950 rounded-2xl border-b-4 border-emerald-600 space-y-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-emerald-600 text-center block">Importe a Cobrar *</label>
+              <div className="relative">
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-700">$</span>
+                <input type="number" min="0" step="0.01" value={importe} onChange={(e) => setImporte(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full bg-transparent text-white text-3xl font-bold outline-none text-center tabular-nums" />
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-6">
+            <button
+              onClick={guardar}
+              disabled={guardando || !importe || !cajaId || (tipo === "PRESUPUESTO" ? !presupuestoId : !descripcion)}
+              className="w-full bg-emerald-600 text-white py-4 rounded-xl text-sm font-bold hover:bg-emerald-700 disabled:opacity-50 transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.98]"
+            >
+              {guardando ? "Procesando..." : "Confirmar Cobro"}
+            </button>
+          </div>
         </div>
-      )}
+      </Drawer>
 
       <ConfirmDialog
         isOpen={!!confirmDelete}
-        title="Eliminar cobranza"
-        message="¿Estás seguro? Esta acción revertirá el cobro y no se puede deshacer."
+        title="Anular Cobranza"
+        message="¿Estás seguro de eliminar este ingreso? Esta acción impactará en el balance de la caja seleccionada de forma permanente."
         confirmLabel={eliminando ? "Eliminando..." : "Sí, eliminar"}
         onCancel={() => setConfirmDelete(null)}
         onConfirm={() => confirmDelete && eliminarCobranza(confirmDelete)}
@@ -397,7 +435,10 @@ function CobranzasContent() {
 
 export default function CobranzasPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><p className="text-gray-500">Cargando...</p></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-40">
+      <div className="w-12 h-1 bg-emerald-600 rounded-full animate-pulse mb-4" />
+      <div className="text-gray-400 font-medium text-sm animate-pulse">Iniciando módulo de cobranzas...</div>
+    </div>}>
       <CobranzasContent />
     </Suspense>
   );
