@@ -6,8 +6,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Settings, Trash2, Plus, Users, Shield, Wrench,
-  ArrowLeft, Eye, EyeOff, Check, X, Edit2, RefreshCw,
-  AlertCircle, ChevronRight, HardHat, FileCode, Lock
+  ArrowLeft, Eye, EyeOff, Check, X, Edit2,
+  AlertCircle, Lock, HardHat
 } from "lucide-react";
 
 interface Usuario {
@@ -20,10 +20,10 @@ interface Usuario {
 }
 
 const ROL_LABELS: Record<string, string> = {
-  ADMIN: "ADMINISTRADOR DE SISTEMA",
-  TECNICO: "OPERADOR TÉCNICO",
-  CAJA: "CONTROL DE TESORERÍA",
-  VENTAS: "GESTIÓN COMERCIAL",
+  ADMIN: "Administrador de Sistema",
+  TECNICO: "Operador Técnico",
+  CAJA: "Control de Tesorería",
+  VENTAS: "Gestión Comercial",
 };
 
 const ROL_COLORS: Record<string, string> = {
@@ -123,8 +123,8 @@ export default function ConfiguracionPage() {
   };
 
   const guardarUsuario = async () => {
-    if (!uNombre.trim() || !uEmail.trim()) { setErrorUser("NOMBRE Y EMAIL SON REQUERIDOS"); return; }
-    if (!editingUser && !uPassword.trim()) { setErrorUser("LA CONTRASEÑA ES REQUERIDA PARA NUEVOS USUARIOS"); return; }
+    if (!uNombre.trim() || !uEmail.trim()) { setErrorUser("Nombre y email solicitados"); return; }
+    if (!editingUser && !uPassword.trim()) { setErrorUser("Contraseña requerida"); return; }
     setGuardandoUser(true);
     setErrorUser("");
 
@@ -145,7 +145,7 @@ export default function ConfiguracionPage() {
       cargarUsuarios();
     } else {
       const err = await res.json();
-      setErrorUser(err.error || "ERROR CRÍTICO AL GUARDAR");
+      setErrorUser(err.error || "Error al guardar usuario");
     }
     setGuardandoUser(false);
   };
@@ -162,116 +162,105 @@ export default function ConfiguracionPage() {
   const usuariosFiltrados = usuarios.filter((u) => showInactivos || u.activo);
 
   if (status === "loading") return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-20">
-      <div className="w-20 h-2 bg-red-600 rounded-full animate-pulse mb-8" />
-      <p className="text-gray-400 font-black animate-pulse uppercase tracking-[0.4em] italic text-center">
-        ESTABLECIENDO CONEXIÓN CON EL NÚCLEO DE CONFIGURACIÓN...
-      </p>
+    <div className="flex flex-col items-center justify-center p-40">
+      <div className="w-12 h-1 bg-red-600 rounded-full animate-pulse mb-4" />
+      <div className="text-gray-400 font-medium text-sm animate-pulse">Cargando configuración...</div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans animate-in fade-in duration-700">
-      {/* INDUSTRIAL HEADER */}
-      <header className="bg-white border-b-2 border-gray-200 sticky top-0 z-40 shadow-sm backdrop-blur-md bg-white/80">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10 h-28 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <Link href="/dashboard" className="p-4 text-gray-400 hover:text-red-600 hover:bg-gray-100 rounded-2xl transition-all border-2 border-transparent hover:border-gray-200 active:scale-90">
-              <ArrowLeft size={28} />
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <Link href="/dashboard" className="p-2 text-gray-400 hover:text-red-600 hover:bg-gray-50 rounded-xl transition-all">
+              <ArrowLeft size={24} />
             </Link>
             <div>
-              <div className="flex items-center gap-3 text-gray-400 mb-1">
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] opacity-70">Console Management</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
-              </div>
-              <h1 className="text-4xl lg:text-5xl font-black text-gray-900 tracking-tighter italic uppercase leading-none">Configuración</h1>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Mantenimiento</p>
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Configuración del Sistema</h1>
             </div>
           </div>
-          <div className="bg-gray-900 p-4 rounded-2xl border-2 border-gray-800 shadow-2xl hidden md:block">
-            <Settings size={36} className="text-red-600 animate-[spin_4s_linear_infinite]" />
+          <div className="p-2 bg-gray-50 rounded-xl border border-gray-100 hidden sm:block">
+            <Settings size={28} className="text-red-600" />
           </div>
         </div>
       </header>
 
-      {/* INDUSTRIAL TABS */}
-      <div className="bg-white border-b-2 border-gray-200 sticky top-28 z-30 overflow-x-auto no-scrollbar">
-        <div className="max-w-7xl mx-auto px-10 flex gap-10 pt-6">
+      <div className="bg-white border-b border-gray-200 sticky top-20 z-30">
+        <div className="max-w-7xl mx-auto px-6 flex gap-8">
           {[
-            { key: "accesorios" as ActiveTab, label: "CATÁLOGO DE COMPONENTES", icon: <Wrench size={20} /> },
-            { key: "usuarios" as ActiveTab, label: "JERARQUÍA DE PERSONAL", icon: <Users size={20} /> },
+            { key: "accesorios" as ActiveTab, label: "Componentes", icon: <Wrench size={18} /> },
+            { key: "usuarios" as ActiveTab, label: "Gestión de Personal", icon: <Users size={18} /> },
           ].map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-4 px-10 py-6 text-[11px] font-black rounded-t-[32px] border-b-4 transition-all uppercase tracking-[0.25em] italic whitespace-nowrap ${
+              className={`flex items-center gap-2 px-6 py-4 text-xs font-bold border-b-2 transition-all uppercase tracking-wider ${
                 activeTab === tab.key
-                  ? "border-red-600 text-red-600 bg-red-50/20 shadow-[0_-10px_40px_-5px_rgba(220,38,38,0.15)]"
-                  : "border-transparent text-gray-400 hover:text-gray-900 hover:bg-gray-50/50"
+                  ? "border-red-600 text-red-600"
+                  : "border-transparent text-gray-400 hover:text-gray-600"
               }`}
             >
-              <span className={`${activeTab === tab.key ? "text-red-600 animate-pulse" : "text-gray-300"}`}>{tab.icon}</span>
+              {tab.icon}
               {tab.label}
             </button>
           ))}
         </div>
       </div>
 
-      <main className="flex-1 max-w-7xl mx-auto px-6 lg:px-10 py-16 w-full space-y-16">
+      <main className="flex-1 max-w-7xl mx-auto px-6 py-12 w-full space-y-12">
 
-        {/* TAB: ACCESORIOS V3 */}
         {activeTab === "accesorios" && (
-          <section className="bg-white rounded-[50px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.1)] border-2 border-gray-100 overflow-hidden animate-in slide-in-from-bottom duration-700">
-            <div className="p-12 border-b-2 border-gray-50 bg-gray-50/30 flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <section className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="p-8 border-b border-gray-100 bg-gray-50/20 flex flex-col sm:flex-row items-center justify-between gap-6">
                 <div>
-                  <h2 className="text-3xl font-black text-gray-900 uppercase italic tracking-tighter">Inventario de Componentes</h2>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em] mt-3 flex items-center gap-2">
-                    <FileCode size={14} className="text-red-600" /> BASE DE DATOS GLOBAL DE RECEPCIÓN
-                  </p>
+                  <h2 className="text-lg font-bold text-gray-900 uppercase">Catálogo de Accesorios</h2>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Nomenclador para recepción de equipos</p>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-4 w-full max-w-2xl">
+                <div className="flex gap-2 w-full sm:w-auto">
                   <input
                     type="text"
                     value={nuevoAcc}
                     onChange={(e) => setNuevoAcc(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && addAcc()}
-                    className="flex-1 px-8 py-5 bg-white border-2 border-gray-200 rounded-[24px] text-lg font-black outline-none focus:border-red-600 transition-all uppercase tracking-tight italic shadow-inner placeholder:text-gray-200"
-                    placeholder="IDENTIFICAR NUEVO ITEM..."
+                    className="flex-1 sm:w-64 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:border-red-600 transition-all uppercase"
+                    placeholder="Nuevo item..."
                   />
                   <button
                     onClick={addAcc}
-                    className="bg-red-600 text-white px-10 py-5 rounded-[24px] text-xs font-black flex items-center justify-center gap-3 hover:bg-red-700 transition-all shadow-2xl shadow-red-600/30 uppercase tracking-widest active:scale-95"
+                    className="bg-red-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-red-700 transition-all shadow-md shadow-red-600/10 flex items-center gap-2"
                   >
-                    <Plus size={22} /> ALTA
+                    <Plus size={18} /> Añadir
                   </button>
                 </div>
             </div>
 
-            <div className="p-12">
+            <div className="p-8">
               {loadingAcc ? (
-                <div className="p-20 text-center text-gray-300 font-black uppercase tracking-[0.4em] animate-pulse italic">SYNCING CATALOG...</div>
+                <div className="p-10 text-center text-gray-400 text-xs font-bold animate-pulse">Cargando catálogo...</div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {accesorios.map((a) => (
                     <div
                       key={a.id}
-                      className="group flex items-center justify-between bg-gray-50/50 border-2 border-transparent hover:border-red-600/20 hover:bg-white px-6 py-5 rounded-[24px] transition-all duration-300 hover:shadow-2xl shadow-gray-200/50"
+                      className="group flex items-center justify-between bg-gray-50/50 border border-gray-100 px-4 py-3 rounded-xl hover:bg-white hover:border-red-100 transition-all"
                     >
-                      <div className="flex items-center gap-4 min-w-0">
-                         <div className="w-2 h-2 rounded-full bg-red-600" />
-                         <span className="text-sm font-black text-gray-900 uppercase tracking-tight italic truncate">{a.nombre}</span>
+                      <div className="flex items-center gap-3 min-w-0">
+                         <div className="w-1.5 h-1.5 rounded-full bg-red-600" />
+                         <span className="text-xs font-bold text-gray-600 uppercase truncate">{a.nombre}</span>
                       </div>
                       <button
                         onClick={() => removeAcc(a.id)}
-                        className="p-3 text-gray-200 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                        className="p-1.5 text-gray-200 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                       >
-                        <Trash2 size={20} />
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   ))}
                   {accesorios.length === 0 && (
-                    <div className="col-span-full p-32 text-center bg-gray-50/50 rounded-[40px] border-4 border-dashed border-gray-100">
-                        <Wrench size={70} className="mx-auto text-gray-200 mb-8 opacity-20 animate-bounce" />
-                        <p className="text-base font-black uppercase tracking-[0.4em] text-gray-300 italic">CATÁLOGO INEXISTENTE EN MEMORIA</p>
+                    <div className="col-span-full p-16 text-center border-2 border-dashed border-gray-100 rounded-2xl italic text-gray-400 text-sm">
+                        No se registran componentes en el catálogo
                     </div>
                   )}
                 </div>
@@ -280,209 +269,195 @@ export default function ConfiguracionPage() {
           </section>
         )}
 
-        {/* TAB: USUARIOS V3 */}
         {activeTab === "usuarios" && (
-          <div className="space-y-16 animate-in slide-in-from-bottom duration-700">
-            <div className="flex flex-col lg:flex-row items-end justify-between gap-10">
-              <div className="space-y-4">
-                <h2 className="text-4xl lg:text-5xl font-black text-gray-900 uppercase italic tracking-tighter leading-none">Operadores de Planta</h2>
-                <div className="flex items-center gap-3 text-gray-400">
-                   <Shield size={16} className="text-red-600" />
-                   <p className="text-[10px] font-black uppercase tracking-[0.3em] italic">CONTROL DE JERARQUÍA Y PERMISOS DE CIBERSEGURIDAD</p>
-                </div>
+          <div className="space-y-12">
+            <div className="flex flex-col sm:flex-row items-end sm:items-center justify-between gap-6">
+              <div className="space-y-1">
+                <h2 className="text-xl font-bold text-gray-900 uppercase">Gestión de Personal</h2>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Base de datos de usuarios y permisos</p>
               </div>
-              <div className="flex flex-wrap items-center gap-8">
-                <label className="flex items-center gap-4 text-[10px] font-black text-gray-400 hover:text-red-600 transition-all cursor-pointer uppercase tracking-[0.2em] italic bg-white px-6 py-4 rounded-[20px] shadow-sm border-2 border-gray-100">
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 text-[10px] font-bold text-gray-400 cursor-pointer uppercase bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-200">
                   <input
                     type="checkbox"
                     checked={showInactivos}
                     onChange={(e) => setShowInactivos(e.target.checked)}
-                    className="w-6 h-6 rounded-lg border-2 border-gray-200 text-red-600 focus:ring-red-600 cursor-pointer"
+                    className="w-4 h-4 rounded-md border-gray-200 text-red-600"
                   />
-                  MOSTRAR BAJAS DE PERSONAL
+                  Mostrar inactivos
                 </label>
                 <button
                   onClick={abrirNuevo}
-                  className="flex items-center gap-4 bg-gray-900 text-white px-10 py-6 rounded-[28px] text-xs font-black hover:bg-red-600 transition-all shadow-2xl shadow-gray-900/20 uppercase tracking-[0.2em] group"
+                  className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-red-600 transition-all shadow-lg shadow-gray-900/10 flex items-center gap-2"
                 >
-                  <Plus size={22} className="text-red-600 group-hover:text-white transition-colors" /> ALTA DE OPERADOR
+                  <Plus size={18} /> Nuevo Operador
                 </button>
               </div>
             </div>
 
-            {/* Formulario Rediseñado V3 */}
             {showForm && (
-              <div className="bg-white border-2 border-red-600 ring-[15px] ring-red-600/5 rounded-[50px] p-12 lg:p-16 shadow-2xl animate-in zoom-in duration-500 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-4 h-full bg-red-600" />
-                <div className="flex items-center gap-6 mb-12 border-b-2 border-gray-50 pb-8">
-                   <div className="bg-red-600 p-4 rounded-2xl text-white shadow-xl shadow-red-600/30">
-                      <HardHat size={32} />
+              <div className="bg-white border-2 border-red-600/10 rounded-3xl p-8 shadow-xl animate-in zoom-in duration-300">
+                <div className="flex items-center gap-4 mb-8">
+                   <div className="bg-red-600/10 p-3 rounded-xl text-red-600">
+                      <HardHat size={24} />
                    </div>
-                   <h3 className="text-2xl font-black text-gray-900 uppercase italic tracking-tighter">
-                      {editingUser ? `MODIFICAR EXPEDIENTE: ${editingUser.nombre.toUpperCase()}` : "EMISIÓN DE NUEVA CREDENCIAL"}
+                   <h3 className="text-lg font-bold text-gray-900 uppercase">
+                      {editingUser ? `Editar Usuario: ${editingUser.nombre}` : "Alta de Nuevo Usuario"}
                    </h3>
                 </div>
 
                 {errorUser && (
-                  <div className="bg-red-600 border-4 border-red-700 text-white px-8 py-6 rounded-[24px] text-sm font-black uppercase tracking-widest mb-12 animate-bounce flex items-center gap-4 shadow-2xl shadow-red-600/40">
-                    <AlertCircle size={24} /> {errorUser}
+                  <div className="bg-red-50 text-red-700 px-4 py-3 rounded-xl text-xs font-bold mb-8 flex items-center gap-2">
+                    <AlertCircle size={16} /> {errorUser}
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] block pl-2 italic">IDENTIDAD OPERATIVA *</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block ml-1">Nombre Completo *</label>
                     <input
                       type="text"
                       value={uNombre}
                       onChange={(e) => setUNombre(e.target.value)}
-                      className="w-full px-8 py-6 bg-gray-50 border-2 border-transparent focus:border-red-600 rounded-[24px] text-lg font-black italic outline-none transition-all uppercase shadow-inner"
-                      placeholder="JUAN PÉREZ"
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none transition-all uppercase"
                     />
                   </div>
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] block pl-2 italic">EMAIL DE ACCESO *</label>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block ml-1">Email Acceso *</label>
                     <input
                       type="email"
                       value={uEmail}
                       onChange={(e) => setUEmail(e.target.value)}
-                      className="w-full px-8 py-6 bg-gray-50 border-2 border-transparent focus:border-red-600 rounded-[24px] text-lg font-black italic outline-none transition-all uppercase shadow-inner"
-                      placeholder="USER@SERVINOA.COM"
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none transition-all"
                     />
                   </div>
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] block pl-2 italic">
-                      {editingUser ? "RESETEAR CLAVE (SEGURIDAD)" : "PASSWORD DE SISTEMA *"}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block ml-1">
+                      {editingUser ? "Nueva Clave (Opcional)" : "Password *"}
                     </label>
                     <div className="relative">
                       <input
                         type={showPass ? "text" : "password"}
                         value={uPassword}
                         onChange={(e) => setUPassword(e.target.value)}
-                        className="w-full px-8 py-6 bg-gray-50 border-2 border-transparent focus:border-red-600 rounded-[24px] text-lg font-black outline-none transition-all shadow-inner"
-                        placeholder={editingUser ? "DEJAR VACÍO..." : "MIN 6 CHARS"}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none transition-all"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPass(!showPass)}
-                        className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-300 hover:text-red-600 transition-colors"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 hover:text-red-600"
                       >
-                        {showPass ? <EyeOff size={24} /> : <Eye size={24} />}
+                        {showPass ? <EyeOff size={20} /> : <Eye size={20} />}
                       </button>
                     </div>
                   </div>
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] block pl-2 italic">CATEGORÍA DE ACCESO (ROL)</label>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block ml-1">Jerarquía / Rol</label>
                     <select
                       value={uRol}
                       onChange={(e) => setURol(e.target.value)}
-                      className="w-full px-8 py-6 bg-gray-50 border-2 border-transparent focus:border-red-600 rounded-[24px] text-lg font-black outline-none transition-all uppercase italic tracking-tighter appearance-none cursor-pointer"
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-xs font-bold outline-none uppercase appearance-none cursor-pointer"
                     >
                       {Object.entries(ROL_LABELS).map(([val, label]) => (
-                        <option key={val} value={val}>{label.toUpperCase()}</option>
+                        <option key={val} value={val}>{label}</option>
                       ))}
                     </select>
                   </div>
                   {editingUser && (
-                    <div className="space-y-4">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] block pl-2 italic">ESTADO DE OPERATIVIDAD</label>
+                    <div className="space-y-2 text-center">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Estado de Cuenta</label>
                       <button
                         onClick={() => setUActivo(!uActivo)}
-                        className={`flex items-center justify-center gap-4 w-full h-[76px] rounded-[24px] text-xs font-black border-4 transition-all uppercase tracking-[0.2em] italic ${uActivo ? "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-xl shadow-emerald-500/10" : "bg-red-50 border-red-200 text-red-700 shadow-xl shadow-red-500/10"}`}
+                        className={`px-6 py-2.5 rounded-xl text-[10px] font-bold border-2 transition-all uppercase tracking-widest ${uActivo ? "bg-emerald-50 border-emerald-100 text-emerald-700 shadow-sm" : "bg-red-50 border-red-100 text-red-700 shadow-sm"}`}
                       >
-                        {uActivo ? <><Check size={20} /> ALTA / ACTIVO</> : <><X size={20} /> BAJA / INACTIVO</>}
+                        {uActivo ? "CUENTA ACTIVA" : "CUENTA INACTIVA / BLOQUEADA"}
                       </button>
                     </div>
                   )}
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-6 mt-16 pt-10 border-t-2 border-gray-50">
+                <div className="flex flex-col sm:flex-row gap-4 mt-10 pt-6 border-t border-gray-50">
                   <button
                     onClick={guardarUsuario}
                     disabled={guardandoUser}
-                    className="flex-1 bg-red-600 text-white px-10 py-7 rounded-[28px] text-base font-black hover:bg-red-700 transition-all shadow-2xl shadow-red-600/40 uppercase tracking-[0.3em] italic disabled:opacity-50 active:scale-95"
+                    className="flex-1 bg-red-600 text-white px-6 py-3.5 rounded-xl text-sm font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20 disabled:opacity-50"
                   >
-                    {guardandoUser ? "SINCRONIZANDO..." : editingUser ? "ACTUALIZAR EXPEDIENTE" : "CONFIRMAR ALTA DE PERSONAL"}
+                    {guardandoUser ? "Guardando..." : editingUser ? "Actualizar Datos" : "Confirmar Alta"}
                   </button>
                   <button
                     onClick={() => setShowForm(false)}
-                    className="px-10 py-7 bg-white border-2 border-gray-200 text-gray-400 rounded-[28px] text-base font-black hover:bg-gray-50 hover:text-gray-900 transition-all uppercase tracking-widest italic"
+                    className="px-6 py-3.5 bg-white border border-gray-200 text-gray-400 rounded-xl text-sm font-bold hover:bg-gray-50"
                   >
-                    ABORTAR
+                    Cancelar
                   </button>
                 </div>
               </div>
             )}
 
-            {/* TABLA DE USUARIOS V3 */}
-            <div className="bg-white rounded-[50px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.1)] border-2 border-gray-100 overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
               {loadingUsers ? (
-                <div className="p-32 text-center text-gray-300 font-black uppercase tracking-[0.4em] animate-pulse italic">SCANNING BIOMETRIC DATA...</div>
+                <div className="p-16 text-center text-gray-400 text-xs font-bold animate-pulse italic">Cargando base de datos...</div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm border-collapse">
+                  <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b-2 border-gray-100 text-gray-400 uppercase text-[11px] font-black tracking-[0.4em] bg-gray-50/50 italic">
-                        <th className="text-left px-12 py-8">OPERADOR / ID</th>
-                        <th className="text-left px-12 py-8">CREDENCIAL</th>
-                        <th className="text-left px-12 py-8">JERARQUÍA</th>
-                        <th className="text-left px-12 py-8">ESTADO</th>
-                        <th className="text-right px-12 py-8">SISTEMA</th>
+                      <tr className="border-b border-gray-100 text-gray-400 uppercase text-[10px] font-bold tracking-widest bg-gray-50/50">
+                        <th className="text-left px-8 py-5">Nombre / Usuario</th>
+                        <th className="text-left px-8 py-5">Email</th>
+                        <th className="text-left px-8 py-5">Rol / Jerarquía</th>
+                        <th className="text-left px-8 py-5">Estado</th>
+                        <th className="text-right px-8 py-5">Sistema</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y-2 divide-gray-50">
+                    <tbody className="divide-y divide-gray-50">
                       {usuariosFiltrados.map((u) => (
-                        <tr key={u.id} className={`hover:bg-gray-50/50 group transition-all duration-300 ${!u.activo ? "opacity-30 grayscale" : ""}`}>
-                          <td className="px-12 py-8">
-                            <div className="flex items-center gap-6">
-                              <div className="w-16 h-16 rounded-[22px] bg-gray-900 border-2 border-gray-800 flex items-center justify-center text-white font-black text-xl shadow-2xl group-hover:rotate-6 transition-all group-hover:scale-110">
+                        <tr key={u.id} className={`hover:bg-gray-50/30 group transition-all ${!u.activo ? "opacity-40 grayscale" : ""}`}>
+                          <td className="px-8 py-6">
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-lg bg-gray-900 flex items-center justify-center text-white font-bold text-sm shadow-sm">
                                 {u.nombre.charAt(0).toUpperCase()}
                               </div>
                               <div>
-                                  <div className="font-black text-gray-900 uppercase italic text-lg tracking-tighter leading-none flex items-center gap-3">
+                                  <div className="font-bold text-gray-900 uppercase text-sm leading-tight flex items-center gap-2">
                                     {u.nombre}
                                     {u.id === (session?.user as { id?: string })?.id && (
-                                      <div className="flex items-center gap-2 text-[8px] bg-red-600 text-white px-3 py-1 rounded-full font-black animate-pulse shadow-lg shadow-red-600/30">
-                                         <Lock size={10} /> SESSION_AUTH
-                                      </div>
+                                       <span className="text-[8px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold">USTED</span>
                                     )}
                                   </div>
-                                  <div className="text-[9px] text-gray-300 font-black uppercase tracking-[0.3em] mt-2 group-hover:text-red-600/50 transition-colors">OPERATOR_ID: {u.id.substring(0,10).toUpperCase()}</div>
+                                  <div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">ID: {u.id.substring(0,8)}</div>
                               </div>
                             </div>
                           </td>
-                          <td className="px-12 py-8">
-                             <div className="text-sm font-black text-gray-400 italic lowercase tracking-tight group-hover:text-gray-900 transition-colors">{u.email}</div>
+                          <td className="px-8 py-6 text-gray-500 font-medium text-xs">
+                             {u.email}
                           </td>
-                          <td className="px-12 py-8">
-                             <span className={`px-6 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.25em] border-2 shadow-sm italic ${ROL_COLORS[u.rol] || "border-gray-100 text-gray-400 bg-gray-50"}`}>
-                               {ROL_LABELS[u.rol] || u.rol.toUpperCase()}
+                          <td className="px-8 py-6">
+                             <span className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest border ${ROL_COLORS[u.rol] || "border-gray-100 text-gray-400"}`}>
+                               {ROL_LABELS[u.rol] || u.rol}
                              </span>
                           </td>
-                          <td className="px-12 py-8">
-                             <div className="flex items-center gap-4">
-                                <div className={`w-4 h-4 rounded-full border-2 ${u.activo ? "bg-emerald-500 border-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.4)]" : "bg-red-500 border-red-200"}`} />
-                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-900 italic">{u.activo ? "ENABLED" : "DISABLED"}</span>
+                          <td className="px-8 py-6">
+                             <div className="flex items-center gap-2">
+                                <div className={`w-2 h-2 rounded-full ${u.activo ? "bg-emerald-500 animate-pulse" : "bg-red-500"}`} />
+                                <span className="text-[10px] font-bold uppercase text-gray-600">{u.activo ? "Activo" : "Bloqueado"}</span>
                              </div>
                           </td>
-                          <td className="px-12 py-8 text-right">
-                            <div className="flex items-center justify-end gap-3">
+                          <td className="px-8 py-6 text-right">
+                            <div className="flex items-center justify-end gap-2">
                               <button
                                 onClick={() => abrirEditar(u)}
-                                className="p-4 text-gray-200 hover:text-red-600 hover:bg-gray-100 rounded-2xl transition-all border-2 border-transparent hover:border-gray-200 active:scale-90"
+                                className="p-2 text-gray-300 hover:text-red-600 hover:bg-gray-100 rounded-lg transition-all"
                               >
-                                <Edit2 size={22} />
+                                <Edit2 size={18} />
                               </button>
                               <button
                                 onClick={() => toggleActivo(u)}
                                 disabled={u.id === (session?.user as { id?: string })?.id}
-                                className={`p-4 rounded-2xl transition-all disabled:opacity-20 border-2 border-transparent active:scale-90 ${
-                                  u.activo
-                                    ? "text-gray-100 hover:text-red-700 hover:bg-red-50 hover:border-red-100"
-                                    : "text-gray-100 hover:text-emerald-700 hover:bg-emerald-50 hover:border-emerald-100"
+                                className={`p-2 rounded-lg transition-all disabled:opacity-20 ${
+                                  u.activo ? "text-gray-200 hover:text-red-700 hover:bg-red-50" : "text-gray-200 hover:text-emerald-700 hover:bg-emerald-50"
                                 }`}
                               >
-                                {u.activo ? <X size={22} /> : <Check size={22} />}
+                                {u.activo ? <X size={18} /> : <Check size={18} />}
                               </button>
                             </div>
                           </td>
@@ -492,20 +467,6 @@ export default function ConfiguracionPage() {
                   </table>
                 </div>
               )}
-            </div>
-
-            <div className="p-12 bg-gray-900 rounded-[40px] border-4 border-gray-800 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.5)]">
-                <div className="flex items-center gap-8">
-                   <div className="p-4 bg-red-600 rounded-2xl shadow-[0_0_30px_rgba(220,38,38,0.3)]">
-                      <AlertCircle size={32} className="text-white" />
-                   </div>
-                   <div className="space-y-2">
-                     <p className="text-xs font-black text-gray-100 uppercase tracking-[0.3em] italic">PROTOCOLO DE SEGURIDAD OPERATIVA</p>
-                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.25em] italic leading-relaxed max-w-4xl">
-                        EL BLOQUEO DE CREDENCIALES REVOCA EL ACCESO AL NÚCLEO DE DATOS DE FORMA INMEDIATA. TODAS LAS INTERVENCIONES PREVIAS DEL OPERADOR PERMANECEN ENCRIPTADAS EN EL HISTORIAL PARA TRAZABILIDAD LEGAL.
-                     </p>
-                   </div>
-                </div>
             </div>
           </div>
         )}

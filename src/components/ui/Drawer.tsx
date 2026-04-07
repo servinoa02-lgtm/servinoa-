@@ -41,24 +41,24 @@ export function Drawer({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-sm transition-opacity">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-gray-900/30 backdrop-blur-[2px] transition-opacity">
       <div className="absolute inset-0" onClick={onClose} />
       
       <div
         ref={drawerRef}
         className={`absolute inset-y-0 right-0 w-full ${width} bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-in-out transform slide-in-from-right`}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h2 className="text-lg font-semibold text-slate-800">{title}</h2>
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-widest">{title}</h2>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 rounded-full transition-colors"
+            className="p-2 text-gray-400 hover:bg-gray-50 hover:text-red-600 rounded-xl transition-all"
           >
             <X size={20} />
           </button>
         </div>
         
-        <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
+        <div className="flex-1 overflow-y-auto p-6 bg-gray-50/20">
           {children}
         </div>
       </div>

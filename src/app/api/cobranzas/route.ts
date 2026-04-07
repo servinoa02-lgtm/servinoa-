@@ -21,20 +21,14 @@ export async function GET() {
     });
 
     const data = cobranzas.map((c) => {
-      const subtotal = c.presupuesto
-        ? c.presupuesto.items.reduce((sum, item) => sum + item.total, 0)
-        : null;
-      const montoPresupuesto =
-        subtotal !== null && (c.presupuesto as any)?.incluyeIva
-          ? subtotal * 1.21
-          : subtotal;
-      const cobradoTotal = c.presupuesto
-        ? c.presupuesto.cobranzas.reduce((sum, co) => sum + co.importe, 0)
-        : null;
-      const saldo =
-        montoPresupuesto !== null && cobradoTotal !== null
-          ? montoPresupuesto - cobradoTotal
-          : null;
+      const ppto = c.presupuesto;
+      if (!ppto) return { ...c, montoPresupuesto: null, saldo: null };
+
+      const subtotal = ppto.items.reduce((sum, item) => sum + item.total, 0);
+      const montoPresupuesto = ppto.incluyeIva ? subtotal * 1.21 : subtotal;
+      const cobradoTotal = ppto.cobranzas.reduce((sum, co) => sum + co.importe, 0);
+      const saldo = montoPresupuesto - cobradoTotal;
+
       return { ...c, montoPresupuesto, saldo };
     });
 

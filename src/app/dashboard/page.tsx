@@ -26,11 +26,11 @@ import { Card, StatCard } from "@/components/ui/Card";
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session) {
+  if (!session?.user) {
     redirect("/login");
   }
 
-  const userId = (session.user as any)?.id;
+  const userId = session.user.id;
   const hoy = new Date();
 
   // 1. Tareas Asignadas
@@ -47,9 +47,20 @@ export default async function DashboardPage() {
   });
 
   // 3. Seguimientos y Alertas
-  const seguimientos = await (prisma as any).nota.findMany({
-    where: { esSeguimiento: true, orden: { estado: { notIn: ["ENTREGADO_REALIZADO", "ENTREGADO_SIN_REALIZAR", "RECHAZADO"] } } },
-    include: { orden: { select: { numero: true, id: true, cliente: { select: { nombre: true } } } } },
+  const seguimientos = await prisma.nota.findMany({
+    where: { 
+      esSeguimiento: true, 
+      orden: { estado: { notIn: ["ENTREGADO_REALIZADO", "ENTREGADO_SIN_REALIZAR", "RECHAZADO"] } } 
+    },
+    include: { 
+      orden: { 
+        select: { 
+          numero: true, 
+          id: true, 
+          cliente: { select: { nombre: true } } 
+        } 
+      } 
+    },
     orderBy: { fecha: "desc" }
   });
 
@@ -98,7 +109,7 @@ export default async function DashboardPage() {
     egresos: v.egresos,
   }));
 
-  const notaGlobal = await (prisma as any).configuracion.findUnique({
+  const notaGlobal = await prisma.configuracion.findUnique({
     where: { clave: "NOTA_GLOBAL" }
   });
 
@@ -175,13 +186,13 @@ export default async function DashboardPage() {
               className="h-full border border-gray-200 rounded-2xl shadow-sm"
             >
               <div className="space-y-4">
-                {(seguimientos as any[]).length === 0 ? (
+                {seguimientos.length === 0 ? (
                   <div className="text-center py-12">
                      <AlertTriangle size={40} className="mx-auto mb-2 text-gray-200" />
                      <p className="text-xs text-gray-400 font-medium font-sans">Sin alertas pendientes</p>
                   </div>
                 ) : (
-                  (seguimientos as any[]).map(s => (
+                  seguimientos.map(s => (
                     <Link key={s.id} href={`/ordenes/${s.orden.id}`} className="block p-4 rounded-xl border border-gray-100 bg-white hover:border-red-600 hover:shadow-md transition-all group">
                       <div className="text-[10px] font-bold text-red-600 mb-2 uppercase tracking-wider flex items-center justify-between">
                          <span>OT #{s.orden.numero} — {s.orden.cliente.nombre}</span>
@@ -251,11 +262,11 @@ export default async function DashboardPage() {
                     <StatusBadge status={ot.estado} />
                   </div>
                   <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tight truncate border-b border-gray-50 pb-2 mb-2">{ot.cliente.nombre}</div>
-                  {(ot as any).fechaEstimadaEntrega && (
+                  {ot.fechaEstimadaEntrega && (
                     <div className="flex items-center gap-2 text-[9px] font-bold text-gray-400 uppercase">
                       Entrega: 
-                      <span className={`px-1.5 py-0.5 rounded ${(ot as any).fechaEstimadaEntrega < hoy ? "bg-red-600 text-white" : "bg-gray-100 text-gray-700"}`}>
-                        {(ot as any).fechaEstimadaEntrega.toLocaleDateString("es-AR")}
+                      <span className={`px-1.5 py-0.5 rounded ${ot.fechaEstimadaEntrega < hoy ? "bg-red-600 text-white" : "bg-gray-100 text-gray-700"}`}>
+                        {ot.fechaEstimadaEntrega.toLocaleDateString("es-AR")}
                       </span>
                     </div>
                   )}

@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
 
+export interface NotificacionPayload {
+  [key: string]: any;
+}
+
 export const notificacionService = {
   /**
    * Encola un mensaje para ser enviado luego. 
@@ -11,7 +15,7 @@ export const notificacionService = {
   async encolar(
     tipo: "WHATSAPP" | "EMAIL",
     destinatario: string,
-    payload: any,
+    payload: NotificacionPayload,
     horasDelay: number = 0
   ) {
     const procesarDespuesDe = new Date();
@@ -44,7 +48,7 @@ export const notificacionService = {
 
     for (const msg of pendientes) {
       try {
-        const datos = JSON.parse(msg.datos);
+        const datos = JSON.parse(msg.datos) as NotificacionPayload;
 
         if (msg.tipoNotificacion === "WHATSAPP") {
           // Acá iría la integración real (Baileys, Meta API, etc.)

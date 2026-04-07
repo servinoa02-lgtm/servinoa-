@@ -3,8 +3,9 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Trash2, ArrowLeft, Plus, Search, FileText, Printer, ChevronRight } from "lucide-react";
+import { Trash2, ArrowLeft, Plus, Search, FileText, ChevronRight } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import Link from "next/link";
 
 interface Presupuesto {
@@ -20,13 +21,6 @@ interface Presupuesto {
   cliente: { nombre: string; empresa?: { nombre: string } | null };
   orden: { numero: number; id: string } | null;
 }
-
-const estadoColors: Record<string, string> = {
-  BORRADOR: "border-gray-200 text-gray-400 bg-white",
-  PRESUPUESTADO: "border-blue-600 text-blue-600 bg-blue-50",
-  APROBADO: "border-emerald-600 text-emerald-600 bg-emerald-50",
-  RECHAZADO: "border-red-600 text-red-600 bg-red-50",
-};
 
 const cobroColors: Record<string, string> = {
   PENDIENTE: "text-gray-400",
@@ -81,7 +75,7 @@ export default function PresupuestosPage() {
     const data = await res.json();
     setEliminando(false);
     if (!res.ok) {
-      setErrorDelete(data.error || "ERROR AL ELIMINAR REGISTRO");
+      setErrorDelete(data.error || "Error al eliminar presupuesto");
       return;
     }
     setConfirmDelete(null);
@@ -101,177 +95,158 @@ export default function PresupuestosPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center font-black uppercase tracking-[0.3em] text-gray-400 animate-pulse">
-        Sincronizando Libro de Presupuestos...
+      <div className="flex flex-col items-center justify-center p-40">
+        <div className="w-12 h-1 bg-red-600 rounded-full animate-pulse mb-4" />
+        <div className="text-gray-400 font-medium text-sm animate-pulse">Cargando presupuestos...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col font-sans animate-in fade-in duration-500">
-      
-      {/* Header Industrial */}
-      <header className="bg-white border-b border-gray-300 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10 h-24 flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="p-3 text-gray-400 hover:text-red-600 hover:bg-gray-100 rounded-xl transition-all border border-transparent hover:border-gray-200">
+            <Link href="/dashboard" className="p-2 text-gray-400 hover:text-red-600 hover:bg-gray-50 rounded-xl transition-all">
               <ArrowLeft size={24} />
             </Link>
             <div>
-              <div className="flex items-center gap-3 text-gray-400 mb-1">
-                <span className="text-xs font-black uppercase tracking-[0.3em] opacity-70">Administración</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
-                <span className="text-[10px] font-bold text-red-600 uppercase tracking-widest">FLUJO DE CAJA ESTIMADO</span>
-              </div>
-              <h1 className="text-3xl lg:text-4xl font-black text-gray-900 tracking-tighter italic uppercase">Gestión de Presupuestos</h1>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Ventas</p>
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Presupuestos</h1>
             </div>
           </div>
           <button
             onClick={() => router.push("/presupuestos/nuevo")}
-            className="flex items-center gap-3 bg-red-600 text-white px-10 py-5 rounded-2xl text-xs font-black hover:bg-red-700 transition-all shadow-xl shadow-red-600/40 uppercase tracking-[0.2em] active:scale-95"
+            className="bg-red-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/10 flex items-center gap-2"
           >
-            <Plus size={20} />
-            <span className="hidden sm:inline">NUEVA COTIZACIÓN</span>
+            <Plus size={18} /> Nueva Cotización
           </button>
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto px-6 lg:px-10 py-10 w-full lg:space-y-12">
-        
-        {/* Barra de Filtros Industrial */}
-        <div className="flex flex-col lg:row items-center gap-8 bg-white p-8 rounded-[32px] border-2 border-gray-100 shadow-sm">
-          <div className="relative flex-1 group w-full">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-red-600 transition-colors" size={24} />
-            <input
-              type="text"
-              placeholder="BUSCAR PPTO, CLIENTE, EMPRESA O FACTURA..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full pl-16 pr-6 py-6 bg-gray-50 border-2 border-transparent focus:border-red-600 rounded-2xl text-base text-gray-900 placeholder:text-gray-300 outline-none transition-all shadow-inner font-black uppercase tracking-tight italic"
-            />
-          </div>
-          <div className="flex flex-col sm:flex-row gap-6 w-full lg:w-auto">
-            <div className="relative">
-                <select
+      <main className="flex-1 max-w-7xl mx-auto px-6 py-10 w-full space-y-8">
+        <div className="flex flex-col md:flex-row items-center gap-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+           <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <input 
+                type="text" 
+                placeholder="Buscar por n°, cliente o factura..." 
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="w-full pl-12 pr-4 py-2.5 bg-gray-50 border border-transparent focus:border-red-600 rounded-xl text-sm font-medium outline-none transition-all"
+              />
+           </div>
+           <div className="flex gap-4 w-full md:w-auto">
+              <select
                 value={filtroEstado}
                 onChange={(e) => setFiltroEstado(e.target.value)}
-                className="w-full sm:w-72 px-8 py-6 bg-gray-900 text-white border-none rounded-2xl text-xs font-black outline-none hover:bg-black transition-all shadow-xl shadow-gray-900/10 uppercase tracking-widest italic appearance-none cursor-pointer"
-                >
+                className="flex-1 md:w-48 px-4 py-2.5 bg-gray-900 text-white border-none rounded-xl text-xs font-bold outline-none appearance-none cursor-pointer"
+              >
                 <option value="">TODOS LOS ESTADOS</option>
                 <option value="BORRADOR">BORRADOR</option>
                 <option value="PRESUPUESTADO">ENVIADO</option>
                 <option value="APROBADO">APROBADOS</option>
                 <option value="RECHAZADO">RECHAZADOS</option>
-                </select>
-                <ChevronRight size={16} className="absolute right-6 top-1/2 -translate-y-1/2 text-red-600 rotate-90 pointer-events-none" />
-            </div>
-            <div className="flex items-center justify-center text-[10px] font-black text-gray-400 bg-gray-50 px-8 py-4 rounded-2xl border-2 border-dashed border-gray-200 uppercase tracking-[0.3em] whitespace-nowrap">
-              {filtrados.length} REGISTROS INDEXADOS
-            </div>
-          </div>
+              </select>
+              <div className="hidden sm:flex items-center px-4 bg-gray-50 rounded-xl border border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                {filtrados.length} encontrados
+              </div>
+           </div>
         </div>
 
-        <div className="bg-white border-2 border-gray-100 rounded-[40px] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full border-separate border-spacing-0">
-                <thead>
-                <tr className="bg-gray-50 border-b-2 border-gray-100 text-gray-400 uppercase text-[10px] font-black tracking-[0.3em]">
-                    <th className="text-left px-8 py-6">ID Documento</th>
-                    <th className="text-left px-8 py-6">Vencimiento</th>
-                    <th className="text-left px-8 py-6">Operativa Comercial</th>
-                    <th className="text-left px-8 py-6">Vínculo</th>
-                    <th className="text-right px-8 py-6">Importe Líquido</th>
-                    <th className="text-right px-8 py-6">Saldo</th>
-                    <th className="text-center px-8 py-6">Protocolo</th>
-                    <th className="text-right px-8 py-6">...</th>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50/50 border-b border-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                  <th className="text-left px-6 py-4">N° Documento</th>
+                  <th className="text-left px-6 py-4">Cliente / Empresa</th>
+                  <th className="text-left px-6 py-4">Vínculo OT</th>
+                  <th className="text-right px-6 py-4">Total</th>
+                  <th className="text-right px-6 py-4">Saldo</th>
+                  <th className="text-center px-6 py-4">Estado</th>
+                  <th className="text-right px-6 py-4">Acción</th>
                 </tr>
-                </thead>
-                <tbody className="divide-y-2 divide-gray-100">
-                {filtrados.map((p) => (
-                    <tr
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+              {filtrados.map((p) => (
+                  <tr
                     key={p.id}
-                    className="hover:bg-red-50/30 transition-all cursor-pointer group"
+                    className="hover:bg-gray-50 group transition-all cursor-pointer"
                     onClick={() => router.push(`/presupuestos/${p.id}`)}
-                    >
-                    <td className="px-8 py-8 font-black text-red-600 italic text-xl tracking-tighter">
+                  >
+                    <td className="px-6 py-5">
+                      <p className="font-bold text-red-600 text-lg tracking-tight italic">
                         {formatNumero(p.numero, p.fecha)}
+                      </p>
+                      <p className="text-[10px] text-gray-400 font-bold">{new Date(p.fecha).toLocaleDateString("es-AR")}</p>
                     </td>
-                    <td className="px-8 py-8 text-gray-400 font-black font-mono text-xs tabular-nums tracking-widest">
-                        {new Date(p.fecha).toLocaleDateString("es-AR")}
+                    <td className="px-6 py-5">
+                      <p className="font-bold text-gray-900 uppercase text-sm leading-tight">
+                        {p.cliente?.empresa?.nombre || "Particular"}
+                      </p>
+                      {p.cliente?.nombre && (
+                        <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">Ref: {p.cliente.nombre}</p>
+                      )}
                     </td>
-                    <td className="px-8 py-8">
-                        <div className="font-black text-gray-900 uppercase text-sm tracking-tight leading-tight group-hover:text-red-700 transition-colors">
-                        {p.cliente?.empresa?.nombre || "ENTIDAD PARTICULAR"}
-                        </div>
-                        {p.cliente?.nombre && (
-                        <div className="text-[10px] text-gray-400 uppercase font-black italic mt-1.5 opacity-60">RESPONSABLE: {p.cliente.nombre}</div>
-                        )}
+                    <td className="px-6 py-5">
+                      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                        {p.orden ? `OT #${p.orden.numero}` : "Venta Directa"}
+                      </span>
                     </td>
-                    <td className="px-8 py-8 font-black text-gray-500 italic text-[11px] uppercase tracking-widest font-mono">
-                        {p.orden ? `OT #${p.orden.numero}` : "EXTERNO"}
-                    </td>
-                    <td className="px-8 py-8 text-right font-black text-lg italic tracking-tighter text-gray-900 tabular-nums">
+                    <td className="px-6 py-5 text-right font-bold text-base text-gray-900 tabular-nums">
                         ${p.total?.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                     </td>
-                    <td className={`px-8 py-8 text-right font-black text-lg italic tracking-tighter tabular-nums ${p.saldo > 0 ? "text-red-700 bg-red-50/50" : "text-emerald-700 bg-emerald-50/50"}`}>
+                    <td className={`px-6 py-5 text-right font-bold text-base tabular-nums ${p.saldo > 0 ? "text-red-700 bg-red-50/30" : "text-emerald-700 bg-emerald-50/30"}`}>
                         ${p.saldo?.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                     </td>
-                    <td className="px-8 py-8 text-center space-y-2">
-                        <div className={`px-4 py-1 rounded-lg text-[9px] font-black uppercase tracking-[0.2em] border-2 shadow-sm inline-block ${estadoColors[p.estado] || "border-gray-200 text-gray-400"}`}>
-                        {p.estado}
-                        </div>
-                        <div className={`text-[9px] font-black uppercase tracking-widest block opacity-70 ${cobroColors[p.estadoCobro] || "text-gray-400"}`}>
-                        {cobroLabel[p.estadoCobro] || p.estadoCobro}
+                    <td className="px-6 py-5 text-center">
+                        <div className="flex flex-col items-center gap-1">
+                          <StatusBadge status={p.estado} />
+                          <span className={`text-[9px] font-bold uppercase tracking-wider ${cobroColors[p.estadoCobro] || "text-gray-400"}`}>
+                            {cobroLabel[p.estadoCobro] || p.estadoCobro}
+                          </span>
                         </div>
                     </td>
-                    <td className="px-8 py-8 text-right" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-6 py-5 text-right" onClick={(e) => e.stopPropagation()}>
                         <button
-                        onClick={() => { setErrorDelete(null); setConfirmDelete({ id: p.id, numero: p.numero, fecha: p.fecha }); }}
-                        className="p-4 text-gray-200 hover:text-red-600 hover:bg-white rounded-2xl transition-all border border-transparent hover:border-gray-200 hover:shadow-lg active:scale-90"
-                        title="ELIMINAR"
+                          onClick={() => setConfirmDelete({ id: p.id, numero: p.numero, fecha: p.fecha })}
+                          className="p-2 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                         >
-                        <Trash2 size={20} />
+                          <Trash2 size={18} />
                         </button>
                     </td>
-                    </tr>
+                  </tr>
                 ))}
-                </tbody>
+                {filtrados.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-20 text-center text-gray-400 font-medium italic bg-gray-50/20">
+                       No se encontraron presupuestos
+                    </td>
+                  </tr>
+                )}
+              </tbody>
             </table>
           </div>
-          
-          {filtrados.length === 0 && (
-            <div className="px-8 py-32 text-center">
-                <div className="flex flex-col items-center gap-6 opacity-20">
-                    <FileText size={80} className="text-gray-400" />
-                    <span className="text-xs font-black uppercase tracking-[0.5em] text-gray-500 italic">BASE DE DATOS SIN REGISTROS COMPATIBLES</span>
-                </div>
-            </div>
-          )}
         </div>
       </main>
 
       <ConfirmDialog
         isOpen={!!confirmDelete}
-        title="Protocolo de Eliminación"
-        message={`¿CONFIRMA LA ELIMINACIÓN PERMANENTE DEL PRESUPUESTO ${confirmDelete ? formatNumero(confirmDelete.numero, confirmDelete.fecha) : ""}? ESTA ACCIÓN NO TIENE RETORNO.`}
-        confirmLabel={eliminando ? "BORRANDO..." : "SÍ, ELIMINAR REGISTRO"}
-        onCancel={() => { setConfirmDelete(null); setErrorDelete(null); }}
+        title="Eliminar Presupuesto"
+        message={`¿Estás seguro de eliminar el presupuesto ${confirmDelete ? formatNumero(confirmDelete.numero, confirmDelete.fecha) : ""}? Esta acción no se puede deshacer.`}
+        confirmLabel={eliminando ? "Eliminando..." : "Sí, eliminar"}
+        onCancel={() => setConfirmDelete(null)}
         onConfirm={() => confirmDelete && eliminarPresupuesto(confirmDelete.id)}
       />
 
       {errorDelete && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 bg-gray-900 border-2 border-red-600 text-red-600 px-8 py-5 rounded-[24px] shadow-2xl shadow-red-600/20 font-black uppercase tracking-[0.2em] italic flex items-center gap-4 animate-in slide-in-from-bottom duration-500">
-           <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-3 text-sm font-bold">
+           <span className="w-2 h-2 rounded-full bg-red-600" />
            {errorDelete}
-           <button onClick={() => setErrorDelete(null)} className="ml-6 py-2 px-4 hover:bg-red-600/10 rounded-lg transition-all underline text-[10px]">CERRAR</button>
+           <button onClick={() => setErrorDelete(null)} className="ml-4 text-[10px] uppercase underline text-gray-400 hover:text-white">Cerrar</button>
         </div>
       )}
-      
-      <footer className="max-w-7xl mx-auto w-full px-6 lg:px-10 py-10">
-         <div className="border-t-2 border-gray-200 pt-8 flex flex-col md:flex-row items-center justify-between gap-6">
-            <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.4em] italic leading-relaxed text-center md:text-left">SISTEMA DE GESTIÓN INDUSTRIAL — SERVINOA V3.0<br/>MODULO ADMINISTRATIVO — PROTECCIÓN DE DATOS ACTIVA</p>
-         </div>
-      </footer>
     </div>
   );
 }

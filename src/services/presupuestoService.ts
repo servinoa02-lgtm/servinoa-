@@ -1,5 +1,25 @@
 import { prisma } from "@/lib/prisma";
 import { cuentaCorrienteService } from "./cuentaCorrienteService";
+import { Prisma, Presupuesto, EstadoPresupuesto } from "@prisma/client";
+
+export interface ItemPresupuestoInput {
+  cantidad: number;
+  descripcion: string;
+  precio: number;
+}
+
+export interface CrearPresupuestoInput {
+  clienteId: string;
+  ordenId?: string | null;
+  usuarioId: string;
+  moneda?: string;
+  formaPago?: string;
+  validezDias?: number;
+  incluyeIva?: boolean;
+  observaciones?: string | null;
+  estado?: EstadoPresupuesto;
+  items: ItemPresupuestoInput[];
+}
 
 export const presupuestoService = {
   /**
@@ -32,8 +52,8 @@ export const presupuestoService = {
   /**
    * Crea un nuevo presupuesto.
    */
-  async crearPresupuesto(data: any) {
-    return await prisma.$transaction(async (tx: any) => {
+  async crearPresupuesto(data: CrearPresupuestoInput): Promise<Presupuesto> {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const presupuesto = await tx.presupuesto.create({
         data: {
           clienteId: data.clienteId,
@@ -47,7 +67,7 @@ export const presupuestoService = {
           estado: data.estado || "PRESUPUESTADO",
           estadoCobro: "APROBACION_PENDIENTE",
           items: {
-            create: data.items.map((item: any) => ({
+            create: data.items.map((item: ItemPresupuestoInput) => ({
               cantidad: item.cantidad,
               descripcion: item.descripcion,
               precio: item.precio,
@@ -78,7 +98,7 @@ export const presupuestoService = {
    * Aprueba un presupuesto y registra el DEBE en Cuenta Corriente con el total correcto (con IVA si aplica).
    */
   async aprobarPresupuesto(presupuestoId: string) {
-    return await prisma.$transaction(async (tx: any) => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const presupuesto = await tx.presupuesto.findUnique({
         where: { id: presupuestoId },
         include: { items: true },
@@ -110,8 +130,8 @@ export const presupuestoService = {
    * Actualiza los ítems de un presupuesto y, si ya está APROBADO,
    * recalcula y actualiza el asiento DEBE en CuentaCorriente.
    */
-  async actualizarItems(presupuestoId: string, items: { cantidad: number; descripcion: string; precio: number }[]) {
-    return await prisma.$transaction(async (tx: any) => {
+  async actualizarItems(presupuestoId: string, items: ItemPresupuestoInput[]) {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const presupuesto = await tx.presupuesto.findUnique({
         where: { id: presupuestoId },
         select: { estado: true, clienteId: true, incluyeIva: true },

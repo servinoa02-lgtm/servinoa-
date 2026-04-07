@@ -1,24 +1,24 @@
 import { prisma } from "@/lib/prisma";
-import { TipoMovimientoCuenta, OrigenMovimientoCuenta } from "@prisma/client";
+import { TipoMovimientoCuenta, OrigenMovimientoCuenta, Prisma, CuentaCorriente } from "@prisma/client";
+
+export interface RegistrarMovimientoData {
+  clienteId: string;
+  tipo: TipoMovimientoCuenta;
+  origen: OrigenMovimientoCuenta;
+  monto: number;
+  presupuestoId?: string;
+  cobranzaId?: string;
+}
 
 export const cuentaCorrienteService = {
   /**
    * Registra un movimiento en la cuenta corriente del cliente.
-   * Internamente no hace commit/rollback porque Prisma no tiene un Unit of Work nativo
-   * en llamadas separadas a menos que se use \$transaction().
-   * Se recomienda llamar a este método dentro de una transacción cuando sea posible.
+   * Se puede pasar un cliente de transacción de Prisma (tx) opcionalmente.
    */
   async registrarMovimiento(
-    tx: any, // Prisma Transaction Client
-    data: {
-      clienteId: string;
-      tipo: TipoMovimientoCuenta;
-      origen: OrigenMovimientoCuenta;
-      monto: number;
-      presupuestoId?: string;
-      cobranzaId?: string;
-    }
-  ) {
+    tx: Prisma.TransactionClient | null,
+    data: RegistrarMovimientoData
+  ): Promise<CuentaCorriente> {
     const db = tx || prisma;
     
     return await db.cuentaCorriente.create({
