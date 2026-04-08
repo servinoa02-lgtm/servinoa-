@@ -31,11 +31,11 @@ const cobroColors: Record<string, string> = {
 };
 
 const cobroLabel: Record<string, string> = {
-  PENDIENTE: "PND",
-  APROBACION_PENDIENTE: "VALIDACIÓN",
-  COBRO_PENDIENTE: "PAGO PND",
-  COBRADO: "LIQUIDADO",
-  PARCIAL: "A CUENTA",
+  PENDIENTE: "Pendiente",
+  APROBACION_PENDIENTE: "Aprobación pendiente",
+  COBRO_PENDIENTE: "Cobro pendiente",
+  COBRADO: "Cobrado",
+  PARCIAL: "Pago parcial",
 };
 
 function formatNumero(numero: number, fecha: string) {
@@ -142,11 +142,10 @@ export default function PresupuestosPage() {
                 onChange={(e) => setFiltroEstado(e.target.value)}
                 className="flex-1 md:w-48 px-4 py-2.5 bg-gray-900 text-white border-none rounded-xl text-xs font-bold outline-none appearance-none cursor-pointer"
               >
-                <option value="">TODOS LOS ESTADOS</option>
-                <option value="BORRADOR">BORRADOR</option>
-                <option value="PRESUPUESTADO">ENVIADO</option>
-                <option value="APROBADO">APROBADOS</option>
-                <option value="RECHAZADO">RECHAZADOS</option>
+                <option value="">Todos los estados</option>
+                <option value="PRESUPUESTADO">Presupuestado</option>
+                <option value="APROBADO">Aprobado</option>
+                <option value="RECHAZADO">Rechazado</option>
               </select>
               <div className="hidden sm:flex items-center px-4 bg-gray-50 rounded-xl border border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                 {filtrados.length} encontrados

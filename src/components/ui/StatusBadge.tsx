@@ -14,6 +14,8 @@ const statusConfig: EnumsMapping = {
   PENDIENTE: { label: "Pendiente", color: "text-amber-700", bg: "bg-amber-50", dot: "bg-amber-600" },
   PARCIAL: { label: "Parcial", color: "text-violet-700", bg: "bg-violet-50", dot: "bg-violet-600" },
   COBRADO: { label: "Cobrado", color: "text-emerald-800", bg: "bg-emerald-100", dot: "bg-emerald-700" },
+  APROBACION_PENDIENTE: { label: "Aprobación pendiente", color: "text-orange-700", bg: "bg-orange-50", dot: "bg-orange-500" },
+  COBRO_PENDIENTE: { label: "Cobro pendiente", color: "text-red-700", bg: "bg-red-50", dot: "bg-red-600" },
 
   // Cheques
   EN_CARTERA: { label: "En Cartera", color: "text-gray-700", bg: "bg-gray-100", dot: "bg-gray-500" },
