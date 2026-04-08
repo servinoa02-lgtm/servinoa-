@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Trash2, ArrowLeft, Plus, Search, FileText, ChevronRight } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { formatFecha } from "@/lib/dateUtils";
 import Link from "next/link";
 
 interface Presupuesto {
@@ -178,7 +179,7 @@ export default function PresupuestosPage() {
                       <p className="font-bold text-red-600 text-lg tracking-tight italic">
                         {formatNumero(p.numero, p.fecha)}
                       </p>
-                      <p className="text-[10px] text-gray-400 font-bold">{new Date(p.fecha).toLocaleDateString("es-AR")}</p>
+                      <p className="text-[10px] text-gray-400 font-bold">{formatFecha(p.fecha)}</p>
                     </td>
                     <td className="px-6 py-5">
                       <p className="font-bold text-gray-900 uppercase text-sm leading-tight">

@@ -22,6 +22,7 @@ import { GlobalNoteForm } from "./GlobalNoteForm";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { FinanceChart } from "@/components/ui/FinanceChart";
 import { Card, StatCard } from "@/components/ui/Card";
+import { formatFecha, formatHora, inicioMesAR, finMesAR, haceNDiasAR, labelDiaMes, anoActualAR } from "@/lib/dateUtils";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -65,8 +66,8 @@ export default async function DashboardPage() {
   });
 
   // 5. Resumen Financiero Mes Actual
-  const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-  const finMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0, 23, 59, 59);
+  const inicioMes = inicioMesAR();
+  const finMes = finMesAR();
 
   const movsCaja = await prisma.movimientoCaja.aggregate({
     where: { fecha: { gte: inicioMes, lte: finMes } },
@@ -77,9 +78,7 @@ export default async function DashboardPage() {
   const mesBalance = mesIngresos - mesEgresos;
 
   // 7. Gráfico: últimos 30 días
-  const hace30 = new Date(hoy);
-  hace30.setDate(hoy.getDate() - 29);
-  hace30.setHours(0, 0, 0, 0);
+  const hace30 = haceNDiasAR(29);
 
   const movs30 = await prisma.movimientoCaja.findMany({
     where: { fecha: { gte: hace30 } },
@@ -89,14 +88,12 @@ export default async function DashboardPage() {
 
   const dayMap = new Map<string, { ingresos: number; egresos: number }>();
   for (let i = 0; i < 30; i++) {
-    const d = new Date(hace30);
-    d.setDate(hace30.getDate() + i);
-    const key = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const d = new Date(hace30.getTime() + i * 86400000);
+    const key = labelDiaMes(d);
     dayMap.set(key, { ingresos: 0, egresos: 0 });
   }
   for (const m of movs30) {
-    const d = new Date(m.fecha);
-    const key = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const key = labelDiaMes(new Date(m.fecha));
     const existing = dayMap.get(key);
     if (existing) {
       existing.ingresos += m.ingreso || 0;
@@ -131,7 +128,7 @@ export default async function DashboardPage() {
               <div>
                  <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Fecha y Hora Actual</p>
                  <span className="text-sm font-bold text-gray-900">
-                    {hoy.toLocaleDateString('es-AR')} — {hoy.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                    {formatFecha(hoy)} — {formatHora(hoy, { hour: '2-digit', minute: '2-digit' })}
                  </span>
               </div>
            </div>
@@ -231,7 +228,7 @@ export default async function DashboardPage() {
                     <div className={`p-4 rounded-xl border transition-all ${isVencida ? 'border-red-200 bg-red-50' : 'border-gray-50 bg-gray-50/50 hover:bg-white hover:border-red-200'}`}>
                       <div className="flex justify-between items-start mb-2">
                         <StatusBadge status={isVencida ? 'URGENTE' : t.prioridad} />
-                        {t.vencimiento && <span className="text-[9px] font-bold text-gray-400">{t.vencimiento.toLocaleDateString('es-AR')}</span>}
+                        {t.vencimiento && <span className="text-[9px] font-bold text-gray-400">{formatFecha(t.vencimiento)}</span>}
                       </div>
                       <p className="text-xs font-bold text-gray-900 uppercase leading-snug">{t.descripcion}</p>
                     </div>
@@ -266,7 +263,7 @@ export default async function DashboardPage() {
                     <div className="flex items-center gap-2 text-[9px] font-bold text-gray-400 uppercase">
                       Entrega: 
                       <span className={`px-1.5 py-0.5 rounded ${ot.fechaEstimadaEntrega < hoy ? "bg-red-600 text-white" : "bg-gray-100 text-gray-700"}`}>
-                        {ot.fechaEstimadaEntrega.toLocaleDateString("es-AR")}
+                        {formatFecha(ot.fechaEstimadaEntrega)}
                       </span>
                     </div>
                   )}
@@ -285,7 +282,7 @@ export default async function DashboardPage() {
           <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 border-dashed">
             <GlobalNoteForm initialNote={notaGlobal?.valor || ""} />
           </div>
-          <p className="text-[9px] text-gray-400 font-medium text-center mt-6 uppercase tracking-widest">ServiNOA © {new Date().getFullYear()}</p>
+          <p className="text-[9px] text-gray-400 font-medium text-center mt-6 uppercase tracking-widest">ServiNOA © {anoActualAR()}</p>
         </Card>
 
       </div>

@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { formatFecha } from "@/lib/dateUtils";
 
 interface Orden {
   id: string;
@@ -262,11 +263,11 @@ export default function OrdenDetallePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
               <span className="text-gray-500 block">Fecha recepción</span>
-              <span className="font-medium">{new Date(orden.fechaRecepcion).toLocaleDateString("es-AR")}</span>
+              <span className="font-medium">{formatFecha(orden.fechaRecepcion)}</span>
             </div>
             <div>
               <span className="text-gray-500 block">Fecha entrega</span>
-              <span className="font-medium">{orden.fechaEntrega ? new Date(orden.fechaEntrega).toLocaleDateString("es-AR") : "-"}</span>
+              <span className="font-medium">{orden.fechaEntrega ? formatFecha(orden.fechaEntrega) : "-"}</span>
             </div>
             <div>
               <span className="text-gray-500 block">Técnico</span>
@@ -302,7 +303,7 @@ export default function OrdenDetallePage() {
                 >
                   <div>
                     <span className="font-medium text-sm">Ppto N°{p.numero}</span>
-                    <span className="text-xs text-gray-500 ml-2">{new Date(p.createdAt).toLocaleDateString("es-AR")}</span>
+                    <span className="text-xs text-gray-500 ml-2">{formatFecha(p.createdAt)}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="font-semibold text-sm">${p.total?.toLocaleString("es-AR") || "0"}</span>

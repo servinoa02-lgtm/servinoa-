@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, FileText, Receipt, User, Wrench, CreditCard, Printer, Save, Trash2, CheckCircle2, XCircle, ChevronRight, AlertTriangle, Plus } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { formatFecha, anoActualAR } from "@/lib/dateUtils";
 
 interface Presupuesto {
   id: string;
@@ -329,7 +330,7 @@ export default function PresupuestoDetallePage() {
                         <div className="space-y-2">
                           {ppto.cobranzas.map((c) => (
                             <div key={c.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                              <span className="text-[10px] font-bold text-gray-400">{new Date(c.fecha).toLocaleDateString("es-AR")} — {c.formaPago}</span>
+                              <span className="text-[10px] font-bold text-gray-400">{formatFecha(c.fecha)} — {c.formaPago}</span>
                               <span className="text-xs font-bold text-emerald-600">${c.importe.toLocaleString("es-AR")}</span>
                             </div>
                           ))}
@@ -340,7 +341,7 @@ export default function PresupuestoDetallePage() {
                    </div>
                 </div>
                 <div className="p-8 bg-gray-50 text-center border-t border-gray-100">
-                    <p className="text-[9px] font-bold text-gray-300 uppercase tracking-widest">ServiNOA © {new Date().getFullYear()}</p>
+                    <p className="text-[9px] font-bold text-gray-300 uppercase tracking-widest">ServiNOA © {anoActualAR()}</p>
                 </div>
              </div>
           </div>

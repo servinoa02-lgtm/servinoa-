@@ -182,8 +182,8 @@ export default function ClientesPage() {
                       </div>
                     </td>
                     <td className="px-6 py-5 text-right">
-                       <span className={`px-4 py-1.5 rounded-xl border font-bold text-sm shadow-sm inline-block tabular-nums ${c.saldo && c.saldo > 0 ? "text-red-600 bg-red-50 border-red-100" : "text-emerald-700 bg-emerald-50 border-emerald-100"}`}>
-                        ${(c.saldo || 0).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                       <span className={`px-4 py-1.5 rounded-xl border font-bold text-sm shadow-sm inline-block tabular-nums ${(c.saldo ?? 0) > 0 ? "text-red-600 bg-red-50 border-red-100" : "text-emerald-700 bg-emerald-50 border-emerald-100"}`}>
+                        ${(c.saldo ?? 0).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                        </span>
                     </td>
                     <td className="px-6 py-5">

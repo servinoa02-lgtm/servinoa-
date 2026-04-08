@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { formatFecha } from "@/lib/dateUtils";
 
 interface Cheque {
   id: string;
@@ -187,7 +188,7 @@ export default function ChequesPage() {
                 <div className="md:col-span-2">
                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Fecha Cobro</p>
                    <p className="text-sm font-bold text-gray-900">
-                      {c.fechaCobro ? new Date(c.fechaCobro).toLocaleDateString("es-AR") : "Inmediata"}
+                      {c.fechaCobro ? formatFecha(c.fechaCobro) : "Inmediata"}
                    </p>
                    <div className="flex items-center gap-1.5 mt-1">
                        <Timer size={12} className={c.diasVencimiento != null && c.diasVencimiento < 0 ? "text-red-500" : "text-gray-300"} />

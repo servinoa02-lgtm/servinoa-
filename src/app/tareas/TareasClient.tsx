@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Plus, Check, Clock, AlertCircle, Search, User, Calendar, Activity } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { formatFecha } from "@/lib/dateUtils";
 
 export function TareasClient({ usuarios }: { usuarios: any[] }) {
   const [tareas, setTareas] = useState<any[]>([]);
@@ -114,7 +115,7 @@ export function TareasClient({ usuarios }: { usuarios: any[] }) {
                   {t.vencimiento && (
                     <div className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider ${isVencida ? 'text-red-600 animate-pulse' : 'text-gray-400'}`}>
                       {isVencida ? <AlertCircle size={14}/> : <Calendar size={14}/>} 
-                      Vence: {new Date(t.vencimiento).toLocaleDateString('es-AR')}
+                      Vence: {formatFecha(t.vencimiento)}
                     </div>
                   )}
 

@@ -12,6 +12,7 @@ import {
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Drawer } from "@/components/ui/Drawer";
 import { ProveedorQuickAdd } from "@/components/ui/ProveedorQuickAdd";
+import { formatFecha } from "@/lib/dateUtils";
 
 interface Gasto {
   id: string;
@@ -202,7 +203,7 @@ export default function GastosPage() {
                     </p>
                     <div className="flex flex-wrap items-center gap-3 mt-1.5">
                        <span className="text-[10px] font-bold text-gray-400 uppercase bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
-                          {new Date(g.fecha).toLocaleDateString("es-AR")}
+                          {formatFecha(g.fecha)}
                        </span>
                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${g.tipo === "SUELDO" ? "border-gray-900 text-gray-900" : "border-red-100 text-red-600 bg-red-50"}`}>
                           {g.tipo === "SUELDO" ? "Sueldo" : "Gasto Varios"}

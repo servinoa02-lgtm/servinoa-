@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Search, Plus, ArrowLeft, Wrench, Calendar, ClipboardList } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import Link from "next/link";
+import { formatFecha } from "@/lib/dateUtils";
 
 interface Orden {
   id: string;
@@ -141,7 +142,7 @@ export default function OrdenesPage() {
                     <td className="px-6 py-5 text-right">
                        <div className="flex items-center justify-end gap-2 text-gray-900 font-bold font-mono text-xs">
                           <Calendar size={14} className="text-gray-300" />
-                          {new Date(o.fechaRecepcion).toLocaleDateString("es-AR")}
+                          {formatFecha(o.fechaRecepcion)}
                        </div>
                     </td>
                   </tr>

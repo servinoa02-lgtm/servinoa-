@@ -9,6 +9,7 @@ import {
   Calendar, ArrowRight, ArrowUpRight, ArrowDownLeft 
 } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
+import { formatFecha } from "@/lib/dateUtils";
 
 interface Transferencia {
   id: string;
@@ -141,7 +142,7 @@ export default function TransferenciasPage() {
                       <div className="flex items-center gap-3 mt-1">
                          <div className="flex items-center gap-1.5 text-gray-400 text-[10px] font-medium uppercase">
                             <Calendar size={12} />
-                            {new Date(t.fecha).toLocaleDateString("es-AR")}
+                            {formatFecha(t.fecha)}
                          </div>
                          <span className="text-[10px] text-gray-300 font-bold uppercase">{t.formaPagoOrigen} <ArrowRight size={10} className="inline mx-0.5" /> {t.formaPagoDestino}</span>
                       </div>

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { ProveedorQuickAdd } from "@/components/ui/ProveedorQuickAdd";
+import { formatFecha, hoyISO } from "@/lib/dateUtils";
 
 interface Caja { id: string; nombre: string; saldo: number; }
 interface Cliente { id: string; nombre: string; empresa?: { nombre: string } | null; }
@@ -68,7 +69,7 @@ export default function FinanzasPage() {
   const [cobroImporte, setCobroImporte] = useState("");
   const [cobroFormaPago, setCobroFormaPago] = useState("Efectivo");
   const [cobroCajaId, setCobroCajaId] = useState("");
-  const [cobroFecha, setCobroFecha] = useState(new Date().toISOString().split("T")[0]);
+  const [cobroFecha, setCobroFecha] = useState(hoyISO());
   const [cobroDescripcion, setCobroDescripcion] = useState("");
   const [chqNumero, setChqNumero] = useState("");
   const [chqBanco, setChqBanco] = useState("");
@@ -89,7 +90,7 @@ export default function FinanzasPage() {
   const [gastoEmpleado, setGastoEmpleado] = useState("");
   const [gastoDesde, setGastoDesde] = useState("");
   const [gastoHasta, setGastoHasta] = useState("");
-  const [gastoFecha, setGastoFecha] = useState(new Date().toISOString().split("T")[0]);
+  const [gastoFecha, setGastoFecha] = useState(hoyISO());
   const [guardandoGasto, setGuardandoGasto] = useState(false);
   const [errGasto, setErrGasto] = useState("");
 
@@ -197,7 +198,7 @@ export default function FinanzasPage() {
   const resetCobro = () => {
     setCobroTipo("PRESUPUESTO"); setCobroClienteId(""); setCobroPptoId(""); setCobroPptoInfo(null);
     setCobroImporte(""); setCobroDescripcion(""); setCobroFormaPago("Efectivo");
-    setCobroFecha(new Date().toISOString().split("T")[0]);
+    setCobroFecha(hoyISO());
     setChqNumero(""); setChqBanco(""); setChqEmision(""); setChqCobro(""); setErrCobro("");
   };
 
@@ -205,7 +206,7 @@ export default function FinanzasPage() {
     setGastoTipo("GASTO_VARIOS"); setGastoDescripcion(""); setGastoImporte("");
     setGastoFormaPago("Efectivo"); setGastoProveedorId(""); setGastoComprobante("");
     setGastoEmpleado(""); setGastoDesde(""); setGastoHasta("");
-    setGastoFecha(new Date().toISOString().split("T")[0]); setErrGasto("");
+    setGastoFecha(hoyISO()); setErrGasto("");
   };
 
   const guardarCobro = async () => {
@@ -432,7 +433,7 @@ export default function FinanzasPage() {
                         {m.cliente ? `${m.cliente} — ` : ""}{m.descripcion}
                       </p>
                       <p className="text-[10px] text-gray-400 mt-0.5">
-                        {new Date(m.fecha).toLocaleDateString("es-AR")}
+                        {formatFecha(m.fecha)}
                         {m.caja ? ` · ${m.caja}` : ""}
                       </p>
                     </div>
@@ -507,7 +508,7 @@ export default function FinanzasPage() {
                     <div className="text-right shrink-0">
                       <p className="text-sm font-bold text-gray-900 tabular-nums">${c.importe.toLocaleString("es-AR")}</p>
                       <p className={`text-[10px] font-bold ${(c.diasVencimiento ?? 0) < 0 ? "text-red-600" : (c.diasVencimiento ?? 0) <= 7 ? "text-amber-600" : "text-gray-400"}`}>
-                        {c.vencimientoTexto || (c.fechaCobro ? new Date(c.fechaCobro).toLocaleDateString("es-AR") : "")}
+                        {c.vencimientoTexto || (c.fechaCobro ? formatFecha(c.fechaCobro) : "")}
                       </p>
                     </div>
                   </div>

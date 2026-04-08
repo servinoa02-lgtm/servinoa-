@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatEstado, estadoColors, TODOS_ESTADOS, FLUJO_ESTADOS } from "@/lib/estados";
+import { formatFecha, formatFechaHora } from "@/lib/dateUtils";
 import { Wrench, Phone, FileText, Send, AlertTriangle, ArrowLeft, Printer, User, Calendar, ChevronRight, CheckCircle2, MoreHorizontal } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 
@@ -200,12 +201,12 @@ export default function OrdenDetallePage() {
                 <div className="grid grid-cols-2 gap-4 pt-2">
                   <div>
                     <label className="text-[9px] font-bold text-gray-400 uppercase block mb-1">Carga</label>
-                    <p className="text-[10px] font-bold text-gray-900">{new Date(orden.fechaRecepcion).toLocaleDateString("es-AR")}</p>
+                    <p className="text-[10px] font-bold text-gray-900">{formatFecha(orden.fechaRecepcion)}</p>
                   </div>
                   <div>
                     <label className="text-[9px] font-bold text-gray-400 uppercase block mb-1">Entrega Est.</label>
                     <p className={`text-[10px] font-bold ${orden.fechaEstimadaEntrega && new Date(orden.fechaEstimadaEntrega) < new Date() ? 'text-red-600' : 'text-gray-900'}`}>
-                      {orden.fechaEstimadaEntrega ? new Date(orden.fechaEstimadaEntrega).toLocaleDateString("es-AR") : "PND"}
+                      {orden.fechaEstimadaEntrega ? formatFecha(orden.fechaEstimadaEntrega) : "PND"}
                     </p>
                   </div>
                 </div>
@@ -314,7 +315,7 @@ export default function OrdenDetallePage() {
                         <div key={nota.id} className={`p-5 rounded-2xl border transition-all ${nota.esSeguimiento ? 'bg-red-50 border-red-200' : 'bg-white border-gray-100 shadow-sm'}`}>
                           <div className="flex justify-between items-center mb-2">
                              <span className="text-[9px] font-bold uppercase text-gray-400 italic">
-                               {nota.usuario?.nombre || 'SISTEMA'} — {new Date(nota.fecha).toLocaleString('es-AR')}
+                               {nota.usuario?.nombre || 'SISTEMA'} — {formatFechaHora(nota.fecha)}
                              </span>
                              {nota.esSeguimiento && <AlertTriangle size={14} className="text-red-600" />}
                           </div>

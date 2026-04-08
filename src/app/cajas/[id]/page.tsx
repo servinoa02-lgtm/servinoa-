@@ -10,6 +10,7 @@ import {
   CreditCard, Search, Filter
 } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
+import { formatFecha } from "@/lib/dateUtils";
 
 interface Movimiento {
   id: string;
@@ -151,7 +152,7 @@ export default function CajaDetallePage() {
                       </p>
                       <div className="flex items-center gap-3 mt-1.5">
                          <span className="text-[10px] font-bold text-gray-400 uppercase bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
-                            {new Date(m.fecha).toLocaleDateString("es-AR")}
+                            {formatFecha(m.fecha)}
                          </span>
                          <span className="text-[10px] font-bold text-gray-400 uppercase">
                             {m.formaPago}

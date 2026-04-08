@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, User, Phone, Mail, MapPin, CreditCard, FileText, Receipt, History, Printer, ChevronRight } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { formatFecha } from "@/lib/dateUtils";
 
 interface ClienteDetalle {
   id: string;
@@ -208,7 +209,7 @@ export default function ClienteDetallePage() {
                                    <StatusBadge status={o.estado} />
                                 </td>
                                 <td className="px-4 py-3 rounded-r-xl text-right text-[10px] font-bold text-gray-400">
-                                   {new Date(o.fechaRecepcion).toLocaleDateString("es-AR")}
+                                   {formatFecha(o.fechaRecepcion)}
                                 </td>
                               </tr>
                             ))}
@@ -266,7 +267,7 @@ export default function ClienteDetallePage() {
                             <tbody>
                               {cliente.cobranzas.map((c) => (
                                 <tr key={c.id}>
-                                  <td className="px-4 py-3 rounded-l-xl text-[10px] font-bold text-gray-400 uppercase">{new Date(c.fecha).toLocaleDateString("es-AR")}</td>
+                                  <td className="px-4 py-3 rounded-l-xl text-[10px] font-bold text-gray-400 uppercase">{formatFecha(c.fecha)}</td>
                                   <td className="px-4 py-3 text-xs font-bold text-gray-700 uppercase italic truncate max-w-[200px]">
                                      {c.descripcion || (c.presupuesto ? `PQ #${c.presupuesto.numero}` : "Cobro vario")}
                                   </td>
