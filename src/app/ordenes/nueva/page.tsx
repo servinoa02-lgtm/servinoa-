@@ -351,11 +351,11 @@ export default function NuevaOrdenPage() {
                       <button key={c.id}
                         onClick={() => {
                           setClienteId(c.id);
-                          setBuscarCliente(c.empresa ? `${c.empresa.nombre.toUpperCase()} — ${c.nombre.toUpperCase()}` : c.nombre.toUpperCase());
+                          setBuscarCliente(c.empresa?.nombre ? `${c.empresa.nombre.toUpperCase()} — ${c.nombre.toUpperCase()}` : c.nombre.toUpperCase());
                         }}
                         className="w-full text-left px-6 py-4 text-sm font-bold uppercase hover:bg-red-50 hover:text-red-700 border-b border-gray-50 last:border-0 transition-colors"
                       >
-                        {c.empresa ? `${c.empresa.nombre} — ${c.nombre}` : c.nombre}
+                        {c.empresa?.nombre ? `${c.empresa.nombre.toUpperCase()} — ${c.nombre.toUpperCase()}` : c.nombre.toUpperCase()}
                       </button>
                     ))}
                   </div>
@@ -469,7 +469,7 @@ export default function NuevaOrdenPage() {
               <div className="flex gap-3">
                 <input
                   type="text" value={nuevoAccesorio} onChange={e => setNuevoAccesorio(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && agregarAccesorio()}
+                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); agregarAccesorio(); } }}
                   placeholder="Ej: Cargador, Cable HDMI, Batería..."
                   className="flex-1 px-5 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all uppercase"
                 />
