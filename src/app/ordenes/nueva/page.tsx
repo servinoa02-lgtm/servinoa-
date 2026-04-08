@@ -82,7 +82,8 @@ export default function NuevaOrdenPage() {
   const [mostrarNuevoCliente, setMostrarNuevoCliente] = useState(false);
   const [nuevoNombre, setNuevoNombre] = useState("");
   const [nuevoTelefono, setNuevoTelefono] = useState("");
-  const [nuevoEmpresa, setNuevoEmpresa] = useState("Particular");
+  const [nuevoEmpresa, setNuevoEmpresa] = useState("");
+  const [esEmpresa, setEsEmpresa] = useState(false);
   const [nuevoCuit, setNuevoCuit] = useState("");
   const [nuevoDni, setNuevoDni] = useState("");
   const [nuevoEmail, setNuevoEmail] = useState("");
@@ -129,7 +130,7 @@ export default function NuevaOrdenPage() {
   const handleCrearClienteOT = async () => {
     if (!nuevoNombre.trim()) return;
     setCreandoCliente(true);
-    const empresaNombre = nuevoEmpresa.trim() && nuevoEmpresa !== "Particular"
+    const empresaNombre = esEmpresa && nuevoEmpresa.trim()
       ? nuevoEmpresa.trim().toUpperCase()
       : null;
     const res = await fetch("/api/clientes", {
@@ -155,7 +156,7 @@ export default function NuevaOrdenPage() {
         : nuevoNombre.trim().toUpperCase();
       setBuscarCliente(label);
       setMostrarNuevoCliente(false);
-      setNuevoNombre(""); setNuevoTelefono(""); setNuevoEmpresa("Particular");
+      setNuevoNombre(""); setNuevoTelefono(""); setNuevoEmpresa(""); setEsEmpresa(false);
       setNuevoCuit(""); setNuevoDni(""); setNuevoEmail(""); setNuevoDomicilio(""); setNuevoIva("NO incluyen IVA");
     }
     setCreandoCliente(false);
@@ -244,24 +245,24 @@ export default function NuevaOrdenPage() {
 
           <div className="p-8">
             {mostrarNuevoCliente ? (
-              <div className="bg-gray-900 rounded-2xl p-6 space-y-5">
-                <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Nuevo cliente</p>
-
+              <div className="space-y-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Empresa */}
                   <div className="md:col-span-2">
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Empresa</label>
                     <div className="flex gap-3">
-                      <select value={nuevoEmpresa === "Particular" || !nuevoEmpresa ? "Particular" : "__custom__"}
-                              onChange={e => setNuevoEmpresa(e.target.value === "__custom__" ? "" : e.target.value)}
-                              className="px-4 py-3.5 bg-gray-800 border border-gray-700 text-white rounded-xl text-sm font-bold outline-none focus:border-red-500 transition-all">
-                        <option value="Particular">Particular</option>
-                        <option value="__custom__">Otra empresa...</option>
+                      <select
+                        value={esEmpresa ? "empresa" : "particular"}
+                        onChange={e => { setEsEmpresa(e.target.value === "empresa"); setNuevoEmpresa(""); }}
+                        className="px-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all"
+                      >
+                        <option value="particular">Particular</option>
+                        <option value="empresa">Empresa</option>
                       </select>
-                      {nuevoEmpresa !== "Particular" && (
+                      {esEmpresa && (
                         <input type="text" value={nuevoEmpresa} onChange={e => setNuevoEmpresa(e.target.value)}
                                placeholder="Nombre de la empresa"
-                               className="flex-1 px-4 py-3.5 bg-gray-800 border border-gray-700 text-white rounded-xl text-sm font-bold outline-none focus:border-red-500 transition-all uppercase placeholder:text-gray-600" />
+                               className="flex-1 px-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all uppercase" />
                       )}
                     </div>
                   </div>
@@ -270,7 +271,7 @@ export default function NuevaOrdenPage() {
                   <div className="md:col-span-2">
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Nombre / Cliente *</label>
                     <input type="text" value={nuevoNombre} onChange={e => setNuevoNombre(e.target.value)}
-                           className="w-full px-4 py-3.5 bg-gray-800 border border-gray-700 text-white rounded-xl text-sm font-bold outline-none focus:border-red-500 transition-all uppercase placeholder:text-gray-600" />
+                           className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all uppercase" />
                   </div>
 
                   {/* CUIT */}
@@ -278,7 +279,7 @@ export default function NuevaOrdenPage() {
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">CUIT</label>
                     <input type="text" value={nuevoCuit} onChange={e => setNuevoCuit(e.target.value)}
                            placeholder="XX-XXXXXXXX-X"
-                           className="w-full px-4 py-3.5 bg-gray-800 border border-gray-700 text-white rounded-xl text-sm font-bold outline-none focus:border-red-500 transition-all placeholder:text-gray-600" />
+                           className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all" />
                   </div>
 
                   {/* DNI */}
@@ -286,7 +287,7 @@ export default function NuevaOrdenPage() {
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">DNI</label>
                     <input type="text" value={nuevoDni} onChange={e => setNuevoDni(e.target.value)}
                            placeholder="XXXXXXXX"
-                           className="w-full px-4 py-3.5 bg-gray-800 border border-gray-700 text-white rounded-xl text-sm font-bold outline-none focus:border-red-500 transition-all placeholder:text-gray-600" />
+                           className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all" />
                   </div>
 
                   {/* Mail */}
@@ -294,7 +295,7 @@ export default function NuevaOrdenPage() {
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Mail</label>
                     <input type="email" value={nuevoEmail} onChange={e => setNuevoEmail(e.target.value)}
                            placeholder="correo@ejemplo.com"
-                           className="w-full px-4 py-3.5 bg-gray-800 border border-gray-700 text-white rounded-xl text-sm font-bold outline-none focus:border-red-500 transition-all placeholder:text-gray-600" />
+                           className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all" />
                   </div>
 
                   {/* Teléfono */}
@@ -302,7 +303,7 @@ export default function NuevaOrdenPage() {
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Teléfono *</label>
                     <input type="text" value={nuevoTelefono} onChange={e => setNuevoTelefono(e.target.value)}
                            placeholder="XXXX-XXXXXXX"
-                           className="w-full px-4 py-3.5 bg-gray-800 border border-gray-700 text-white rounded-xl text-sm font-bold outline-none focus:border-red-500 transition-all placeholder:text-gray-600" />
+                           className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all" />
                   </div>
 
                   {/* Domicilio */}
@@ -310,14 +311,14 @@ export default function NuevaOrdenPage() {
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Domicilio</label>
                     <input type="text" value={nuevoDomicilio} onChange={e => setNuevoDomicilio(e.target.value)}
                            placeholder="Calle, número, localidad"
-                           className="w-full px-4 py-3.5 bg-gray-800 border border-gray-700 text-white rounded-xl text-sm font-bold outline-none focus:border-red-500 transition-all uppercase placeholder:text-gray-600" />
+                           className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all uppercase" />
                   </div>
 
                   {/* IVA */}
                   <div className="md:col-span-2">
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">IVA</label>
                     <select value={nuevoIva} onChange={e => setNuevoIva(e.target.value)}
-                            className="w-full px-4 py-3.5 bg-gray-800 border border-gray-700 text-white rounded-xl text-sm font-bold outline-none focus:border-red-500 transition-all">
+                            className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all">
                       <option value="NO incluyen IVA">NO incluyen IVA</option>
                       <option value="Incluyen IVA">Incluyen IVA</option>
                     </select>
@@ -330,7 +331,7 @@ export default function NuevaOrdenPage() {
                     {creandoCliente ? "Creando..." : "Crear y seleccionar cliente"}
                   </button>
                   <button type="button" onClick={() => setMostrarNuevoCliente(false)}
-                          className="text-gray-400 hover:text-white px-4 py-3.5 rounded-xl text-sm font-bold transition-all uppercase">
+                          className="text-gray-400 hover:text-gray-700 px-4 py-3.5 rounded-xl text-sm font-bold transition-all uppercase">
                     Cancelar
                   </button>
                 </div>
