@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import Link from "next/link";
 import { formatEstado, estadoColors, TODOS_ESTADOS, FLUJO_ESTADOS } from "@/lib/estados";
 import { formatFecha, formatFechaHora } from "@/lib/dateUtils";
@@ -43,6 +44,7 @@ export default function OrdenDetallePage() {
   useEffect(() => {
     if (id) cargarOT();
   }, [id]);
+  useAutoRefresh(cargarOT);
 
   const cambiarEstado = async (nuevoEstado: string) => {
     if (!orden) return;

@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import Link from "next/link";
 import {
   ArrowLeft, TrendingUp, TrendingDown, DollarSign, Wallet,
@@ -100,9 +101,9 @@ export default function FinanzasPage() {
   }, [status, router]);
 
   // ── Carga de datos ─────────────────────────────────────────────────────────
-  const cargar = useCallback(async () => {
+  const cargar = useCallback(async (silent = false) => {
     if (status !== "authenticated") return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const [rCajas, rCobros, rGastos, rCheques, rPptos, rClientes, rProveedores] = await Promise.all([
         fetch("/api/cajas").then(r => r.json()),
@@ -155,6 +156,7 @@ export default function FinanzasPage() {
   }, [status]);
 
   useEffect(() => { cargar(); }, [cargar]);
+  useAutoRefresh(() => cargar(true));
 
   // Presupuestos del cliente seleccionado
   useEffect(() => {

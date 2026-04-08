@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { Search, Plus, ArrowLeft, Wrench, Calendar, ClipboardList } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import Link from "next/link";
@@ -32,15 +33,15 @@ export default function OrdenesPage() {
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
 
-  useEffect(() => {
+  const cargar = () => {
     fetch("/api/ordenes")
       .then((r) => r.json())
-      .then((data) => {
-        setOrdenes(data);
-        setLoading(false);
-      })
+      .then((data) => { setOrdenes(data); setLoading(false); })
       .catch(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { cargar(); }, []);
+  useAutoRefresh(cargar);
 
   const filtradas = ordenes.filter((o) => {
     const texto = busqueda.toLowerCase();

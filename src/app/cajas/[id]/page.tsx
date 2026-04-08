@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import Link from "next/link";
 import { 
   ArrowLeft, Wallet, ArrowUpRight, ArrowDownLeft, 
@@ -58,6 +59,7 @@ export default function CajaDetallePage() {
   };
 
   useEffect(() => { if (id) cargar(); }, [id]);
+  useAutoRefresh(cargar);
 
   const guardar = async () => {
     if (!descripcion || !importe) return;

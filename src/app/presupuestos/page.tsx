@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { Trash2, ArrowLeft, Plus, Search, FileText, ChevronRight } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -59,15 +60,15 @@ export default function PresupuestosPage() {
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
 
-  useEffect(() => {
+  const cargar = () => {
     fetch("/api/presupuestos")
       .then((r) => r.json())
-      .then((data) => {
-        setPresupuestos(data);
-        setLoading(false);
-      })
+      .then((data) => { setPresupuestos(data); setLoading(false); })
       .catch(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { cargar(); }, []);
+  useAutoRefresh(cargar);
 
   const eliminarPresupuesto = async (id: string) => {
     setEliminando(true);

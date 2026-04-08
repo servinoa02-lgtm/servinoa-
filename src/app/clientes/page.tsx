@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { Plus, Search, Building2, Phone, Mail, FileText, ArrowLeft, Trash2, ChevronRight, Contact, Briefcase } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -54,6 +55,7 @@ export default function ClientesPage() {
   };
 
   useEffect(() => { cargar(); }, []);
+  useAutoRefresh(cargar);
 
   const filtrados = clientes.filter((c) => {
     const texto = busqueda.toLowerCase();
