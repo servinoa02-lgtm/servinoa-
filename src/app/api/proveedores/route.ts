@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
         email: body.email || null,
         domicilio: body.domicilio || null,
         telefono: body.telefono || null,
+        rubro: body.rubro || null,
         iva: body.iva || null,
       },
     });

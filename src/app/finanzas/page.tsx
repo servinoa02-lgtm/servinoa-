@@ -10,6 +10,7 @@ import {
   Receipt, CheckCircle2, Save, AlertTriangle,
 } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
+import { ProveedorQuickAdd } from "@/components/ui/ProveedorQuickAdd";
 
 interface Caja { id: string; nombre: string; saldo: number; }
 interface Cliente { id: string; nombre: string; empresa?: { nombre: string } | null; }
@@ -28,7 +29,7 @@ interface Movimiento {
   descripcion: string; importe: number; formaPago: string;
   cliente?: string; caja?: string;
 }
-interface Proveedor { id: string; nombre: string; }
+interface Proveedor { id: string; nombre: string; empresa?: string | null; domicilio?: string | null; telefono?: string | null; rubro?: string | null; }
 
 const FORMAS_PAGO = ["Efectivo", "Transferencia", "Cheque", "Mercado Pago", "Otro"];
 
@@ -726,10 +727,12 @@ export default function FinanzasPage() {
             <>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Proveedor (opcional)</label>
-                <select value={gastoProveedorId} onChange={e => setGastoProveedorId(e.target.value)} className={selectCls}>
-                  <option value="">Sin proveedor asociado</option>
-                  {proveedores.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-                </select>
+                <ProveedorQuickAdd
+                  value={gastoProveedorId}
+                  proveedores={proveedores}
+                  onChange={setGastoProveedorId}
+                  onCreated={(p) => setProveedores(prev => [...prev, p].sort((a, b) => a.nombre.localeCompare(b.nombre)))}
+                />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Descripción *</label>

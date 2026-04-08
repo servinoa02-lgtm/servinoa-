@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Drawer } from "@/components/ui/Drawer";
+import { ProveedorQuickAdd } from "@/components/ui/ProveedorQuickAdd";
 
 interface Gasto {
   id: string;
@@ -28,7 +29,7 @@ interface Gasto {
   proveedor?: { nombre: string } | null;
 }
 
-interface Proveedor { id: string; nombre: string; }
+interface Proveedor { id: string; nombre: string; empresa?: string | null; domicilio?: string | null; telefono?: string | null; rubro?: string | null; }
 interface Caja { id: string; nombre: string; }
 
 const FORMAS_PAGO = ["EFECTIVO", "TRANSFERENCIA", "CHEQUE", "TARJETA", "MERCADO PAGO", "OTRO"];
@@ -269,11 +270,12 @@ export default function GastosPage() {
               <>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Proveedor (Opcional)</label>
-                  <select value={proveedorId} onChange={(e) => setProveedorId(e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none uppercase appearance-none cursor-pointer">
-                    <option value="">SIN PROVEEDOR ASOCIADO</option>
-                    {proveedores.map((p) => <option key={p.id} value={p.id}>{p.nombre.toUpperCase()}</option>)}
-                  </select>
+                  <ProveedorQuickAdd
+                    value={proveedorId}
+                    proveedores={proveedores}
+                    onChange={setProveedorId}
+                    onCreated={(p) => setProveedores(prev => [...prev, p].sort((a, b) => a.nombre.localeCompare(b.nombre)))}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Descripción *</label>

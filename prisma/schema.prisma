@@ -551,6 +551,7 @@ model Proveedor {
   email     String?
   domicilio String?
   telefono  String?
+  rubro     String?
   iva       String?
   createdAt DateTime @default(now())
 
