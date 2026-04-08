@@ -37,7 +37,7 @@ export function Sidebar() {
       className={`bg-white border-r border-gray-200 h-screen sticky top-0 transition-all duration-300 flex flex-col z-40 ${collapsed ? 'w-20' : 'w-64'}`}
     >
       {/* Header / Logo */}
-      <div className="h-20 flex items-center justify-between px-6 border-b border-gray-100">
+      <div className={`h-20 flex items-center border-b border-gray-100 px-4 ${collapsed ? 'justify-center' : 'justify-between px-6'}`}>
         {!collapsed && (
           <Link href="/dashboard" className="flex items-center gap-2 group">
             <h1 className="text-2xl font-bold tracking-tight text-gray-900 font-sans">
@@ -46,13 +46,13 @@ export function Sidebar() {
           </Link>
         )}
         {collapsed && (
-          <div className="w-10 h-10 rounded-lg bg-red-600 flex items-center justify-center mx-auto">
-            <span className="text-white font-bold text-xl">S</span>
+          <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center">
+            <span className="text-white font-bold text-base">S</span>
           </div>
         )}
-        <button 
+        <button
           onClick={() => setCollapsed(!collapsed)}
-          className={`p-1.5 rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-red-600 hover:border-red-200 transition-all ${collapsed ? 'hidden' : 'flex'}`}
+          className="flex p-1.5 rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-red-600 hover:border-red-200 transition-all"
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>

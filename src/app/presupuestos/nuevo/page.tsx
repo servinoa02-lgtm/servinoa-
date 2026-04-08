@@ -10,6 +10,7 @@ interface Cliente {
   id: string;
   nombre: string;
   empresa?: { nombre: string } | null;
+  iva?: string;
 }
 
 interface Orden {
@@ -217,7 +218,13 @@ function NuevoPresupuestoForm() {
               </div>
             ) : !mostrarNuevoCliente ? (
               <div>
-                <select value={clienteId} onChange={(e) => { setClienteId(e.target.value); setOrdenId(""); }}
+                <select value={clienteId} onChange={(e) => {
+                  const id = e.target.value;
+                  setClienteId(id);
+                  setOrdenId("");
+                  const c = clientes.find(cl => cl.id === id);
+                  if (c) setIncluyeIva(c.iva === "Incluyen IVA");
+                }}
                         className="w-full px-6 py-4 bg-gray-50 border-2 border-gray-100 focus:border-red-600 rounded-2xl text-sm font-bold outline-none transition-all uppercase">
                   <option value="">Seleccionar cliente...</option>
                   {clientes.map((c) => (
