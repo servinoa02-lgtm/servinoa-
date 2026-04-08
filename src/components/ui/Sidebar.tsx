@@ -17,13 +17,13 @@ import { useState } from "react";
 import { LogoutButton } from "./LogoutButton";
 
 const menuItems = [
-  { name: "Dashboard", icon: <BarChart3 size={20} />, href: "/dashboard" },
-  { name: "Taller (OT)", icon: <Wrench size={20} />, href: "/ordenes" },
-  { name: "Presupuestos", icon: <FileText size={20} />, href: "/presupuestos" },
-  { name: "Finanzas", icon: <Wallet size={20} />, href: "/cobranzas" },
-  { name: "Clientes", icon: <Users size={20} />, href: "/clientes" },
-  { name: "Tareas", icon: <CheckSquare size={20} />, href: "/tareas" },
-  { name: "Configuración", icon: <Settings size={20} />, href: "/configuracion" },
+  { name: "Dashboard", icon: <BarChart3 size={20} />, href: "/dashboard", activeFor: ["/dashboard"] },
+  { name: "Taller (OT)", icon: <Wrench size={20} />, href: "/ordenes", activeFor: ["/ordenes"] },
+  { name: "Presupuestos", icon: <FileText size={20} />, href: "/presupuestos", activeFor: ["/presupuestos"] },
+  { name: "Finanzas", icon: <Wallet size={20} />, href: "/finanzas", activeFor: ["/finanzas", "/cobranzas", "/gastos", "/cajas", "/cheques"] },
+  { name: "Clientes", icon: <Users size={20} />, href: "/clientes", activeFor: ["/clientes"] },
+  { name: "Tareas", icon: <CheckSquare size={20} />, href: "/tareas", activeFor: ["/tareas"] },
+  { name: "Configuración", icon: <Settings size={20} />, href: "/configuracion", activeFor: ["/configuracion"] },
 ];
 
 export function Sidebar() {
@@ -61,7 +61,9 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
         {menuItems.map((item) => {
-          const isActive = pathname.startsWith(item.href);
+          const isActive = item.activeFor
+          ? item.activeFor.some((p) => pathname.startsWith(p))
+          : pathname.startsWith(item.href);
           return (
             <Link
               key={item.name}
