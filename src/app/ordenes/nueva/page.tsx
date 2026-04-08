@@ -78,7 +78,6 @@ export default function NuevaOrdenPage() {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
 
-  // Nuevo cliente inline
   const [mostrarNuevoCliente, setMostrarNuevoCliente] = useState(false);
   const [nuevoNombre, setNuevoNombre] = useState("");
   const [nuevoTelefono, setNuevoTelefono] = useState("");
