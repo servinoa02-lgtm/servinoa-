@@ -230,7 +230,7 @@ export default function PresupuestoDetallePage() {
                    </div>
                 </div>
                 {ppto.estado === "APROBADO" && ppto.saldo > 0 && (
-                  <button onClick={() => router.push(`/cobranzas/nueva?presupuestoId=${ppto.id}`)} className="w-full bg-emerald-600 text-white py-3 rounded-xl text-[10px] font-bold hover:bg-emerald-700 transition-all uppercase tracking-widest">
+                  <button onClick={() => router.push(`/cobranzas?presupuestoId=${ppto.id}`)} className="w-full bg-emerald-600 text-white py-3 rounded-xl text-[10px] font-bold hover:bg-emerald-700 transition-all uppercase tracking-widest">
                      Registrar Pago
                   </button>
                 )}

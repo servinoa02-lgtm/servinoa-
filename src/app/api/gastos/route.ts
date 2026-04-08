@@ -21,7 +21,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { tipo, descripcion, importe, formaPago, cajaId, usuarioId, proveedorId, comprobante, firma, empleado, desde, hasta } = body;
+    const { tipo, descripcion, importe, formaPago, cajaId, usuarioId, proveedorId, comprobante, firma, empleado, desde, hasta, fecha } = body;
 
     const gasto = await prisma.gasto.create({
       data: {
@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
         empleado: empleado || null,
         desde: desde ? new Date(desde) : null,
         hasta: hasta ? new Date(hasta) : null,
+        ...(fecha && { fecha: new Date(fecha) }),
       },
       include: {
         usuario: { select: { nombre: true } },
