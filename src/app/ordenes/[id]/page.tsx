@@ -286,7 +286,7 @@ export default function OrdenDetallePage() {
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="bg-gray-50/50 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2"><FileText size={14} className="text-red-600" /> Vínculos de Pago</h2>
+                <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2"><FileText size={14} className="text-red-600" /> Presupuestos asociados</h2>
                 <button onClick={() => router.push(`/presupuestos/nuevo?otId=${orden.id}`)} className="text-[9px] font-bold text-red-600 uppercase border border-red-600 px-2 py-0.5 rounded-lg hover:bg-red-600 hover:text-white transition-all">Crear</button>
               </div>
               <div className="p-4 space-y-2">
