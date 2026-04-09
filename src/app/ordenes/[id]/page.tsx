@@ -7,8 +7,9 @@ import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import Link from "next/link";
 import { formatEstado, estadoColors, TODOS_ESTADOS, FLUJO_ESTADOS } from "@/lib/estados";
 import { formatFecha, formatFechaHora } from "@/lib/dateUtils";
-import { Wrench, Phone, FileText, Send, AlertTriangle, ArrowLeft, Printer, User, Calendar, ChevronRight, CheckCircle2, MoreHorizontal } from "lucide-react";
+import { Wrench, Phone, FileText, Send, AlertTriangle, ArrowLeft, Printer, User, Calendar, ChevronRight, CheckCircle2, MoreHorizontal, ShieldCheck } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { CierreOTModal } from "@/components/ot/CierreOTModal";
 
 export default function OrdenDetallePage() {
   const { data: session, status } = useSession();
@@ -25,6 +26,7 @@ export default function OrdenDetallePage() {
   const [nuevaNota, setNuevaNota] = useState("");
   const [esSeguimiento, setEsSeguimiento] = useState(false);
   const [mostrarTodosEstados, setMostrarTodosEstados] = useState(false);
+  const [cierrePendiente, setCierrePendiente] = useState<"ENTREGADO_REALIZADO" | "ENTREGADO_SIN_REALIZAR" | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -53,6 +55,15 @@ export default function OrdenDetallePage() {
       setActiveTab("revision");
       return;
     }
+    // Interceptar cierres de OT: requieren constancia de retiro con firma.
+    // Solo cuando el cambio viene del flujo natural (no del menú "Más estados" que es escape de admin).
+    if (
+      !mostrarTodosEstados &&
+      (nuevoEstado === "ENTREGADO_REALIZADO" || nuevoEstado === "ENTREGADO_SIN_REALIZAR")
+    ) {
+      setCierrePendiente(nuevoEstado);
+      return;
+    }
     setActualizando(true);
     await fetch(`/api/ordenes/${id}`, {
       method: "PATCH",
@@ -62,6 +73,21 @@ export default function OrdenDetallePage() {
     cargarOT();
     setActualizando(false);
     setMostrarTodosEstados(false);
+  };
+
+  const confirmarCierreOT = async (data: { nombre: string; dni: string; firma: string }) => {
+    if (!orden || !cierrePendiente) return;
+    const res = await fetch(`/api/ordenes/${id}/retiros`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...data, tipoEntrega: cierrePendiente }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "No se pudo registrar el retiro.");
+    }
+    setCierrePendiente(null);
+    cargarOT();
   };
 
   const guardarRevision = async () => {
@@ -100,9 +126,22 @@ export default function OrdenDetallePage() {
 
   if (!orden || orden.error) return <div className="p-20 text-center text-gray-400 font-bold uppercase tracking-widest">Orden no encontrada</div>;
 
-  const siguientesEstados = FLUJO_ESTADOS[orden.estado] || [];
+  const siguientesEstadosBase = FLUJO_ESTADOS[orden.estado] || [];
+
+  // Coherencia APROBADO ↔ RECHAZADO en PARA_ENTREGAR (filtro visual; ADMIN puede forzar desde "Más estados").
+  const historial: Array<{ estadoNuevo: string }> = orden.historial || [];
+  const tuvoRechazado = historial.some((h) => h.estadoNuevo === "RECHAZADO");
+  const tuvoAprobado = historial.some((h) => h.estadoNuevo === "APROBADO");
+  const siguientesEstados = siguientesEstadosBase.filter((est: string) => {
+    if (orden.estado !== "PARA_ENTREGAR") return true;
+    if (est === "ENTREGADO_REALIZADO" && tuvoRechazado && !tuvoAprobado) return false;
+    if (est === "ENTREGADO_SIN_REALIZAR" && tuvoAprobado && !tuvoRechazado) return false;
+    return true;
+  });
+
   const equipoStr = [orden.maquina?.nombre, orden.marca?.nombre, orden.modelo?.nombre].filter(Boolean).join(" - ");
   const totalPresupuestado = orden.presupuestos?.reduce((sum: number, p: any) => sum + (p.total || 0), 0) || 0;
+  const ultimoRetiro = orden.retiros?.[0];
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
@@ -214,6 +253,36 @@ export default function OrdenDetallePage() {
                 </div>
               </div>
             </div>
+
+            {ultimoRetiro && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="bg-gray-50/50 px-6 py-4 border-b border-gray-100">
+                  <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                    <ShieldCheck size={14} className="text-emerald-600" /> Constancia de Retiro
+                  </h2>
+                </div>
+                <div className="p-6 space-y-4">
+                  <div>
+                    <label className="text-[9px] font-bold text-gray-400 uppercase block mb-1">Retira</label>
+                    <p className="text-sm font-bold text-gray-900 uppercase leading-tight">{ultimoRetiro.nombre}</p>
+                    <p className="text-[10px] font-mono font-bold text-gray-500 mt-0.5">DNI {ultimoRetiro.dni}</p>
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-bold text-gray-400 uppercase block mb-1">Fecha</label>
+                    <p className="text-[10px] font-bold text-gray-700">{formatFechaHora(ultimoRetiro.fecha)}</p>
+                  </div>
+                  {ultimoRetiro.firma && (
+                    <div>
+                      <label className="text-[9px] font-bold text-gray-400 uppercase block mb-1">Firma</label>
+                      <div className="border border-gray-200 rounded-xl bg-white p-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={ultimoRetiro.firma} alt="Firma del receptor" className="w-full h-24 object-contain" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="bg-gray-50/50 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
@@ -353,6 +422,14 @@ export default function OrdenDetallePage() {
           </div>
         </div>
       </main>
+
+      <CierreOTModal
+        isOpen={cierrePendiente !== null}
+        destino={cierrePendiente}
+        ordenNumero={orden.numero}
+        onCancel={() => setCierrePendiente(null)}
+        onConfirm={confirmarCierreOT}
+      />
     </div>
   );
 }

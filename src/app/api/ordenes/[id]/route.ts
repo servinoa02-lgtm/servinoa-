@@ -27,6 +27,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           orderBy: { fecha: "desc" },
         },
         fotos: { orderBy: { fecha: "desc" } },
+        retiros: { orderBy: { fecha: "desc" } },
+        historial: { orderBy: { fecha: "asc" } },
       },
     });
     if (!orden) {
