@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/requireAuth";
+
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const sesion = await requireAuth();
+  if (sesion instanceof NextResponse) return sesion;
+
   const { id } = await params;
   try {
     const orden = await prisma.ordenTrabajo.findUnique({
@@ -35,6 +40,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const sesion = await requireAuth(["ADMIN", "TECNICO", "VENTAS"]);
+  if (sesion instanceof NextResponse) return sesion;
+
   const { id } = await params;
   try {
     const body = await req.json();
@@ -68,6 +76,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const sesion = await requireAuth("ADMIN");
+  if (sesion instanceof NextResponse) return sesion;
+
   const { id } = await params;
   try {
     const presupuestosCount = await prisma.presupuesto.count({ where: { ordenId: id } });

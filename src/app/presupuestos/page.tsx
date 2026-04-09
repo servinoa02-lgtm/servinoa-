@@ -7,6 +7,7 @@ import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { Trash2, ArrowLeft, Plus, Search, FileText, ChevronRight } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { Toast } from "@/components/ui/Toast";
 import { formatFecha } from "@/lib/dateUtils";
 import Link from "next/link";
 
@@ -55,6 +56,7 @@ export default function PresupuestosPage() {
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; numero: number; fecha: string } | null>(null);
   const [eliminando, setEliminando] = useState(false);
   const [errorDelete, setErrorDelete] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -62,9 +64,15 @@ export default function PresupuestosPage() {
 
   const cargar = () => {
     fetch("/api/presupuestos")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Error al cargar presupuestos");
+        return r.json();
+      })
       .then((data) => { setPresupuestos(data); setLoading(false); })
-      .catch(() => setLoading(false));
+      .catch((e) => {
+        setLoading(false);
+        setToast({ message: e.message, type: "error" });
+      });
   };
 
   useEffect(() => { cargar(); }, []);
@@ -82,6 +90,7 @@ export default function PresupuestosPage() {
     }
     setConfirmDelete(null);
     setPresupuestos((prev) => prev.filter((p) => p.id !== id));
+    setToast({ message: "Presupuesto eliminado correctamente", type: "success" });
   };
 
   const filtrados = presupuestos.filter((p) => {
@@ -247,6 +256,14 @@ export default function PresupuestosPage() {
            {errorDelete}
            <button onClick={() => setErrorDelete(null)} className="ml-4 text-[10px] uppercase underline text-gray-400 hover:text-white">Cerrar</button>
         </div>
+      )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );

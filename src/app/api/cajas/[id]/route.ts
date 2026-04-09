@@ -43,12 +43,30 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const body = await req.json();
     const { tipo, descripcion, importe, formaPago } = body;
 
+    // ─── Validaciones ───
+    const importeNum = parseFloat(importe);
+    if (!Number.isFinite(importeNum) || importeNum <= 0) {
+      return NextResponse.json(
+        { error: "El importe debe ser un número mayor a 0" },
+        { status: 400 }
+      );
+    }
+    if (tipo !== "ingreso" && tipo !== "egreso") {
+      return NextResponse.json(
+        { error: 'El tipo de movimiento debe ser "ingreso" o "egreso"' },
+        { status: 400 }
+      );
+    }
+    if (!descripcion || !String(descripcion).trim()) {
+      return NextResponse.json({ error: "La descripción es obligatoria" }, { status: 400 });
+    }
+
     const movimiento = await prisma.movimientoCaja.create({
       data: {
         cajaId: id,
         descripcion,
-        ingreso: tipo === "ingreso" ? parseFloat(importe) : 0,
-        egreso: tipo === "egreso" ? parseFloat(importe) : 0,
+        ingreso: tipo === "ingreso" ? importeNum : 0,
+        egreso: tipo === "egreso" ? importeNum : 0,
         formaPago: formaPago || "Efectivo",
       },
     });

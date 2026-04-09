@@ -7,6 +7,7 @@ import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { Plus, Search, Building2, Phone, Mail, FileText, ArrowLeft, Trash2, ChevronRight, Contact, Briefcase } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Toast } from "@/components/ui/Toast";
 import Link from "next/link";
 
 interface Cliente {
@@ -32,6 +33,7 @@ export default function ClientesPage() {
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; nombre: string } | null>(null);
   const [eliminando, setEliminando] = useState(false);
   const [errorDelete, setErrorDelete] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   // Formulario nuevo cliente
   const [fNombre, setFNombre] = useState("");
@@ -49,9 +51,15 @@ export default function ClientesPage() {
 
   const cargar = () => {
     fetch("/api/clientes")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Error al cargar clientes");
+        return r.json();
+      })
       .then((data) => { setClientes(data); setLoading(false); })
-      .catch(() => setLoading(false));
+      .catch((e) => {
+        setLoading(false);
+        setToast({ message: e.message, type: "error" });
+      });
   };
 
   useEffect(() => { cargar(); }, []);
@@ -84,23 +92,33 @@ export default function ClientesPage() {
   const guardarCliente = async () => {
     if (!fNombre.trim()) return;
     setGuardando(true);
-    await fetch("/api/clientes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        nombre: fNombre.toUpperCase(),
-        empresaNombre: fEmpresa ? fEmpresa.toUpperCase() : null,
-        telefono: fTelefono || null,
-        email: fEmail || null,
-        dni: fDni || null,
-        domicilio: fDomicilio ? fDomicilio.toUpperCase() : null,
-        iva: fIva,
-      }),
-    });
-    setMostrarForm(false);
-    setFNombre(""); setFEmpresa(""); setFTelefono(""); setFEmail(""); setFDni(""); setFDomicilio("");
-    setGuardando(false);
-    cargar();
+    try {
+      const res = await fetch("/api/clientes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: fNombre.toUpperCase(),
+          empresaNombre: fEmpresa ? fEmpresa.toUpperCase() : null,
+          telefono: fTelefono || null,
+          email: fEmail || null,
+          dni: fDni || null,
+          domicilio: fDomicilio ? fDomicilio.toUpperCase() : null,
+          iva: fIva,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Error al crear cliente");
+      }
+      setMostrarForm(false);
+      setFNombre(""); setFEmpresa(""); setFTelefono(""); setFEmail(""); setFDni(""); setFDomicilio("");
+      setToast({ message: "Cliente creado correctamente", type: "success" });
+      cargar();
+    } catch (e: any) {
+      setToast({ message: e.message || "Error al crear cliente", type: "error" });
+    } finally {
+      setGuardando(false);
+    }
   };
 
   if (status === "loading" || loading) {
@@ -303,6 +321,14 @@ export default function ClientesPage() {
           {errorDelete}
           <button onClick={() => setErrorDelete(null)} className="ml-4 text-[10px] uppercase underline text-gray-400">Cerrar</button>
         </div>
+      )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { Toast } from "@/components/ui/Toast";
 import { formatFecha } from "@/lib/dateUtils";
 
 interface Cheque {
@@ -40,6 +41,7 @@ export default function ChequesPage() {
   const [mostrarForm, setMostrarForm] = useState(false);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [busqueda, setBusqueda] = useState("");
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const [clienteId, setClienteId] = useState("");
   const [numeroCheque, setNumeroCheque] = useState("");
@@ -58,7 +60,16 @@ export default function ChequesPage() {
   }, [status, router]);
 
   const cargar = () => {
-    fetch("/api/cheques").then((r) => r.json()).then((d) => { setCheques(d); setLoading(false); }).catch(() => setLoading(false));
+    fetch("/api/cheques")
+      .then((r) => {
+        if (!r.ok) throw new Error("Error al cargar cheques");
+        return r.json();
+      })
+      .then((d) => { setCheques(d); setLoading(false); })
+      .catch((e) => {
+        setLoading(false);
+        setToast({ message: e.message, type: "error" });
+      });
   };
 
   useEffect(() => { cargar(); }, []);
@@ -79,26 +90,36 @@ export default function ChequesPage() {
   const guardar = async () => {
     if (!importe) return;
     setGuardando(true);
-    await fetch("/api/cheques", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        clienteId: clienteId || null, 
-        numeroCheque, 
-        banco: banco.toUpperCase(), 
-        librador: librador.toUpperCase(), 
-        importe, 
-        fechaEmision, 
-        fechaCobro, 
-        endosadoA, 
-        descripcion: (descripcion || "").toUpperCase(), 
-        estado: estadoForm 
-      }),
-    });
-    setMostrarForm(false);
-    setNumeroCheque(""); setBanco(""); setLibrador(""); setImporte(""); setFechaEmision(""); setFechaCobro(""); setEndosadoA(""); setDescripcion(""); setClienteId("");
-    setGuardando(false);
-    cargar();
+    try {
+      const res = await fetch("/api/cheques", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          clienteId: clienteId || null, 
+          numeroCheque, 
+          banco: banco.toUpperCase(), 
+          librador: librador.toUpperCase(), 
+          importe, 
+          fechaEmision, 
+          fechaCobro, 
+          endosadoA, 
+          descripcion: (descripcion || "").toUpperCase(), 
+          estado: estadoForm 
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Error al registrar cheque");
+      }
+      setMostrarForm(false);
+      setNumeroCheque(""); setBanco(""); setLibrador(""); setImporte(""); setFechaEmision(""); setFechaCobro(""); setEndosadoA(""); setDescripcion(""); setClienteId("");
+      setToast({ message: "Cheque registrado correctamente", type: "success" });
+      cargar();
+    } catch (e: any) {
+      setToast({ message: e.message || "Error al registrar cheque", type: "error" });
+    } finally {
+      setGuardando(false);
+    }
   };
 
   if (status === "loading" || loading) return (
@@ -289,6 +310,14 @@ export default function ChequesPage() {
           </div>
         </div>
       </Drawer>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

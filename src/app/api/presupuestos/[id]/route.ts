@@ -3,8 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { presupuestoService } from "@/services/presupuestoService";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { requireAuth } from "@/lib/requireAuth";
+import { calcularTotalConIVA } from "@/lib/constants";
+
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const sesion = await requireAuth();
+  if (sesion instanceof NextResponse) return sesion;
+
   const { id } = await params;
   try {
     const presupuesto = await prisma.presupuesto.findUnique({
@@ -36,7 +42,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     const subtotal = presupuesto.items.reduce((sum, item) => sum + item.total, 0);
-    const total = presupuesto.incluyeIva ? subtotal * 1.21 : subtotal;
+    const total = calcularTotalConIVA(subtotal, presupuesto.incluyeIva);
     const cobrado = presupuesto.cobranzas.reduce((sum, c) => sum + c.importe, 0);
 
     return NextResponse.json({ ...presupuesto, total, subtotal, cobrado, saldo: total - cobrado });
@@ -47,6 +53,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const sesion = await requireAuth(["ADMIN", "VENTAS"]);
+  if (sesion instanceof NextResponse) return sesion;
+
   const { id } = await params;
   try {
     const body = await req.json();
@@ -98,7 +107,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!presupuesto) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
 
     const subtotal = presupuesto.items.reduce((sum, item) => sum + item.total, 0);
-    const total = presupuesto.incluyeIva ? subtotal * 1.21 : subtotal;
+    const total = calcularTotalConIVA(subtotal, presupuesto.incluyeIva);
     const cobrado = presupuesto.cobranzas.reduce((sum, c) => sum + c.importe, 0);
 
     return NextResponse.json({ ...presupuesto, total, subtotal, cobrado, saldo: total - cobrado });

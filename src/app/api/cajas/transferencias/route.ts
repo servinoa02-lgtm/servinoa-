@@ -22,41 +22,67 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { cajaOrigenId, cajaDestinoId, monto, descripcion, formaPagoOrigen, formaPagoDestino } = body;
 
-    const transferencia = await prisma.transferenciaCaja.create({
-      data: {
-        cajaOrigenId,
-        cajaDestinoId,
-        monto: parseFloat(monto),
-        descripcion: descripcion || null,
-        formaPagoOrigen: formaPagoOrigen || "Efectivo",
-        formaPagoDestino: formaPagoDestino || "Efectivo",
-      },
-      include: {
-        cajaOrigen: { select: { nombre: true } },
-        cajaDestino: { select: { nombre: true } },
-      },
-    });
+    // ─── Validaciones ───
+    const montoNum = parseFloat(monto);
+    if (!Number.isFinite(montoNum) || montoNum <= 0) {
+      return NextResponse.json(
+        { error: "El monto debe ser un número mayor a 0" },
+        { status: 400 }
+      );
+    }
+    if (!cajaOrigenId || !cajaDestinoId) {
+      return NextResponse.json(
+        { error: "Debe seleccionar caja de origen y caja de destino" },
+        { status: 400 }
+      );
+    }
+    if (cajaOrigenId === cajaDestinoId) {
+      return NextResponse.json(
+        { error: "La caja de origen y destino no pueden ser la misma" },
+        { status: 400 }
+      );
+    }
 
-    // Registrar egreso en origen
-    await prisma.movimientoCaja.create({
-      data: {
-        cajaId: cajaOrigenId,
-        descripcion: `Transferencia a ${transferencia.cajaDestino.nombre}${descripcion ? ` - ${descripcion}` : ""}`,
-        ingreso: 0,
-        egreso: parseFloat(monto),
-        formaPago: formaPagoOrigen || "Efectivo",
-      },
-    });
+    // ─── Todo en una sola transacción para evitar plata duplicada o perdida ───
+    const transferencia = await prisma.$transaction(async (tx) => {
+      const nuevaTransferencia = await tx.transferenciaCaja.create({
+        data: {
+          cajaOrigenId,
+          cajaDestinoId,
+          monto: montoNum,
+          descripcion: descripcion || null,
+          formaPagoOrigen: formaPagoOrigen || "Efectivo",
+          formaPagoDestino: formaPagoDestino || "Efectivo",
+        },
+        include: {
+          cajaOrigen: { select: { nombre: true } },
+          cajaDestino: { select: { nombre: true } },
+        },
+      });
 
-    // Registrar ingreso en destino
-    await prisma.movimientoCaja.create({
-      data: {
-        cajaId: cajaDestinoId,
-        descripcion: `Transferencia desde ${transferencia.cajaOrigen.nombre}${descripcion ? ` - ${descripcion}` : ""}`,
-        ingreso: parseFloat(monto),
-        egreso: 0,
-        formaPago: formaPagoDestino || "Efectivo",
-      },
+      // Registrar egreso en origen
+      await tx.movimientoCaja.create({
+        data: {
+          cajaId: cajaOrigenId,
+          descripcion: `Transferencia a ${nuevaTransferencia.cajaDestino.nombre}${descripcion ? ` - ${descripcion}` : ""}`,
+          ingreso: 0,
+          egreso: montoNum,
+          formaPago: formaPagoOrigen || "Efectivo",
+        },
+      });
+
+      // Registrar ingreso en destino
+      await tx.movimientoCaja.create({
+        data: {
+          cajaId: cajaDestinoId,
+          descripcion: `Transferencia desde ${nuevaTransferencia.cajaOrigen.nombre}${descripcion ? ` - ${descripcion}` : ""}`,
+          ingreso: montoNum,
+          egreso: 0,
+          formaPago: formaPagoDestino || "Efectivo",
+        },
+      });
+
+      return nuevaTransferencia;
     });
 
     return NextResponse.json(transferencia);

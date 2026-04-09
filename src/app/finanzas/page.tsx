@@ -13,6 +13,20 @@ import {
 import { Drawer } from "@/components/ui/Drawer";
 import { ProveedorQuickAdd } from "@/components/ui/ProveedorQuickAdd";
 import { formatFecha, hoyISO } from "@/lib/dateUtils";
+import { FORMAS_PAGO } from "@/lib/constants";
+
+
+function campo(label: string, children: React.ReactNode) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+const inputCls = "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold outline-none focus:border-red-600 focus:bg-white transition-all";
+const selectCls = inputCls + " appearance-none cursor-pointer";
 
 interface Caja { id: string; nombre: string; saldo: number; }
 interface Cliente { id: string; nombre: string; empresa?: { nombre: string } | null; }
@@ -33,20 +47,6 @@ interface Movimiento {
 }
 interface Proveedor { id: string; nombre: string; empresa?: string | null; domicilio?: string | null; telefono?: string | null; rubro?: string | null; }
 
-const FORMAS_PAGO = ["Efectivo", "Transferencia", "Cheque", "Mercado Pago", "Otro"];
-
-function campo(label: string, children: React.ReactNode) {
-  return (
-    <div className="space-y-1.5">
-      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">{label}</label>
-      {children}
-    </div>
-  );
-}
-
-const inputCls = "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold outline-none focus:border-red-600 focus:bg-white transition-all";
-const selectCls = inputCls + " appearance-none cursor-pointer";
-
 export default function FinanzasPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -56,9 +56,11 @@ export default function FinanzasPage() {
   const [cobrosP, setCobrosP] = useState<Presupuesto[]>([]);
   const [cheques, setCheques] = useState<Cheque[]>([]);
   const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
+  const [allMovimientos, setAllMovimientos] = useState<Movimiento[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorCarga, setErrorCarga] = useState("");
 
   // ── Form Cobro ─────────────────────────────────────────────────────────────
   const [mostrarCobro, setMostrarCobro] = useState(false);
@@ -104,16 +106,26 @@ export default function FinanzasPage() {
   const cargar = useCallback(async (silent = false) => {
     if (status !== "authenticated") return;
     if (!silent) setLoading(true);
+    setErrorCarga("");
     try {
-      const [rCajas, rCobros, rGastos, rCheques, rPptos, rClientes, rProveedores] = await Promise.all([
-        fetch("/api/cajas").then(r => r.json()),
-        fetch("/api/cobranzas").then(r => r.json()),
-        fetch("/api/gastos").then(r => r.json()),
-        fetch("/api/cheques").then(r => r.json()),
-        fetch("/api/presupuestos").then(r => r.json()),
-        fetch("/api/clientes").then(r => r.json()),
-        fetch("/api/proveedores").then(r => r.json()),
+      const responses = await Promise.all([
+        fetch("/api/cajas"),
+        fetch("/api/cobranzas"),
+        fetch("/api/gastos"),
+        fetch("/api/cheques"),
+        fetch("/api/presupuestos"),
+        fetch("/api/clientes"),
+        fetch("/api/proveedores"),
       ]);
+
+      // Verificar que todas las respuestas sean ok
+      for (const r of responses) {
+        if (!r.ok) throw new Error(`Error al cargar datos (${r.status})`);
+      }
+
+      const [rCajas, rCobros, rGastos, rCheques, rPptos, rClientes, rProveedores] = await Promise.all(
+        responses.map(r => r.json())
+      );
 
       setCajas(rCajas);
       setClientes(rClientes);
@@ -145,11 +157,15 @@ export default function FinanzasPage() {
         descripcion: g.descripcion, importe: g.importe, formaPago: g.formaPago,
         caja: g.caja?.nombre,
       }));
-      setMovimientos([...ingresos, ...egresos]
-        .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
-        .slice(0, 20));
-    } catch (e) {
+
+      const todos = [...ingresos, ...egresos]
+        .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+
+      setAllMovimientos(todos);
+      setMovimientos(todos.slice(0, 20));
+    } catch (e: any) {
       console.error(e);
+      setErrorCarga(e.message || "Error al cargar datos financieros");
     } finally {
       setLoading(false);
     }
@@ -171,14 +187,14 @@ export default function FinanzasPage() {
     }
   }, [cobroClienteId, cobroTipo]);
 
-  // ── KPIs ───────────────────────────────────────────────────────────────────
+  // ── KPIs (calculados sobre TODOS los movimientos, no los 20 mostrados) ───
   const ahora = new Date();
   const delMes = (movs: Movimiento[]) => movs.filter(m => {
     const f = new Date(m.fecha);
     return f.getMonth() === ahora.getMonth() && f.getFullYear() === ahora.getFullYear();
   });
-  const ingresosList = movimientos.filter(m => m.origen === "INGRESO");
-  const egresosList = movimientos.filter(m => m.origen === "EGRESO");
+  const ingresosList = allMovimientos.filter(m => m.origen === "INGRESO");
+  const egresosList = allMovimientos.filter(m => m.origen === "EGRESO");
   const totalCajas = cajas.reduce((s, c) => s + c.saldo, 0);
   const cobrosDelMes = delMes(ingresosList).reduce((s, m) => s + m.importe, 0);
   const gastosDelMes = delMes(egresosList).reduce((s, m) => s + m.importe, 0);

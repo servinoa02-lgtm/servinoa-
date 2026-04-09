@@ -12,7 +12,9 @@ import {
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Drawer } from "@/components/ui/Drawer";
 import { ProveedorQuickAdd } from "@/components/ui/ProveedorQuickAdd";
+import { Toast } from "@/components/ui/Toast";
 import { formatFecha } from "@/lib/dateUtils";
+import { FORMAS_PAGO } from "@/lib/constants";
 
 interface Gasto {
   id: string;
@@ -33,7 +35,7 @@ interface Gasto {
 interface Proveedor { id: string; nombre: string; empresa?: string | null; domicilio?: string | null; telefono?: string | null; rubro?: string | null; }
 interface Caja { id: string; nombre: string; }
 
-const FORMAS_PAGO = ["EFECTIVO", "TRANSFERENCIA", "CHEQUE", "TARJETA", "MERCADO PAGO", "OTRO"];
+const FORMAS_PAGO_GASTO = [...FORMAS_PAGO] as const;
 
 export default function GastosPage() {
   const { data: session, status } = useSession();
@@ -46,7 +48,7 @@ export default function GastosPage() {
   const [tipo, setTipo] = useState<"GASTO_VARIOS" | "SUELDO">("GASTO_VARIOS");
   const [descripcion, setDescripcion] = useState("");
   const [importe, setImporte] = useState("");
-  const [formaPago, setFormaPago] = useState("EFECTIVO");
+  const [formaPago, setFormaPago] = useState<string>(FORMAS_PAGO[0]);
   const [cajaId, setCajaId] = useState("");
   const [proveedorId, setProveedorId] = useState("");
   const [comprobante, setComprobante] = useState("");
@@ -58,6 +60,7 @@ export default function GastosPage() {
   const [guardando, setGuardando] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [eliminando, setEliminando] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -66,7 +69,16 @@ export default function GastosPage() {
   }, [status, router]);
 
   const cargar = () => {
-    fetch("/api/gastos").then((r) => r.json()).then((d) => { setGastos(d); setLoading(false); }).catch(() => setLoading(false));
+    fetch("/api/gastos")
+      .then((r) => {
+        if (!r.ok) throw new Error("Error al cargar gastos");
+        return r.json();
+      })
+      .then((d) => { setGastos(d); setLoading(false); })
+      .catch((e) => {
+        setLoading(false);
+        setToast({ message: e.message || "Error al cargar gastos", type: "error" });
+      });
   };
 
   useEffect(() => { cargar(); }, []);
@@ -78,10 +90,20 @@ export default function GastosPage() {
 
   const eliminarGasto = async (id: string) => {
     setEliminando(true);
-    await fetch(`/api/gastos/${id}`, { method: "DELETE" });
-    setEliminando(false);
-    setConfirmDelete(null);
-    cargar();
+    try {
+      const res = await fetch(`/api/gastos/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Error al eliminar gasto");
+      }
+      setToast({ message: "Gasto eliminado correctamente", type: "success" });
+      cargar();
+    } catch (e: any) {
+      setToast({ message: e.message || "Error al eliminar gasto", type: "error" });
+    } finally {
+      setEliminando(false);
+      setConfirmDelete(null);
+    }
   };
 
   const guardar = async () => {
@@ -90,29 +112,39 @@ export default function GastosPage() {
     if (tipo === "SUELDO" && !empleado) return;
     setGuardando(true);
 
-    await fetch("/api/gastos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        tipo,
-        descripcion: tipo === "SUELDO" ? `SUELDO ${empleado.toUpperCase()}` : descripcion.toUpperCase(),
-        importe,
-        formaPago,
-        cajaId,
-        usuarioId: (session?.user as { id?: string })?.id,
-        proveedorId: proveedorId || null,
-        comprobante: comprobante.toUpperCase() || null,
-        empleado: tipo === "SUELDO" ? empleado.toUpperCase() : null,
-        desde: desde || null,
-        hasta: hasta || null,
-      }),
-    });
+    try {
+      const res = await fetch("/api/gastos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tipo,
+          descripcion: tipo === "SUELDO" ? `SUELDO ${empleado.toUpperCase()}` : descripcion.toUpperCase(),
+          importe,
+          formaPago,
+          cajaId,
+          usuarioId: (session?.user as { id?: string })?.id,
+          proveedorId: proveedorId || null,
+          comprobante: comprobante.toUpperCase() || null,
+          empleado: tipo === "SUELDO" ? empleado.toUpperCase() : null,
+          desde: desde || null,
+          hasta: hasta || null,
+        }),
+      });
 
-    setMostrarForm(false);
-    setImporte(""); setDescripcion(""); setComprobante(""); setEmpleado(""); setDesde(""); setHasta(""); setProveedorId("");
-    setGuardando(false);
-    cargar();
-  };
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Error al registrar gasto");
+      }
+
+      setMostrarForm(false);
+      setImporte(""); setDescripcion(""); setComprobante(""); setEmpleado(""); setDesde(""); setHasta(""); setProveedorId("");
+      setToast({ message: "Gasto registrado correctamente", type: "success" });
+      cargar();
+    } catch (e: any) {
+      setToast({ message: e.message || "Error al registrar gasto", type: "error" });
+    } finally {
+      setGuardando(false);
+    }};
 
   const totalDelMes = () => {
     const ahora = new Date();
@@ -319,7 +351,7 @@ export default function GastosPage() {
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Método Pago</label>
                 <select value={formaPago} onChange={(e) => setFormaPago(e.target.value)}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold outline-none appearance-none cursor-pointer">
-                  {FORMAS_PAGO.map((f) => <option key={f} value={f}>{f}</option>)}
+                  {FORMAS_PAGO_GASTO.map((f) => <option key={f} value={f}>{f}</option>)}
                 </select>
               </div>
               <div className="space-y-2">
@@ -362,6 +394,14 @@ export default function GastosPage() {
         onCancel={() => setConfirmDelete(null)}
         onConfirm={() => confirmDelete && eliminarGasto(confirmDelete)}
       />
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

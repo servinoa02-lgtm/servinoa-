@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/requireAuth";
+import { calcularTotalConIVA } from "@/lib/constants";
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const sesion = await requireAuth(["ADMIN", "CAJA"]);
+  if (sesion instanceof NextResponse) return sesion;
+
   const { id } = await params;
   try {
     await prisma.$transaction(async (tx) => {
@@ -12,7 +17,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       });
       if (!cobranza) throw new Error("Cobranza no encontrada");
 
-      // Eliminar entradas relacionadas
+      // Eliminar entradas relacionadas en orden correcto
       await tx.cuentaCorriente.deleteMany({ where: { cobranzaId: id } });
       await tx.movimientoCaja.deleteMany({ where: { cobranzaId: id } });
       await tx.cobranza.delete({ where: { id } });
@@ -28,7 +33,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
         });
         if (ppto) {
           const subtotal = ppto.items.reduce((sum, item) => sum + item.total, 0);
-          const total = ppto.incluyeIva ? subtotal * 1.21 : subtotal;
+          const total = calcularTotalConIVA(subtotal, ppto.incluyeIva);
           const cobrado = ppto.cobranzas.reduce((sum, c) => sum + c.importe, 0);
           const estadoCobro =
             cobrado <= 0

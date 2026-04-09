@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { Search, Plus, ArrowLeft, Wrench, Calendar, ClipboardList } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { Toast } from "@/components/ui/Toast";
 import Link from "next/link";
 import { formatFecha } from "@/lib/dateUtils";
 
@@ -28,6 +29,7 @@ export default function OrdenesPage() {
   const [ordenes, setOrdenes] = useState<Orden[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -35,9 +37,15 @@ export default function OrdenesPage() {
 
   const cargar = () => {
     fetch("/api/ordenes")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Error al cargar órdenes");
+        return r.json();
+      })
       .then((data) => { setOrdenes(data); setLoading(false); })
-      .catch(() => setLoading(false));
+      .catch((e) => {
+        setLoading(false);
+        setToast({ message: e.message || "Error al cargar órdenes", type: "error" });
+      });
   };
 
   useEffect(() => { cargar(); }, []);
@@ -160,6 +168,14 @@ export default function OrdenesPage() {
           </div>
         </div>
       </main>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

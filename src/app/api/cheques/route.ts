@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/requireAuth";
+
 
 export async function GET() {
+  const sesion = await requireAuth();
+  if (sesion instanceof NextResponse) return sesion;
+
   try {
     const cheques = await prisma.cheque.findMany({
       include: {
@@ -36,6 +41,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const sesion = await requireAuth(["ADMIN", "CAJA"]);
+  if (sesion instanceof NextResponse) return sesion;
+
   try {
     const body = await req.json();
     const cheque = await prisma.cheque.create({
