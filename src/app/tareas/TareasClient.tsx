@@ -62,7 +62,9 @@ export function TareasClient({ usuarios }: { usuarios: any[] }) {
   const tareasFiltradas = tareas.filter(t => filtroTab === "COMPLETADAS" ? t.estado === "COMPLETADA" : t.estado !== "COMPLETADA");
 
   const tareasOrdenadas = [...tareasFiltradas].sort((a, b) => {
-    return new Date(a.vencimiento).getTime() - new Date(b.vencimiento).getTime();
+    const timeA = a.vencimiento ? new Date(a.vencimiento).getTime() : Infinity;
+    const timeB = b.vencimiento ? new Date(b.vencimiento).getTime() : Infinity;
+    return timeA - timeB;
   });
 
   return (

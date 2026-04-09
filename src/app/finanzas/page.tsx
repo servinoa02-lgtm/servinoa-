@@ -59,8 +59,19 @@ export default function FinanzasPage() {
   const [allMovimientos, setAllMovimientos] = useState<Movimiento[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
+  const [usuarios, setUsuarios] = useState<{ id: string; nombre: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorCarga, setErrorCarga] = useState("");
+
+  const TIPOS_GASTO = [
+    { value: "GASTO_VARIOS", label: "Gastos a clasificar / Varios" },
+    { value: "SUELDO", label: "Sueldo / Personal" },
+    { value: "INSUMOS", label: "Insumos y Repuestos" },
+    { value: "MANTENIMIENTO", label: "Mantenimiento Local" },
+    { value: "IMPUESTOS", label: "Impuestos y Servicios" },
+    { value: "LOGISTICA", label: "Logística y Envíos" },
+    { value: "EQUIPAMIENTO", label: "Equipamiento Taller" }
+  ];
 
   // ── Form Cobro ─────────────────────────────────────────────────────────────
   const [mostrarCobro, setMostrarCobro] = useState(false);
@@ -116,6 +127,7 @@ export default function FinanzasPage() {
         fetch("/api/presupuestos"),
         fetch("/api/clientes"),
         fetch("/api/proveedores"),
+        fetch("/api/usuarios"),
       ]);
 
       // Verificar que todas las respuestas sean ok
@@ -123,13 +135,14 @@ export default function FinanzasPage() {
         if (!r.ok) throw new Error(`Error al cargar datos (${r.status})`);
       }
 
-      const [rCajas, rCobros, rGastos, rCheques, rPptos, rClientes, rProveedores] = await Promise.all(
+      const [rCajas, rCobros, rGastos, rCheques, rPptos, rClientes, rProveedores, rUsuarios] = await Promise.all(
         responses.map(r => r.json())
       );
 
       setCajas(rCajas);
       setClientes(rClientes);
       setProveedores(rProveedores);
+      setUsuarios(rUsuarios);
 
       if (rCajas.length > 0) {
         setCobroCajaId(prev => prev || rCajas[0].id);
@@ -261,7 +274,7 @@ export default function FinanzasPage() {
 
   const guardarGasto = async () => {
     if (!gastoImporte || !gastoCajaId) { setErrGasto("Importe y caja son obligatorios"); return; }
-    if (gastoTipo === "GASTO_VARIOS" && !gastoDescripcion) { setErrGasto("Ingresá una descripción"); return; }
+    if (gastoTipo !== "SUELDO" && !gastoDescripcion) { setErrGasto("Ingresá una descripción"); return; }
     if (gastoTipo === "SUELDO" && !gastoEmpleado) { setErrGasto("Ingresá el nombre del empleado"); return; }
     setGuardandoGasto(true); setErrGasto("");
     const res = await fetch("/api/gastos", {
@@ -727,22 +740,16 @@ export default function FinanzasPage() {
 
           {/* Tipo */}
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Tipo de gasto</label>
-            <div className="flex gap-2">
-              {(["GASTO_VARIOS", "SUELDO"] as const).map(t => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setGastoTipo(t)}
-                  className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all border ${gastoTipo === t ? "bg-red-600 text-white border-red-600" : "bg-gray-50 text-gray-500 border-gray-200 hover:border-gray-300"}`}
-                >
-                  {t === "GASTO_VARIOS" ? "Gasto varios" : "Sueldo / Personal"}
-                </button>
-              ))}
-            </div>
+             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Categoría de Egreso</label>
+             <select 
+               value={gastoTipo} onChange={e => setGastoTipo(e.target.value as any)}
+               className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none cursor-pointer uppercase appearance-none"
+             >
+                {TIPOS_GASTO.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+             </select>
           </div>
 
-          {gastoTipo === "GASTO_VARIOS" ? (
+          {gastoTipo !== "SUELDO" ? (
             <>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Proveedor (opcional)</label>
@@ -774,12 +781,12 @@ export default function FinanzasPage() {
           ) : (
             <>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Empleado / Beneficiario *</label>
-                <input
-                  type="text" value={gastoEmpleado} onChange={e => setGastoEmpleado(e.target.value)}
-                  placeholder="Nombre completo..."
-                  className={inputCls + " uppercase"}
-                />
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Operador / Beneficiario *</label>
+                <select value={gastoEmpleado} onChange={(e) => setGastoEmpleado(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none uppercase cursor-pointer appearance-none">
+                   <option value="">Seleccione personal...</option>
+                   {usuarios.map(u => <option key={u.id} value={u.nombre}>{u.nombre}</option>)}
+                </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">

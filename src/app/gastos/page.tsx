@@ -120,7 +120,7 @@ export default function GastosPage() {
 
   const guardar = async () => {
     if (!importe || !cajaId) return;
-    if (tipo === "GASTO_VARIOS" && !descripcion) return;
+    if (tipo !== "SUELDO" && !descripcion) return;
     if (tipo === "SUELDO" && !empleado) return;
     setGuardando(true);
 

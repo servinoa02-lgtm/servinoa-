@@ -188,7 +188,14 @@ function TransferenciasContent() {
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Caja Origen</label>
               <select 
-                value={cajaOrigenId} onChange={e => setCajaOrigenId(e.target.value)}
+                value={cajaOrigenId} 
+                onChange={e => {
+                  const newOrigen = e.target.value;
+                  setCajaOrigenId(newOrigen);
+                  if (newOrigen === cajaDestinoId) {
+                    setCajaDestinoId(cajas.find(c => c.id !== newOrigen)?.id || "");
+                  }
+                }}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none appearance-none cursor-pointer"
               >
                 {cajas.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
