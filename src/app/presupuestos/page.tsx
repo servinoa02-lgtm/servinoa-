@@ -115,27 +115,27 @@ export default function PresupuestosPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="p-2 text-gray-400 hover:text-red-600 hover:bg-gray-50 rounded-xl transition-all">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 md:h-20 flex items-center justify-between">
+          <div className="flex items-center gap-3 md:gap-6">
+            <Link href="/dashboard" className="hidden md:flex p-2 text-gray-400 hover:text-red-600 hover:bg-gray-50 rounded-xl transition-all">
               <ArrowLeft size={24} />
             </Link>
-            <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Ventas</p>
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Presupuestos</h1>
+            <div className="pl-10 lg:pl-0">
+              <p className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Ventas</p>
+              <h1 className="text-lg md:text-2xl font-bold text-gray-900 tracking-tight">Presupuestos</h1>
             </div>
           </div>
           <button
             onClick={() => router.push("/presupuestos/nuevo")}
-            className="bg-red-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/10 flex items-center gap-2"
+            className="bg-red-600 text-white px-3 md:px-5 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/10 flex items-center gap-1.5 md:gap-2"
           >
-            <Plus size={18} /> Nueva Cotización
+            <Plus size={16} /> <span className="hidden sm:inline">Nueva</span> Cotización
           </button>
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto px-6 py-10 w-full space-y-8">
+      <main className="flex-1 max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-10 w-full space-y-6 md:space-y-8">
         <div className="flex flex-col md:flex-row items-center gap-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
            <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -164,7 +164,8 @@ export default function PresupuestosPage() {
            </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        {/* ─── Desktop: Tabla ─── */}
+        <div className="hidden md:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -238,6 +239,50 @@ export default function PresupuestosPage() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* ─── Mobile: Cards ─── */}
+        <div className="md:hidden space-y-3">
+          {filtrados.map((p) => (
+            <div
+              key={p.id}
+              onClick={() => router.push(`/presupuestos/${p.id}`)}
+              className="bg-white rounded-xl border border-gray-200 p-4 active:bg-gray-50 transition-all cursor-pointer shadow-sm"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <p className="font-bold text-red-600 text-base italic">{formatNumero(p.numero, p.fecha)}</p>
+                  <p className="text-[10px] text-gray-400 font-bold">{formatFecha(p.fecha)}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <StatusBadge status={p.estado} />
+                  <span className={`text-[9px] font-bold uppercase ${cobroColors[p.estadoCobro] || "text-gray-400"}`}>
+                    {cobroLabel[p.estadoCobro] || p.estadoCobro}
+                  </span>
+                </div>
+              </div>
+              <p className="font-bold text-gray-900 uppercase text-sm">{p.cliente?.empresa?.nombre || "Particular"}</p>
+              {p.cliente?.nombre && (
+                <p className="text-[10px] text-gray-400 font-bold uppercase">Ref: {p.cliente.nombre}</p>
+              )}
+              <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
+                <span className="text-xs font-bold text-gray-500">
+                  {p.orden ? `OT #${p.orden.numero}` : "Venta Directa"}
+                </span>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-gray-900 tabular-nums">${p.total?.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</p>
+                  {p.saldo > 0 && (
+                    <p className="text-[10px] font-bold text-red-600 tabular-nums">Saldo: ${p.saldo?.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+          {filtrados.length === 0 && (
+            <div className="text-center py-16 text-gray-400 font-medium italic text-sm">
+              No se encontraron presupuestos
+            </div>
+          )}
         </div>
       </main>
 

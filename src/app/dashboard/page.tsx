@@ -111,13 +111,13 @@ export default async function DashboardPage() {
   });
 
   return (
-    <div className="p-6 lg:p-10 space-y-10 bg-gray-50 font-sans">
+    <div className="p-4 md:p-6 lg:p-10 space-y-8 md:space-y-10 bg-gray-50 font-sans">
       
       {/* Header */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-gray-200 pb-8">
-        <div>
+        <div className="pl-10 lg:pl-0">
            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Panel de Control</p>
-           <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight">
+           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight">
               Escritorio <span className="text-red-600">Administrativo</span>
            </h1>
         </div>

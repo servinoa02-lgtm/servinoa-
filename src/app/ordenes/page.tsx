@@ -13,10 +13,10 @@ import { formatFecha } from "@/lib/dateUtils";
 interface Orden {
   id: string;
   numero: number;
-  fechaRecepcion: string;
   estado: string;
   falla: string;
-  cliente: { nombre: string; empresa?: { nombre: string } | null };
+  fechaRecepcion: string;
+  cliente: { nombre: string; empresa?: { nombre: string } | null } | null;
   tecnico?: { nombre: string } | null;
   maquina?: { nombre: string } | null;
   marca?: { nombre: string } | null;
@@ -73,28 +73,28 @@ export default function OrdenesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="p-2 text-gray-400 hover:text-red-600 hover:bg-gray-50 rounded-xl transition-all">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 md:h-20 flex items-center justify-between">
+          <div className="flex items-center gap-3 md:gap-6">
+            <Link href="/dashboard" className="hidden md:flex p-2 text-gray-400 hover:text-red-600 hover:bg-gray-50 rounded-xl transition-all">
               <ArrowLeft size={24} />
             </Link>
-            <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Operaciones</p>
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Órdenes de Trabajo</h1>
+            <div className="pl-10 lg:pl-0">
+              <p className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Operaciones</p>
+              <h1 className="text-lg md:text-2xl font-bold text-gray-900 tracking-tight">Órdenes de Trabajo</h1>
             </div>
           </div>
           <button
             onClick={() => router.push("/ordenes/nueva")}
-            className="bg-red-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/10 flex items-center gap-2"
+            className="bg-red-600 text-white px-3 md:px-5 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/10 flex items-center gap-1.5 md:gap-2"
           >
-            <Plus size={18} /> Nueva OT
+            <Plus size={16} /> <span className="hidden sm:inline">Nueva</span> OT
           </button>
         </div>
       </header>
 
-      <main className="flex-1 max-w-6xl mx-auto px-6 py-10 w-full space-y-8">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+      <main className="flex-1 max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-10 w-full space-y-6 md:space-y-8">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-3 md:p-4 rounded-2xl border border-gray-200 shadow-sm">
            <div className="relative w-full max-w-lg">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input 
@@ -110,7 +110,8 @@ export default function OrdenesPage() {
            </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        {/* ─── Desktop: Tabla ─── */}
+        <div className="hidden md:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -166,6 +167,39 @@ export default function OrdenesPage() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* ─── Mobile: Cards ─── */}
+        <div className="md:hidden space-y-3">
+          {filtradas.map((o) => (
+            <div
+              key={o.id}
+              onClick={() => router.push(`/ordenes/${o.id}`)}
+              className="bg-white rounded-xl border border-gray-200 p-4 active:bg-gray-50 transition-all cursor-pointer shadow-sm"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-bold text-red-600 text-lg">#{o.numero}</span>
+                <StatusBadge status={o.estado} />
+              </div>
+              <p className="font-bold text-gray-900 uppercase text-sm mb-1">{o.cliente?.nombre}</p>
+              {o.cliente?.empresa?.nombre && (
+                <p className="text-[10px] text-gray-400 font-bold uppercase mb-2">{o.cliente.empresa.nombre}</p>
+              )}
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+                <span className="text-[10px] text-gray-500 font-medium uppercase">
+                  {[o.maquina?.nombre, o.marca?.nombre].filter(Boolean).join(" — ") || "Sin equipo"}
+                </span>
+                <span className="text-[10px] text-gray-400 font-bold font-mono">
+                  {formatFecha(o.fechaRecepcion)}
+                </span>
+              </div>
+            </div>
+          ))}
+          {filtradas.length === 0 && (
+            <div className="text-center py-16 text-gray-400 font-medium italic text-sm">
+              No se encontraron órdenes
+            </div>
+          )}
         </div>
       </main>
 

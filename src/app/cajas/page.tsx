@@ -37,29 +37,27 @@ export default function CajasPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col font-sans animate-in fade-in duration-500">
-      <header className="bg-white border-b border-gray-300 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10 h-24 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/finanzas" className="p-3 text-gray-400 hover:text-red-600 hover:bg-gray-100 rounded-xl transition-all border border-transparent hover:border-gray-200">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6 h-16 lg:h-20 flex items-center justify-between">
+          <div className="flex items-center gap-3 lg:gap-6">
+            <Link href="/dashboard" className="hidden lg:flex p-2 text-gray-400 hover:text-red-600 hover:bg-gray-50 rounded-xl transition-all">
               <ArrowLeft size={24} />
             </Link>
-            <div>
-              <div className="flex items-center gap-3 text-gray-400 mb-1 lg:mb-0">
-                <span className="text-xs font-black uppercase tracking-[0.3em] opacity-70">Finanzas</span>
-              </div>
-              <h1 className="text-3xl lg:text-4xl font-black text-gray-900 tracking-tighter italic uppercase">Control de Cajas</h1>
+            <div className="pl-10 lg:pl-0">
+              <p className="text-[9px] lg:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Finanzas</p>
+              <h1 className="text-xl lg:text-3xl xl:text-4xl font-black text-gray-900 tracking-tighter italic uppercase">Control de Cajas</h1>
             </div>
           </div>
-          <div className="text-right border-l-4 border-emerald-500 pl-6 bg-emerald-50/50 py-2 pr-4 rounded-r-xl">
-            <p className="text-[10px] font-black text-emerald-800 uppercase tracking-[0.2em] mb-1">Tesorería Total</p>
-            <p className={`text-2xl lg:text-3xl font-black tabular-nums ${totalGeneral >= 0 ? "text-emerald-700" : "text-red-700"}`}>
+          <div className="text-right border-l-4 border-emerald-500 pl-3 md:pl-6 bg-emerald-50/50 py-1.5 md:py-2 pr-2 md:pr-4 rounded-r-xl">
+            <p className="text-[8px] md:text-[10px] font-black text-emerald-800 uppercase tracking-[0.2em] mb-0.5 md:mb-1">Tesorería Total</p>
+            <p className={`text-lg md:text-2xl lg:text-3xl font-black tabular-nums ${totalGeneral >= 0 ? "text-emerald-700" : "text-red-700"}`}>
               ${totalGeneral.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
             </p>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto px-6 lg:px-10 py-10 w-full lg:space-y-10">
+      <main className="flex-1 max-w-7xl mx-auto px-4 md:px-6 lg:px-10 py-6 lg:py-10 w-full space-y-6 lg:space-y-10">
         <div className="flex flex-wrap gap-4 mb-8">
           <button
             className="flex items-center gap-3 px-8 py-4 rounded-xl text-sm font-black bg-red-600 text-white shadow-lg shadow-red-600/20 uppercase tracking-widest transition-all"

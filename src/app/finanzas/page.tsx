@@ -304,39 +304,39 @@ export default function FinanzasPage() {
     <div className="min-h-screen bg-gray-50 font-sans">
 
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="p-2 text-gray-400 hover:text-red-600 hover:bg-gray-50 rounded-xl transition-all">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 md:h-20 flex items-center justify-between">
+          <div className="flex items-center gap-3 md:gap-6">
+            <Link href="/dashboard" className="hidden md:flex p-2 text-gray-400 hover:text-red-600 hover:bg-gray-50 rounded-xl transition-all">
               <ArrowLeft size={24} />
             </Link>
-            <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">ServiNOA</p>
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Tesorería</h1>
+            <div className="pl-10 lg:pl-0">
+              <p className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">ServiNOA</p>
+              <h1 className="text-lg md:text-2xl font-bold text-gray-900 tracking-tight">Tesorería</h1>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
             <button
               onClick={() => { resetCobro(); setMostrarCobro(true); }}
-              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all shadow-md"
+              className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-emerald-600 text-white rounded-xl text-[10px] md:text-xs font-bold hover:bg-emerald-700 transition-all shadow-md"
             >
-              <ArrowUpRight size={16} /> Nuevo cobro
+              <ArrowUpRight size={14} /> <span className="hidden sm:inline">Nuevo</span> cobro
             </button>
             <button
               onClick={() => { resetGasto(); setMostrarGasto(true); }}
-              className="flex items-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition-all shadow-md"
+              className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-red-600 text-white rounded-xl text-[10px] md:text-xs font-bold hover:bg-red-700 transition-all shadow-md"
             >
-              <ArrowDownRight size={16} /> Nuevo gasto
+              <ArrowDownRight size={14} /> <span className="hidden sm:inline">Nuevo</span> gasto
             </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-10 space-y-10">
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-10 space-y-8 md:space-y-10">
 
         {/* KPIs */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 md:p-6">
             <div className="flex items-center justify-between mb-3">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total en cajas</p>
               <div className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center">
@@ -390,7 +390,7 @@ export default function FinanzasPage() {
         </div>
 
         {/* Grid principal */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
 
           {/* Columna izquierda */}
           <div className="lg:col-span-7 space-y-8">
