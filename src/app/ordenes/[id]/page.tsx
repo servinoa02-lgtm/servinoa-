@@ -173,7 +173,7 @@ export default function OrdenDetallePage() {
                 {orden.cliente.empresa && <p className="text-[10px] font-bold text-gray-400 uppercase mb-4">Ref: {orden.cliente.nombre}</p>}
                 
                 {orden.cliente.telefono && (
-                  <a href={`https://wa.me/${orden.cliente.telefono.replace(/\D/g,'')}`} className="flex items-center gap-3 p-3 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100 hover:bg-emerald-100 transition-all">
+                  <a href={`https://wa.me/${orden.cliente.telefono.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100 hover:bg-emerald-100 transition-all">
                     <Phone size={16} />
                     <span className="text-xs font-bold leading-none">{orden.cliente.telefono}</span>
                   </a>
@@ -239,8 +239,29 @@ export default function OrdenDetallePage() {
           </aside>
 
           {/* Columna Central: Pestañas */}
-          <div className="lg:col-span-8">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden h-full flex flex-col">
+          <div className="lg:col-span-8 flex flex-col gap-6">
+
+            {orden.estado === "PARA_PRESUPUESTAR" && orden.presupuestos.length === 0 && (
+               <div className="bg-amber-50 border-2 border-amber-500/20 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top">
+                 <div className="flex items-center gap-4">
+                   <div className="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-amber-500/20">
+                     <FileText size={24} />
+                   </div>
+                   <div>
+                     <h3 className="text-amber-900 font-bold uppercase text-lg">Requiere Presupuesto</h3>
+                     <p className="text-amber-700/80 text-xs font-bold uppercase tracking-widest mt-0.5">El diagnóstico fue registrado. El cliente espera una cotización.</p>
+                   </div>
+                 </div>
+                 <button 
+                   onClick={() => router.push(`/presupuestos/nuevo?otId=${orden.id}`)}
+                   className="w-full sm:w-auto bg-amber-500 text-white px-8 py-4 rounded-xl font-bold uppercase tracking-widest shadow-xl shadow-amber-500/20 hover:bg-amber-600 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+                 >
+                   <FileText size={18} /> Iniciar Presupuesto
+                 </button>
+               </div>
+            )}
+
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex-1 flex flex-col">
               <div className="flex border-b border-gray-100 bg-gray-50/30">
                 {[
                   { id: "falla", label: "Informe de Falla" },

@@ -169,6 +169,12 @@ export default function NuevaOrdenPage() {
     setGuardando(true);
     setError("");
 
+    const accFinal = nuevoAccesorio.trim().toUpperCase();
+    let accesoriosGuardar = [...accesoriosSeleccionados];
+    if (accFinal && !accesoriosGuardar.includes(accFinal)) {
+       accesoriosGuardar.push(accFinal);
+    }
+
     const res = await fetch("/api/ordenes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -183,7 +189,7 @@ export default function NuevaOrdenPage() {
         modeloId: modeloId || null,
         modeloNuevo: !modeloId ? modeloNuevo : null,
         falla,
-        accesorios: accesoriosSeleccionados.length > 0 ? accesoriosSeleccionados.join(", ") : "Sin accesorios",
+        accesorios: accesoriosGuardar.length > 0 ? accesoriosGuardar.join(", ") : "Sin accesorios",
         nroSerie,
         observaciones,
         fechaEstimadaEntrega: fechaEstimadaEntrega || null
@@ -341,7 +347,7 @@ export default function NuevaOrdenPage() {
                   <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                   <input
                     type="text" placeholder="Buscar por nombre o empresa..." value={buscarCliente}
-                    onChange={e => { setBuscarCliente(e.target.value); if (!e.target.value) setClienteId(""); }}
+                    onChange={e => { setBuscarCliente(e.target.value); setClienteId(""); }}
                     className="w-full pl-14 pr-5 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all uppercase"
                   />
                 </div>

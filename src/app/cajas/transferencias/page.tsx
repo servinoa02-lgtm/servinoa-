@@ -1,8 +1,8 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { 
   ArrowLeft, ArrowRightLeft, History, 
@@ -26,9 +26,10 @@ interface Caja { id: string; nombre: string; }
 
 const FORMAS_PAGO = ["EFECTIVO", "TRANSFERENCIA", "CHEQUE", "TARJETA", "MERCADO PAGO", "OTRO"];
 
-export default function TransferenciasPage() {
+function TransferenciasContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [transferencias, setTransferencias] = useState<Transferencia[]>([]);
   const [loading, setLoading] = useState(true);
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -57,9 +58,18 @@ export default function TransferenciasPage() {
   useEffect(() => {
     fetch("/api/cajas").then((r) => r.json()).then((d) => {
       setCajas(d);
-      if (d.length >= 2) { setCajaOrigenId(d[0].id); setCajaDestinoId(d[1].id); }
+      const origenQuery = searchParams.get("origen");
+      if (origenQuery && d.some((c: Caja) => c.id === origenQuery)) {
+        setCajaOrigenId(origenQuery);
+        setMostrarForm(true);
+        if (d.length >= 2) {
+           setCajaDestinoId(d.find((c: Caja) => c.id !== origenQuery)?.id || d[0].id);
+        }
+      } else if (d.length >= 2) { 
+        setCajaOrigenId(d[0].id); setCajaDestinoId(d[1].id); 
+      }
     });
-  }, []);
+  }, [searchParams]);
 
   const guardar = async () => {
     if (!cajaOrigenId || !cajaDestinoId || !monto || cajaOrigenId === cajaDestinoId) return;
@@ -241,5 +251,13 @@ export default function TransferenciasPage() {
         </div>
       </Drawer>
     </div>
+  );
+}
+
+export default function TransferenciasPage() {
+  return (
+    <Suspense fallback={<div className="p-20 text-center">Cargando modulo de transferencias...</div>}>
+      <TransferenciasContent />
+    </Suspense>
   );
 }

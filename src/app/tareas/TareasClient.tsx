@@ -10,6 +10,7 @@ export function TareasClient({ usuarios }: { usuarios: any[] }) {
   const [tareas, setTareas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [mostrarForm, setMostrarForm] = useState(false);
+  const [filtroTab, setFiltroTab] = useState<"PENDIENTES" | "COMPLETADAS">("PENDIENTES");
 
   const [form, setForm] = useState({
     descripcion: "",
@@ -58,9 +59,9 @@ export function TareasClient({ usuarios }: { usuarios: any[] }) {
     </div>
   );
 
-  const tareasOrdenadas = [...tareas].sort((a, b) => {
-    if (a.estado === "COMPLETADA" && b.estado !== "COMPLETADA") return 1;
-    if (a.estado !== "COMPLETADA" && b.estado === "COMPLETADA") return -1;
+  const tareasFiltradas = tareas.filter(t => filtroTab === "COMPLETADAS" ? t.estado === "COMPLETADA" : t.estado !== "COMPLETADA");
+
+  const tareasOrdenadas = [...tareasFiltradas].sort((a, b) => {
     return new Date(a.vencimiento).getTime() - new Date(b.vencimiento).getTime();
   });
 
@@ -76,6 +77,21 @@ export function TareasClient({ usuarios }: { usuarios: any[] }) {
           className="bg-red-600 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/10 flex items-center gap-2"
         >
           <Plus size={20} /> Asignar Tarea
+        </button>
+      </div>
+
+      <div className="flex border-b border-gray-200 mb-6 font-sans">
+        <button
+          onClick={() => setFiltroTab("PENDIENTES")}
+          className={`flex-1 sm:flex-none px-6 py-4 text-xs font-bold uppercase tracking-wider transition-all border-b-2 ${filtroTab === "PENDIENTES" ? "border-red-600 text-red-600" : "border-transparent text-gray-400 hover:text-gray-600"}`}
+        >
+          Pendientes ({tareas.filter(t => t.estado !== "COMPLETADA").length})
+        </button>
+        <button
+          onClick={() => setFiltroTab("COMPLETADAS")}
+          className={`flex-1 sm:flex-none px-6 py-4 text-xs font-bold uppercase tracking-wider transition-all border-b-2 ${filtroTab === "COMPLETADAS" ? "border-red-600 text-red-600" : "border-transparent text-gray-400 hover:text-gray-600"}`}
+        >
+          Completadas ({tareas.filter(t => t.estado === "COMPLETADA").length})
         </button>
       </div>
 
@@ -127,9 +143,11 @@ export function TareasClient({ usuarios }: { usuarios: any[] }) {
             </div>
           );
         })}
-        {tareas.length === 0 && (
+        {tareasOrdenadas.length === 0 && (
           <div className="p-20 text-center bg-white rounded-3xl border-2 border-dashed border-gray-100 italic">
-             <p className="text-sm font-medium text-gray-400">No hay tareas pendientes en el tablero</p>
+             <p className="text-sm font-medium text-gray-400">
+               {filtroTab === "PENDIENTES" ? "No hay tareas pendientes en el tablero" : "No hay tareas completadas"}
+             </p>
           </div>
         )}
       </div>

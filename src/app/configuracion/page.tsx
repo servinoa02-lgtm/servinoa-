@@ -7,7 +7,7 @@ import Link from "next/link";
 import {
   Settings, Trash2, Plus, Users, Shield, Wrench,
   ArrowLeft, Eye, EyeOff, Check, X, Edit2,
-  AlertCircle, Lock, HardHat
+  AlertCircle, Lock, HardHat, Wallet
 } from "lucide-react";
 
 interface Usuario {
@@ -33,7 +33,7 @@ const ROL_COLORS: Record<string, string> = {
   VENTAS: "border-amber-600 text-amber-600 bg-amber-50/50",
 };
 
-type ActiveTab = "accesorios" | "usuarios";
+type ActiveTab = "accesorios" | "usuarios" | "cajas";
 
 export default function ConfiguracionPage() {
   const { data: session, status } = useSession();
@@ -44,6 +44,11 @@ export default function ConfiguracionPage() {
   const [accesorios, setAccesorios] = useState<{ id: string; nombre: string }[]>([]);
   const [nuevoAcc, setNuevoAcc] = useState("");
   const [loadingAcc, setLoadingAcc] = useState(false);
+
+  // Cajas
+  const [cajas, setCajas] = useState<{ id: string; nombre: string }[]>([]);
+  const [nuevaCaja, setNuevaCaja] = useState("");
+  const [loadingCajas, setLoadingCajas] = useState(false);
 
   // Usuarios
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
@@ -70,6 +75,9 @@ export default function ConfiguracionPage() {
     if (status === "authenticated") {
       cargarAccesorios();
       cargarUsuarios();
+      if ((session?.user as any)?.rol === "ADMIN") {
+        cargarCajas();
+      }
     }
   }, [status]);
 
@@ -85,6 +93,13 @@ export default function ConfiguracionPage() {
     const res = await fetch("/api/usuarios");
     if (res.ok) setUsuarios(await res.json());
     setLoadingUsers(false);
+  };
+
+  const cargarCajas = async () => {
+    setLoadingCajas(true);
+    const res = await fetch("/api/cajas");
+    if (res.ok) setCajas(await res.json());
+    setLoadingCajas(false);
   };
 
   // --- Accesorios ---
@@ -105,6 +120,23 @@ export default function ConfiguracionPage() {
   const removeAcc = async (id: string) => {
     await fetch(`/api/accesorios/${id}`, { method: "DELETE" });
     setAccesorios((prev) => prev.filter((x) => x.id !== id));
+  };
+
+  // --- Cajas ---
+  const addCaja = async () => {
+    if (!nuevaCaja.trim()) return;
+    const res = await fetch("/api/cajas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nombre: nuevaCaja.trim().toUpperCase() }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setCajas((prev) => [...prev, data]);
+      setNuevaCaja("");
+    } else {
+      alert("Error al crear caja (¿quizás el nombre ya existe o no tenés permisos?).");
+    }
   };
 
   // --- Usuarios ---
@@ -191,8 +223,9 @@ export default function ConfiguracionPage() {
         <div className="max-w-7xl mx-auto px-6 flex gap-8">
           {[
             { key: "accesorios" as ActiveTab, label: "Componentes", icon: <Wrench size={18} /> },
+            ((session?.user as any)?.rol === "ADMIN") && { key: "cajas" as ActiveTab, label: "Entidades / Cajas", icon: <Wallet size={18} /> },
             { key: "usuarios" as ActiveTab, label: "Gestión de Personal", icon: <Users size={18} /> },
-          ].map((tab) => (
+          ].filter(Boolean).map((tab: any) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
@@ -248,11 +281,12 @@ export default function ConfiguracionPage() {
                     >
                       <div className="flex items-center gap-3 min-w-0">
                          <div className="w-1.5 h-1.5 rounded-full bg-red-600" />
-                         <span className="text-xs font-bold text-gray-600 uppercase truncate">{a.nombre}</span>
+                         <span className="font-bold text-gray-900 uppercase text-xs truncate">{a.nombre}</span>
                       </div>
                       <button
                         onClick={() => removeAcc(a.id)}
-                        className="p-1.5 text-gray-200 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        className="text-gray-300 hover:text-red-600 transition-colors p-1"
+                        title="Eliminar"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -263,6 +297,54 @@ export default function ConfiguracionPage() {
                         No se registran componentes en el catálogo
                     </div>
                   )}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {activeTab === "cajas" && (session?.user as any)?.rol === "ADMIN" && (
+          <section className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-12">
+            <div className="p-8 border-b border-gray-100 bg-gray-50/20 flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900 uppercase">Gestión de Cajas</h2>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Creación de entidades financieras o billeteras</p>
+                </div>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <input
+                    type="text"
+                    value={nuevaCaja}
+                    onChange={(e) => setNuevaCaja(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && addCaja()}
+                    className="flex-1 sm:w-64 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:border-red-600 transition-all uppercase"
+                    placeholder="Efectivo, Banco X..."
+                  />
+                  <button
+                    onClick={addCaja}
+                    className="bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all shadow-md shadow-emerald-600/10 flex items-center gap-2"
+                  >
+                    <Plus size={18} /> Añadir
+                  </button>
+                </div>
+            </div>
+
+            <div className="p-8">
+              {loadingCajas ? (
+                <div className="p-10 text-center text-gray-400 text-xs font-bold animate-pulse">Cargando cajas...</div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {cajas.map((c) => (
+                    <div
+                      key={c.id}
+                      className="group flex items-center justify-between bg-gray-50/50 border border-gray-100 px-4 py-3 rounded-xl hover:bg-white hover:border-emerald-100 transition-all"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                         <span className="font-bold text-gray-900 uppercase text-xs truncate">{c.nombre}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {cajas.length === 0 && <p className="text-[10px] font-bold text-gray-400 uppercase">No hay cajas creadas.</p>}
                 </div>
               )}
             </div>

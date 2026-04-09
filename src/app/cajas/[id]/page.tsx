@@ -8,7 +8,7 @@ import Link from "next/link";
 import { 
   ArrowLeft, Wallet, ArrowUpRight, ArrowDownLeft, 
   History, Calendar, 
-  CreditCard, Search, Filter
+  CreditCard, Search, Filter, ArrowRightLeft
 } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { formatFecha } from "@/lib/dateUtils";
@@ -125,6 +125,12 @@ export default function CajaDetallePage() {
                 className="flex items-center gap-2 bg-red-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/10"
               >
                 <ArrowUpRight size={18} /> Nuevo Egreso
+              </button>
+              <button
+                onClick={() => router.push(`/cajas/transferencias?origen=${caja.id}`)}
+                className="flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-black transition-all shadow-lg shadow-gray-900/10"
+              >
+                <ArrowRightLeft size={18} className="hidden sm:block" /> <span className="hidden sm:inline">Transferir</span><ArrowRightLeft size={18} className="sm:hidden" />
               </button>
            </div>
            

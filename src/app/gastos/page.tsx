@@ -37,6 +37,16 @@ interface Caja { id: string; nombre: string; }
 
 const FORMAS_PAGO_GASTO = [...FORMAS_PAGO] as const;
 
+const TIPOS_GASTO = [
+  { value: "GASTO_VARIOS", label: "Gastos Varios" },
+  { value: "SUELDO", label: "Sueldo / Personal" },
+  { value: "INSUMOS", label: "Compra de Insumos" },
+  { value: "MANTENIMIENTO", label: "Mantenimiento Taller" },
+  { value: "IMPUESTOS", label: "Impuestos y Servicios" },
+  { value: "LOGISTICA", label: "Logística y Envíos" },
+  { value: "EQUIPAMIENTO", label: "Equipamiento" },
+];
+
 export default function GastosPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -45,7 +55,7 @@ export default function GastosPage() {
   const [mostrarForm, setMostrarForm] = useState(false);
 
   // Form
-  const [tipo, setTipo] = useState<"GASTO_VARIOS" | "SUELDO">("GASTO_VARIOS");
+  const [tipo, setTipo] = useState<string>("GASTO_VARIOS");
   const [descripcion, setDescripcion] = useState("");
   const [importe, setImporte] = useState("");
   const [formaPago, setFormaPago] = useState<string>(FORMAS_PAGO[0]);
@@ -57,6 +67,7 @@ export default function GastosPage() {
   const [hasta, setHasta] = useState("");
   const [cajas, setCajas] = useState<Caja[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
+  const [usuarios, setUsuarios] = useState<{ id: string; nombre: string }[]>([]);
   const [guardando, setGuardando] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [eliminando, setEliminando] = useState(false);
@@ -86,6 +97,7 @@ export default function GastosPage() {
   useEffect(() => {
     fetch("/api/cajas").then((r) => r.json()).then((d) => { setCajas(d); if (d.length > 0) setCajaId(d[0].id); });
     fetch("/api/proveedores").then((r) => r.json()).then(setProveedores);
+    fetch("/api/usuarios").then((r) => r.json()).then(setUsuarios);
   }, []);
 
   const eliminarGasto = async (id: string) => {
@@ -238,7 +250,7 @@ export default function GastosPage() {
                           {formatFecha(g.fecha)}
                        </span>
                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${g.tipo === "SUELDO" ? "border-gray-900 text-gray-900" : "border-red-100 text-red-600 bg-red-50"}`}>
-                          {g.tipo === "SUELDO" ? "Sueldo" : "Gasto Varios"}
+                          {TIPOS_GASTO.find(t => t.value === g.tipo)?.label || "Gasto"}
                        </span>
                        {g.proveedor && <span className="text-[10px] font-bold text-gray-400 uppercase">Prov: {g.proveedor.nombre}</span>}
                        {g.caja && <span className="text-[10px] font-bold text-emerald-600 uppercase italic">Caja: {g.caja.nombre}</span>}
@@ -285,21 +297,17 @@ export default function GastosPage() {
       >
         <div className="p-1 space-y-6">
           <div className="space-y-2">
-             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Tipo de Egreso</label>
-             <div className="grid grid-cols-2 gap-3">
-                {(["GASTO_VARIOS", "SUELDO"] as const).map((t) => (
-                  <button 
-                    key={t} 
-                    onClick={() => setTipo(t)}
-                    className={`py-3 rounded-xl text-xs font-bold transition-all border ${tipo === t ? "border-red-600 bg-red-600 text-white shadow-lg shadow-red-600/20" : "border-gray-200 bg-gray-50 text-gray-400 hover:bg-gray-100"}`}>
-                    {t === "SUELDO" ? "Sueldo / Personal" : "Gastos Varios"}
-                  </button>
-                ))}
-            </div>
+             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Categoría de Egreso</label>
+             <select 
+               value={tipo} onChange={e => setTipo(e.target.value)}
+               className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none cursor-pointer uppercase appearance-none"
+             >
+                {TIPOS_GASTO.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+             </select>
           </div>
 
           <div className="space-y-6">
-            {tipo === "GASTO_VARIOS" ? (
+            {tipo !== "SUELDO" ? (
               <>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Proveedor (Opcional)</label>
@@ -326,10 +334,12 @@ export default function GastosPage() {
             ) : (
               <>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Operario / Beneficiario *</label>
-                  <input type="text" value={empleado} onChange={(e) => setEmpleado(e.target.value)}
-                    placeholder="Nombre completo..."
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-medium outline-none uppercase" />
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Operador / Beneficiario *</label>
+                  <select value={empleado} onChange={(e) => setEmpleado(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none uppercase cursor-pointer appearance-none">
+                     <option value="">Seleccione personal...</option>
+                     {usuarios.map(u => <option key={u.id} value={u.nombre}>{u.nombre}</option>)}
+                  </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">

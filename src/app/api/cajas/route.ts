@@ -26,3 +26,22 @@ export async function GET() {
     return NextResponse.json({ error: "Error al cargar cajas" }, { status: 500 });
   }
 }
+
+export async function POST(req: Request) {
+  const sesion = await requireAuth(["ADMIN"]);
+  if (sesion instanceof NextResponse) return sesion;
+
+  try {
+    const body = await req.json();
+    if (!body.nombre) return NextResponse.json({ error: "Nombre es requerido" }, { status: 400 });
+
+    const caja = await prisma.caja.create({
+      data: { nombre: body.nombre.trim().toUpperCase() }
+    });
+
+    return NextResponse.json(caja);
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: "Error al crear caja" }, { status: 500 });
+  }
+}

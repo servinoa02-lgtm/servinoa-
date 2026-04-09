@@ -393,6 +393,11 @@ model MovimientoCaja {
 enum TipoGasto {
   GASTO_VARIOS
   SUELDO
+  INSUMOS
+  MANTENIMIENTO
+  IMPUESTOS
+  LOGISTICA
+  EQUIPAMIENTO
 }
 
 model Gasto {

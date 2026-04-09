@@ -40,7 +40,7 @@ export default function CajasPage() {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 lg:px-6 h-16 lg:h-20 flex items-center justify-between">
           <div className="flex items-center gap-3 lg:gap-6">
-            <Link href="/dashboard" className="hidden lg:flex p-2 text-gray-400 hover:text-red-600 hover:bg-gray-50 rounded-xl transition-all">
+            <Link href="/finanzas" className="hidden lg:flex p-2 text-gray-400 hover:text-red-600 hover:bg-gray-50 rounded-xl transition-all">
               <ArrowLeft size={24} />
             </Link>
             <div className="pl-10 lg:pl-0">
@@ -68,7 +68,7 @@ export default function CajasPage() {
             onClick={() => router.push("/cajas/transferencias")}
             className="flex items-center gap-3 px-8 py-4 rounded-xl text-sm font-black bg-white border border-gray-300 text-gray-600 hover:text-red-600 hover:bg-gray-50 transition-all uppercase tracking-widest shadow-sm"
           >
-            <Repeat size={18} /> OPERACIONES
+            <Repeat size={18} /> TRANSFERENCIAS
           </button>
           <button
             onClick={() => router.push("/cheques")}
@@ -101,13 +101,7 @@ export default function CajasPage() {
               </div>
             </button>
           ))}
-          
-          <button className="border-2 border-dashed border-gray-300 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 text-gray-400 hover:text-red-600 hover:border-red-600/50 hover:bg-red-50/10 transition-all group">
-            <div className="p-4 bg-gray-100 rounded-full group-hover:bg-red-100">
-              <Plus size={32} />
-            </div>
-            <span className="text-xs font-black uppercase tracking-[0.2em]">Agregar Entidad</span>
-          </button>
+
         </div>
       </main>
     </div>
