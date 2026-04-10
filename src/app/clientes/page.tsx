@@ -8,6 +8,7 @@ import { Plus, Search, Building2, Phone, Mail, FileText, ArrowLeft, Trash2, Chev
 import { Drawer } from "@/components/ui/Drawer";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Toast } from "@/components/ui/Toast";
+import { RoleGuard } from "@/components/auth/RoleGuard";
 import Link from "next/link";
 import { formatoService } from "@/services/formatoService";
 
@@ -132,7 +133,8 @@ export default function ClientesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+    <RoleGuard allowedRoles={["ADMIN", "JEFE", "ADMINISTRACION"]}>
+      <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
       <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 md:h-20 flex items-center justify-between">
           <div className="flex items-center gap-3 md:gap-6">
@@ -366,5 +368,6 @@ export default function ClientesPage() {
         />
       )}
     </div>
+    </RoleGuard>
   );
 }

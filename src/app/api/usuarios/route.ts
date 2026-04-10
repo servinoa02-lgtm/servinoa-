@@ -1,10 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { requireAuth } from "@/lib/requireAuth";
 
 const ROLES_VALIDOS = ["ADMIN", "JEFE", "ADMINISTRACION", "TECNICO", "CAJA", "VENTAS"];
 
 export async function GET() {
+  const session = await requireAuth("ADMIN");
+  if (session instanceof NextResponse) return session;
+
   try {
     const usuarios = await prisma.usuario.findMany({
       select: {
@@ -26,6 +29,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const session = await requireAuth("ADMIN");
+  if (session instanceof NextResponse) return session;
+
   try {
     const body = await req.json();
     const { nombre, email, password, rol } = body;

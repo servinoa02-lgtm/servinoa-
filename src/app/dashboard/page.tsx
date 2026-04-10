@@ -2,14 +2,14 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { 
-  Wrench, 
-  CheckCircle, 
-  AlertTriangle, 
-  MessageSquare, 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
+import {
+  Wrench,
+  CheckCircle,
+  AlertTriangle,
+  MessageSquare,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
   BarChart2,
   Clock,
   ExternalLink,
@@ -32,6 +32,9 @@ export default async function DashboardPage() {
   }
 
   const userId = session.user.id;
+  const role = (session.user as any).rol;
+  const isAdminOrJefe = ["ADMIN", "JEFE"].includes(role);
+  const canSeeFinances = ["ADMIN", "JEFE", "ADMINISTRACION"].includes(role);
   const hoy = new Date();
 
   // 1. Tareas Asignadas
@@ -49,18 +52,18 @@ export default async function DashboardPage() {
 
   // 3. Seguimientos y Alertas
   const seguimientos = await prisma.nota.findMany({
-    where: { 
-      esSeguimiento: true, 
-      orden: { estado: { notIn: ["ENTREGADO_REALIZADO", "ENTREGADO_SIN_REALIZAR", "RECHAZADO"] } } 
+    where: {
+      esSeguimiento: true,
+      orden: { estado: { notIn: ["ENTREGADO_REALIZADO", "ENTREGADO_SIN_REALIZAR", "RECHAZADO"] } }
     },
-    include: { 
-      orden: { 
-        select: { 
-          numero: true, 
-          id: true, 
-          cliente: { select: { nombre: true } } 
-        } 
-      } 
+    include: {
+      orden: {
+        select: {
+          numero: true,
+          id: true,
+          cliente: { select: { nombre: true } }
+        }
+      }
     },
     orderBy: { fecha: "desc" }
   });
@@ -112,58 +115,61 @@ export default async function DashboardPage() {
 
   return (
     <div className="p-4 md:p-6 lg:p-10 space-y-8 md:space-y-10 bg-gray-50 font-sans">
-      
+
       {/* Header */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-gray-200 pb-8">
         <div className="pl-10 lg:pl-0">
-           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Panel de Control</p>
-           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight">
-              Escritorio <span className="text-red-600">Administrativo</span>
-           </h1>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Panel de Control</p>
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight">
+            Escritorio <span className="text-red-600">Administrativo</span>
+          </h1>
         </div>
-        
+
         <div className="flex items-center gap-4">
-           <div className="bg-white border border-gray-200 px-5 py-3 rounded-xl shadow-sm flex items-center gap-4">
-              <Clock size={20} className="text-red-600" />
-              <div>
-                 <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Fecha y Hora Actual</p>
-                 <span className="text-sm font-bold text-gray-900">
-                    {formatFecha(hoy)} — {formatHora(hoy, { hour: '2-digit', minute: '2-digit' })}
-                 </span>
-              </div>
-           </div>
+          <div className="bg-white border border-gray-200 px-5 py-3 rounded-xl shadow-sm flex items-center gap-4">
+            <Clock size={20} className="text-red-600" />
+            <div>
+              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Fecha y Hora Actual</p>
+              <span className="text-sm font-bold text-gray-900">
+                {formatFecha(hoy)} — {formatHora(hoy, { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+          </div>
         </div>
       </header>
-        
+
       {/* Resumen Financiero */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard 
-          label="Ingresos del Mes"
-          value={`$${mesIngresos.toLocaleString("es-AR")}`}
-          icon={<TrendingUp size={20} />}
-          color="emerald"
-        />
-        <StatCard 
-          label="Egresos del Mes"
-          value={`$${mesEgresos.toLocaleString("es-AR")}`}
-          icon={<TrendingDown size={20} />}
-          color="rose"
-        />
-        <StatCard 
-          label="Balance de Caja"
-          value={`$${mesBalance.toLocaleString("es-AR")}`}
-          icon={<DollarSign size={20} />}
-          color={mesBalance >= 0 ? "primary" : "rose"}
-          trend={{ value: "Saldo Neto", positive: mesBalance >= 0 }}
-        />
-      </div>
+      {canSeeFinances && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <StatCard
+            label="Ingresos del Mes"
+            value={`$${mesIngresos.toLocaleString("es-AR")}`}
+            icon={<TrendingUp size={20} />}
+            color="emerald"
+          />
+          <StatCard
+            label="Egresos del Mes"
+            value={`$${mesEgresos.toLocaleString("es-AR")}`}
+            icon={<TrendingDown size={20} />}
+            color="rose"
+          />
+          <StatCard
+            label="Balance de Caja"
+            value={`$${mesBalance.toLocaleString("es-AR")}`}
+            icon={<DollarSign size={20} />}
+            color={mesBalance >= 0 ? "primary" : "rose"}
+            trend={{ value: "Saldo Neto", positive: mesBalance >= 0 }}
+          />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-         
-         {/* Gráfico */}
-         <div className="lg:col-span-8">
-            <Card 
-              title="Flujo de Operaciones" 
+
+        {/* Gráfico */}
+        {canSeeFinances && (
+          <div className="lg:col-span-8">
+            <Card
+              title="Flujo de Operaciones"
               subtitle="Movimientos de los últimos 30 días"
               icon={<BarChart2 size={20} className="text-red-600" />}
               action={<Link href="/cajas" className="text-xs font-bold text-red-600 hover:underline flex items-center gap-1">Ver todos <ChevronRight size={14} /></Link>}
@@ -173,43 +179,43 @@ export default async function DashboardPage() {
                 <FinanceChart data={chartData} />
               </div>
             </Card>
-         </div>
+          </div>
+        )}
 
-         {/* Alertas */}
-         <div className="lg:col-span-4 h-full">
-            <Card 
-              title="Alertas de Seguimiento" 
-              icon={<Bell size={20} className="text-red-600" />}
-              className="h-full border border-gray-200 rounded-2xl shadow-sm"
-            >
-              <div className="space-y-4">
-                {seguimientos.length === 0 ? (
-                  <div className="text-center py-12">
-                     <AlertTriangle size={40} className="mx-auto mb-2 text-gray-200" />
-                     <p className="text-xs text-gray-400 font-medium font-sans">Sin alertas pendientes</p>
-                  </div>
-                ) : (
-                  seguimientos.map(s => (
-                    <Link key={s.id} href={`/ordenes/${s.orden.id}`} className="block p-4 rounded-xl border border-gray-100 bg-white hover:border-red-600 hover:shadow-md transition-all group">
-                      <div className="text-[10px] font-bold text-red-600 mb-2 uppercase tracking-wider flex items-center justify-between">
-                         <span>OT #{s.orden.numero} — {s.orden.cliente.nombre}</span>
-                         <ExternalLink size={12} />
-                      </div>
-                      <p className="text-xs text-gray-700 leading-relaxed font-medium">"{s.texto}"</p>
-                    </Link>
-                  ))
-                )}
-              </div>
-            </Card>
-         </div>
-
+        {/* Alertas */}
+        <div className={canSeeFinances ? "lg:col-span-4 h-full" : "lg:col-span-12 h-full"}>
+          <Card
+            title="Alertas de Seguimiento"
+            icon={<Bell size={20} className="text-red-600" />}
+            className="h-full border border-gray-200 rounded-2xl shadow-sm"
+          >
+            <div className="space-y-4">
+              {seguimientos.length === 0 ? (
+                <div className="text-center py-12">
+                  <AlertTriangle size={40} className="mx-auto mb-2 text-gray-200" />
+                  <p className="text-xs text-gray-400 font-medium font-sans">Sin alertas pendientes</p>
+                </div>
+              ) : (
+                seguimientos.map(s => (
+                  <Link key={s.id} href={`/ordenes/${s.orden.id}`} className="block p-4 rounded-xl border border-gray-100 bg-white hover:border-red-600 hover:shadow-md transition-all group">
+                    <div className="text-[10px] font-bold text-red-600 mb-2 uppercase tracking-wider flex items-center justify-between">
+                      <span>OT #{s.orden.numero} — {s.orden.cliente.nombre}</span>
+                      <ExternalLink size={12} />
+                    </div>
+                    <p className="text-xs text-gray-700 leading-relaxed font-medium">"{s.texto}"</p>
+                  </Link>
+                ))
+              )}
+            </div>
+          </Card>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-        
+
         {/* Tareas */}
-        <Card 
-          title="Tareas Pendientes" 
+        <Card
+          title="Tareas Pendientes"
           icon={<Target size={20} className="text-gray-900" />}
           action={<span className="text-[10px] font-bold bg-gray-900 text-white px-3 py-1 rounded-md">{misTareas.length}</span>}
           className="rounded-2xl shadow-sm border border-gray-200"
@@ -240,17 +246,17 @@ export default async function DashboardPage() {
         </Card>
 
         {/* Taller */}
-        <Card 
-          title="Equipos en Taller" 
+        <Card
+          title="Equipos en Taller"
           icon={<Wrench size={20} className="text-gray-900" />}
           action={<span className="text-[10px] font-bold border border-gray-200 px-3 py-1 rounded-md">{otsEnProceso.length}</span>}
           className="rounded-2xl shadow-sm border border-gray-200"
         >
           <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
             {otsEnProceso.length === 0 ? (
-               <div className="text-center py-12">
-                  <p className="text-xs text-gray-400 font-medium">Sin equipos en reparación</p>
-               </div>
+              <div className="text-center py-12">
+                <p className="text-xs text-gray-400 font-medium">Sin equipos en reparación</p>
+              </div>
             ) : (
               otsEnProceso.map(ot => (
                 <Link key={ot.id} href={`/ordenes/${ot.id}`} className="block p-4 rounded-xl bg-white border border-gray-100 hover:border-red-600 transition-all shadow-sm">
@@ -261,7 +267,7 @@ export default async function DashboardPage() {
                   <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tight truncate border-b border-gray-50 pb-2 mb-2">{ot.cliente.nombre}</div>
                   {ot.fechaEstimadaEntrega && (
                     <div className="flex items-center gap-2 text-[9px] font-bold text-gray-400 uppercase">
-                      Entrega: 
+                      Entrega:
                       <span className={`px-1.5 py-0.5 rounded ${ot.fechaEstimadaEntrega < hoy ? "bg-red-600 text-white" : "bg-gray-100 text-gray-700"}`}>
                         {formatFecha(ot.fechaEstimadaEntrega)}
                       </span>
@@ -274,8 +280,8 @@ export default async function DashboardPage() {
         </Card>
 
         {/* Comunicaciones */}
-        <Card 
-          title="Avisos del Equipo" 
+        <Card
+          title="Avisos del Equipo"
           icon={<MessageSquare size={20} className="text-gray-900" />}
           className="rounded-2xl shadow-sm border border-gray-200"
         >

@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { RoleGuard } from "@/components/auth/RoleGuard";
 import {
   Settings, Trash2, Plus, Users, Shield, Wrench,
   ArrowLeft, Eye, EyeOff, Check, X, Edit2,
@@ -41,6 +42,10 @@ export default function ConfiguracionPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ActiveTab>("accesorios");
+  
+  return (
+    <RoleGuard allowedRoles={["ADMIN", "JEFE"]}>
+      <div className="p-0"> {/* Wrapper opcional */}
 
   // Accesorios
   const [accesorios, setAccesorios] = useState<{ id: string; nombre: string }[]>([]);
@@ -562,5 +567,6 @@ export default function ConfiguracionPage() {
         )}
       </main>
     </div>
+    </RoleGuard>
   );
 }

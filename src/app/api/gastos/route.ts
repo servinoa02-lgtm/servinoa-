@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
 export async function GET() {
-  const sesion = await requireAuth();
+  const sesion = await requireAuth(["ADMIN", "JEFE", "ADMINISTRACION"]);
   if (sesion instanceof NextResponse) return sesion;
 
   try {
@@ -23,7 +23,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const sesion = await requireAuth(["ADMIN", "CAJA"]);
+  const sesion = await requireAuth(["ADMIN", "JEFE", "ADMINISTRACION"]);
   if (sesion instanceof NextResponse) return sesion;
 
   try {

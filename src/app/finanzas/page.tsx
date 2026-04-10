@@ -10,6 +10,7 @@ import {
   ArrowUpRight, ArrowDownRight, Plus, Clock, ChevronRight,
   Receipt, CheckCircle2, Save, AlertTriangle,
 } from "lucide-react";
+import { RoleGuard } from "@/components/auth/RoleGuard";
 import { Drawer } from "@/components/ui/Drawer";
 import { ProveedorQuickAdd } from "@/components/ui/ProveedorQuickAdd";
 import { formatFecha, hoyISO } from "@/lib/dateUtils";
@@ -315,7 +316,8 @@ export default function FinanzasPage() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
+    <RoleGuard allowedRoles={["ADMIN", "JEFE", "ADMINISTRACION"]}>
+      <div className="min-h-screen bg-gray-50 font-sans">
 
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
@@ -850,5 +852,6 @@ export default function FinanzasPage() {
       </Drawer>
 
     </div>
+    </RoleGuard>
   );
 }

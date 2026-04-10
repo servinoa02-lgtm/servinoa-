@@ -15,15 +15,27 @@ type Role = keyof typeof ROLES;
 export const permissions = {
   /**
    * ADMIN y JEFE tienen control total del sistema.
+   * Solo ADMIN puede borrar usuarios o entrar a Configuración Crítica.
    */
   isAdmin(role?: string | null): boolean {
+    return role === ROLES.ADMIN;
+  },
+
+  isJefeOrAdmin(role?: string | null): boolean {
     return role === ROLES.ADMIN || role === ROLES.JEFE;
   },
 
   /**
-   * Para cobrar, ver finanzas y Cajas, se requiere ADMIN, JEFE o ADMINISTRACION.
+   * Para cobrar, ver finanzas, Cajas y Clientes, se requiere ADMIN, JEFE o ADMINISTRACION.
    */
   canManageFinances(role?: string | null): boolean {
+    return role === ROLES.ADMIN || role === ROLES.JEFE || role === ROLES.ADMINISTRACION;
+  },
+
+  /**
+   * Acceso a la lista de clientes.
+   */
+  canViewClients(role?: string | null): boolean {
     return role === ROLES.ADMIN || role === ROLES.JEFE || role === ROLES.ADMINISTRACION;
   },
 

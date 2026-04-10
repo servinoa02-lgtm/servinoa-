@@ -13,6 +13,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Drawer } from "@/components/ui/Drawer";
 import { ProveedorQuickAdd } from "@/components/ui/ProveedorQuickAdd";
 import { Toast } from "@/components/ui/Toast";
+import { RoleGuard } from "@/components/auth/RoleGuard";
 import { formatFecha } from "@/lib/dateUtils";
 import { FORMAS_PAGO } from "@/lib/constants";
 import { formatoService } from "@/services/formatoService";
@@ -414,5 +415,6 @@ export default function GastosPage() {
         />
       )}
     </div>
+    </RoleGuard>
   );
 }

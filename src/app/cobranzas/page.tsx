@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ArrowLeft, Plus, Trash2, Search, Receipt, X, Save } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { formatFecha, hoyISO } from "@/lib/dateUtils";
+import { RoleGuard } from "@/components/auth/RoleGuard";
 import { formatoService } from "@/services/formatoService";
 
 interface Cobranza {
@@ -172,7 +173,8 @@ function CobranzasContent() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
+    <RoleGuard allowedRoles={["ADMIN", "JEFE", "ADMINISTRACION"]}>
+      <div className="min-h-screen bg-gray-50 font-sans">
       <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 md:h-20 flex items-center justify-between">
           <div className="flex items-center gap-3 md:gap-6">
@@ -421,6 +423,7 @@ function CobranzasContent() {
         onConfirm={() => confirmDelete && eliminar(confirmDelete)}
       />
     </div>
+    </RoleGuard>
   );
 }
 
