@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
+const ROLES_VALIDOS = ["ADMIN", "JEFE", "ADMINISTRACION", "TECNICO", "CAJA", "VENTAS"];
+
 export async function GET() {
   try {
     const usuarios = await prisma.usuario.findMany({
@@ -37,6 +39,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Ya existe un usuario con ese email" }, { status: 409 });
     }
 
+    const rolFinal = rol && ROLES_VALIDOS.includes(rol) ? rol : "TECNICO";
+
     const hash = await bcrypt.hash(password, 10);
 
     const usuario = await prisma.usuario.create({
@@ -44,7 +48,7 @@ export async function POST(req: NextRequest) {
         nombre,
         email,
         password: hash,
-        rol: rol || "TECNICO",
+        rol: rolFinal,
         activo: true,
       },
       select: {

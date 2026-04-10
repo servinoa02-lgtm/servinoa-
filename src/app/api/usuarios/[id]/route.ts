@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
+const ROLES_VALIDOS = ["ADMIN", "JEFE", "ADMINISTRACION", "TECNICO", "CAJA", "VENTAS"];
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   try {
@@ -21,7 +23,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const data: Record<string, unknown> = {};
     if (nombre !== undefined) data.nombre = nombre;
     if (email !== undefined) data.email = email;
-    if (rol !== undefined) data.rol = rol;
+    if (rol !== undefined && ROLES_VALIDOS.includes(rol)) data.rol = rol;
     if (activo !== undefined) data.activo = activo;
     if (password) data.password = await bcrypt.hash(password, 10);
 

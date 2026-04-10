@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ArrowLeft, Plus, Trash2, Search, Receipt, X, Save } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { formatFecha, hoyISO } from "@/lib/dateUtils";
+import { formatoService } from "@/services/formatoService";
 
 interface Cobranza {
   id: string; tipo: string; fecha: string; descripcion?: string | null;
@@ -124,14 +125,14 @@ function CobranzasContent() {
         tipo,
         clienteId: clienteId || null,
         presupuestoId: tipo === "PRESUPUESTO" ? presupuestoId : null,
-        descripcion: (descripcion || "Cobro varios").toUpperCase(),
+        descripcion: formatoService.capitalizarPrimeraLetra(descripcion || "Cobro varios"),
         importe: parseFloat(importe),
         formaPago,
         cajaId,
         usuarioId: (session?.user as any)?.id,
         fecha,
         ...(formaPago === "Cheque" && {
-          chequeNumero, chequeBanco, chequeFechaEmision, chequeFechaCobro,
+          chequeNumero: formatoService.capitalizarPalabras(chequeNumero), chequeBanco: formatoService.capitalizarPalabras(chequeBanco), chequeFechaEmision, chequeFechaCobro,
         }),
       }),
     });
@@ -262,9 +263,9 @@ function CobranzasContent() {
                 ) : (
                   <div>
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Descripción *</label>
-                    <input type="text" value={descripcion} onChange={e => setDescripcion(e.target.value)}
+                    <input type="text" value={descripcion} onChange={e => setDescripcion(formatoService.capitalizarPrimeraLetra(e.target.value))}
                            placeholder="Motivo del cobro..."
-                           className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all uppercase" />
+                           className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all" />
                   </div>
                 )}
 
@@ -326,10 +327,10 @@ function CobranzasContent() {
                 {formaPago === "Cheque" && (
                   <div className="md:col-span-2 grid grid-cols-2 gap-4 p-5 bg-gray-50 border border-gray-200 rounded-2xl">
                     <p className="col-span-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Datos del cheque</p>
-                    <input type="text" placeholder="N° de cheque" value={chequeNumero} onChange={e => setChequeNumero(e.target.value)}
-                           className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:border-red-600 uppercase" />
-                    <input type="text" placeholder="Banco emisor" value={chequeBanco} onChange={e => setChequeBanco(e.target.value)}
-                           className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:border-red-600 uppercase" />
+                    <input type="text" placeholder="N° de cheque" value={chequeNumero} onChange={e => setChequeNumero(formatoService.capitalizarPalabras(e.target.value))}
+                           className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:border-red-600" />
+                    <input type="text" placeholder="Banco emisor" value={chequeBanco} onChange={e => setChequeBanco(formatoService.capitalizarPalabras(e.target.value))}
+                           className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:border-red-600" />
                     <div>
                       <label className="text-[9px] font-bold text-gray-400 uppercase block mb-1">Fecha emisión</label>
                       <input type="date" value={chequeFechaEmision} onChange={e => setChequeFechaEmision(e.target.value)}

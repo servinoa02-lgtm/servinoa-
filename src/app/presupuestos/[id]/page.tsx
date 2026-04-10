@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ArrowLeft, FileText, Receipt, User, Wrench, CreditCard, Printer, Save, Trash2, CheckCircle2, XCircle, ChevronRight, AlertTriangle, Plus } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatFecha, anoActualAR } from "@/lib/dateUtils";
+import { formatoService } from "@/services/formatoService";
 
 interface Presupuesto {
   id: string;
@@ -293,8 +294,8 @@ export default function PresupuestoDetallePage() {
                         {editItems.map((item, idx) => (
                           <div key={idx} className="bg-white border border-gray-200 p-5 rounded-2xl relative group shadow-sm flex flex-col gap-4">
                              <button onClick={() => editItems.length > 1 && setEditItems(editItems.filter((_, i) => i !== idx))} className="absolute top-2 right-2 text-gray-300 hover:text-red-600 transition-all"><Trash2 size={18}/></button>
-                             <input type="text" value={item.descripcion} onChange={e => { const n = [...editItems]; n[idx].descripcion = e.target.value.toUpperCase(); setEditItems(n); }} 
-                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold italic outline-none focus:border-red-600 focus:bg-white transition-all uppercase" placeholder="DESCRIPCIÓN DEL ÍTEM..." />
+                             <input type="text" value={item.descripcion} onChange={e => { const n = [...editItems]; n[idx].descripcion = formatoService.capitalizarPrimeraLetra(e.target.value); setEditItems(n); }} 
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold italic outline-none focus:border-red-600 focus:bg-white transition-all" placeholder="Descripción del ítem..." />
                              <div className="grid grid-cols-2 gap-4">
                                 <input type="number" min="1" value={item.cantidad || ""} onChange={e => { const n = [...editItems]; n[idx].cantidad = parseFloat(e.target.value) || 0; setEditItems(n); }} 
                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:border-red-600 focus:bg-white" placeholder="Cant." />

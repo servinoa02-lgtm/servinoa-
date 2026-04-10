@@ -8,111 +8,83 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ==========================================
-// USUARIOS Y AUTENTICACIÓN
-// ==========================================
-
-enum Rol {
-  ADMIN
-  TECNICO
-  CAJA
-  VENTAS
-}
-
 model Usuario {
-  id        String   @id @default(cuid())
-  nombre    String
-  email     String   @unique
-  password  String
-  rol       Rol      @default(TECNICO)
-  activo    Boolean  @default(true)
-  foto      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  ordenesAsignadas  OrdenTrabajo[]  @relation("TecnicoOT")
-  ordenesCreadas    OrdenTrabajo[]  @relation("CreadorOT")
-  presupuestos      Presupuesto[]
-  cobranzas         Cobranza[]
-  gastos            Gasto[]
-  notas             Nota[]
-  tareas            Tarea[]
-  cajaAsignada      Caja?           @relation("CajaUsuario")
-  servicios         Servicio[]
-  ventas            Venta[]
+  id               String         @id @default(cuid())
+  nombre           String
+  email            String         @unique
+  password         String
+  rol              Rol            @default(TECNICO)
+  activo           Boolean        @default(true)
+  foto             String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  cajaAsignada     Caja?          @relation("CajaUsuario")
+  cobranzas        Cobranza[]
+  gastos           Gasto[]
+  notas            Nota[]
+  ordenesCreadas   OrdenTrabajo[] @relation("CreadorOT")
+  ordenesAsignadas OrdenTrabajo[] @relation("TecnicoOT")
+  presupuestos     Presupuesto[]
+  servicios        Servicio[]
+  tareas           Tarea[]
+  ventas           Venta[]
 }
-
-// ==========================================
-// CLIENTES Y EMPRESAS
-// ==========================================
 
 model Empresa {
-  id        String   @id @default(cuid())
-  nombre    String   @unique
+  id        String    @id @default(cuid())
+  nombre    String    @unique
   cuit      String?
   domicilio String?
   telefono  String?
-  createdAt DateTime @default(now())
-
-  clientes Cliente[]
+  createdAt DateTime  @default(now())
+  clientes  Cliente[]
 }
 
 model Cliente {
-  id        String   @id @default(cuid())
-  nombre    String
-  dni       String?
-  cuit      String?
-  email     String?
-  domicilio String?
-  telefono  String?
-  iva       String   @default("NO incluyen IVA")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  empresaId String?
-  empresa   Empresa? @relation(fields: [empresaId], references: [id])
-
+  id              String            @id @default(cuid())
+  nombre          String
+  dni             String?
+  email           String?
+  domicilio       String?
+  telefono        String?
+  iva             String            @default("NO incluyen IVA")
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  empresaId       String?
+  cuit            String?
+  cheques         Cheque[]
+  empresa         Empresa?          @relation(fields: [empresaId], references: [id])
+  cobranzas       Cobranza[]
+  cuentaCorriente CuentaCorriente[]
   ordenes         OrdenTrabajo[]
   presupuestos    Presupuesto[]
-  cobranzas       Cobranza[]
-  cheques         Cheque[]
-  cuentaCorriente CuentaCorriente[]
   servicios       Servicio[]
   ventas          Venta[]
 }
 
-// ==========================================
-// CATÁLOGO DE EQUIPOS
-// ==========================================
-
 model Maquina {
-  id     String  @id @default(cuid())
-  nombre String  @unique
-
+  id      String         @id @default(cuid())
+  nombre  String         @unique
   marcas  Marca[]
   ordenes OrdenTrabajo[]
 }
 
 model Marca {
-  id     String  @id @default(cuid())
-  nombre String
-
+  id        String         @id @default(cuid())
+  nombre    String
   maquinaId String
-  maquina   Maquina @relation(fields: [maquinaId], references: [id])
-
-  modelos Modelo[]
-  ordenes OrdenTrabajo[]
+  maquina   Maquina        @relation(fields: [maquinaId], references: [id])
+  modelos   Modelo[]
+  ordenes   OrdenTrabajo[]
 
   @@unique([nombre, maquinaId])
 }
 
 model Modelo {
-  id     String  @id @default(cuid())
-  nombre String
-
+  id      String         @id @default(cuid())
+  nombre  String
   marcaId String
-  marca   Marca  @relation(fields: [marcaId], references: [id])
-
+  marca   Marca          @relation(fields: [marcaId], references: [id])
   ordenes OrdenTrabajo[]
 
   @@unique([nombre, marcaId])
@@ -123,127 +95,80 @@ model Falla {
   nombre String @unique
 }
 
-// ==========================================
-// ÓRDENES DE TRABAJO
-// ==========================================
-
-enum EstadoOT {
-  RECIBIDO
-  PARA_REVISAR
-  EN_REVISION
-  REVISADO
-  PARA_PRESUPUESTAR
-  PRESUPUESTADO
-  APROBADO
-  EN_REPARACION
-  REPARADO
-  PARA_ENTREGAR
-  ENTREGADO_REALIZADO
-  ENTREGADO_SIN_REALIZAR
-  RECHAZADO
-}
-
 model OrdenTrabajo {
-  id              String    @id @default(cuid())
-  numero          Int       @unique @default(autoincrement())
-  fechaRecepcion  DateTime  @default(now())
+  id                   String        @id @default(cuid())
+  numero               Int           @unique @default(autoincrement())
+  fechaRecepcion       DateTime      @default(now())
   fechaEntrega         DateTime?
-  fechaEstimadaEntrega DateTime?
-  estado               EstadoOT  @default(RECIBIDO)
+  estado               EstadoOT      @default(RECIBIDO)
   falla                String?
-  revisionTecnica      String?
   observaciones        String?
-  nroSerie        String?
-  accesorios      String?
-  whatsappEnviado Boolean   @default(false)
-  pdfUrl          String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  maquinaId String?
-  maquina   Maquina? @relation(fields: [maquinaId], references: [id])
-  marcaId   String?
-  marca     Marca?   @relation(fields: [marcaId], references: [id])
-  modeloId  String?
-  modelo    Modelo?  @relation(fields: [modeloId], references: [id])
-
-  clienteId  String
-  cliente    Cliente  @relation(fields: [clienteId], references: [id])
-  tecnicoId  String?
-  tecnico    Usuario? @relation("TecnicoOT", fields: [tecnicoId], references: [id])
-  creadorId  String
-  creador    Usuario  @relation("CreadorOT", fields: [creadorId], references: [id])
-
-  presupuestos Presupuesto[]
-  fotos        Foto[]
-  notas        Nota[]
-  retiros      Retiro[]
-  historial    HistorialOT[]
+  nroSerie             String?
+  accesorios           String?
+  whatsappEnviado      Boolean       @default(false)
+  pdfUrl               String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  maquinaId            String?
+  marcaId              String?
+  modeloId             String?
+  clienteId            String
+  tecnicoId            String?
+  creadorId            String
+  fechaEstimadaEntrega DateTime?
+  revisionTecnica      String?
+  fotos                Foto[]
+  historial            HistorialOT[]
+  notas                Nota[]
+  cliente              Cliente       @relation(fields: [clienteId], references: [id])
+  creador              Usuario       @relation("CreadorOT", fields: [creadorId], references: [id])
+  maquina              Maquina?      @relation(fields: [maquinaId], references: [id])
+  marca                Marca?        @relation(fields: [marcaId], references: [id])
+  modelo               Modelo?       @relation(fields: [modeloId], references: [id])
+  tecnico              Usuario?      @relation("TecnicoOT", fields: [tecnicoId], references: [id])
+  presupuestos         Presupuesto[]
+  retiros              Retiro[]
 }
 
 model HistorialOT {
-  id             String    @id @default(cuid())
-  fecha          DateTime  @default(now())
+  id             String       @id @default(cuid())
+  fecha          DateTime     @default(now())
   estadoAnterior EstadoOT?
   estadoNuevo    EstadoOT
   comentario     String?
-
-  ordenId String
-  orden   OrdenTrabajo @relation(fields: [ordenId], references: [id])
+  ordenId        String
+  orden          OrdenTrabajo @relation(fields: [ordenId], references: [id])
 }
 
 model Foto {
-  id    String   @id @default(cuid())
-  url   String
-  fecha DateTime @default(now())
-
+  id      String       @id @default(cuid())
+  url     String
+  fecha   DateTime     @default(now())
   ordenId String
   orden   OrdenTrabajo @relation(fields: [ordenId], references: [id])
 }
 
 model Nota {
-  id            String   @id @default(cuid())
+  id            String       @id @default(cuid())
   texto         String
-  fecha         DateTime @default(now())
-  esSeguimiento Boolean  @default(false)
-
-  ordenId String
-  orden   OrdenTrabajo @relation(fields: [ordenId], references: [id])
-
-  usuarioId String
-  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+  fecha         DateTime     @default(now())
+  ordenId       String
+  usuarioId     String
+  esSeguimiento Boolean      @default(false)
+  orden         OrdenTrabajo @relation(fields: [ordenId], references: [id])
+  usuario       Usuario      @relation(fields: [usuarioId], references: [id])
 }
 
 model Retiro {
-  id        String   @id @default(cuid())
-  fecha     DateTime @default(now())
+  id        String       @id @default(cuid())
+  fecha     DateTime     @default(now())
   nombre    String
   dni       String?
   firma     String?
   fotoDni   String?
-  realizada Boolean  @default(false)
-
-  ordenId String
-  orden   OrdenTrabajo @relation(fields: [ordenId], references: [id])
-}
-
-// ==========================================
-// PRESUPUESTOS
-// ==========================================
-
-enum EstadoPresupuesto {
-  BORRADOR
-  PRESUPUESTADO
-  APROBADO
-  RECHAZADO
-}
-
-enum EstadoCobro {
-  PENDIENTE
-  APROBACION_PENDIENTE
-  COBRO_PENDIENTE
-  COBRADO
-  PARCIAL
+  realizada Boolean      @default(false)
+  ordenId   String
+  orden     OrdenTrabajo @relation(fields: [ordenId], references: [id])
 }
 
 model Presupuesto {
@@ -261,35 +186,26 @@ model Presupuesto {
   pdfUrl          String?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
-
-  clienteId String
-  cliente   Cliente @relation(fields: [clienteId], references: [id])
-
-  ordenId String?
-  orden   OrdenTrabajo? @relation(fields: [ordenId], references: [id])
-
-  usuarioId String
-  usuario   Usuario @relation(fields: [usuarioId], references: [id])
-
-  items           ItemPresupuesto[]
+  clienteId       String
+  ordenId         String?
+  usuarioId       String
   cobranzas       Cobranza[]
   cuentaCorriente CuentaCorriente[]
+  items           ItemPresupuesto[]
+  cliente         Cliente           @relation(fields: [clienteId], references: [id])
+  orden           OrdenTrabajo?     @relation(fields: [ordenId], references: [id])
+  usuario         Usuario           @relation(fields: [usuarioId], references: [id])
 }
 
 model ItemPresupuesto {
-  id          String @id @default(cuid())
-  cantidad    Int    @default(1)
-  descripcion String
-  precio      Float
-  total       Float
-
+  id            String      @id @default(cuid())
+  cantidad      Int         @default(1)
+  descripcion   String
+  precio        Float
+  total         Float
   presupuestoId String
   presupuesto   Presupuesto @relation(fields: [presupuestoId], references: [id], onDelete: Cascade)
 }
-
-// ==========================================
-// SERVICIOS EXTERNOS
-// ==========================================
 
 model Servicio {
   id          String   @id @default(cuid())
@@ -299,79 +215,61 @@ model Servicio {
   precio      Float
   estado      String   @default("PENDIENTE")
   createdAt   DateTime @default(now())
-
-  clienteId String
-  cliente   Cliente @relation(fields: [clienteId], references: [id])
-
-  tecnicoId String?
-  tecnico   Usuario? @relation(fields: [tecnicoId], references: [id])
+  clienteId   String
+  tecnicoId   String?
+  cliente     Cliente  @relation(fields: [clienteId], references: [id])
+  tecnico     Usuario? @relation(fields: [tecnicoId], references: [id])
 }
 
-// ==========================================
-// VENTAS DIRECTAS
-// ==========================================
-
 model Producto {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   nombre      String
   descripcion String?
   precio      Float
-  stockActual Int      @default(0)
-  stockMinimo Int      @default(0)
+  stockActual Int         @default(0)
+  stockMinimo Int         @default(0)
   categoria   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  itemsVenta ItemVenta[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  itemsVenta  ItemVenta[]
 }
 
 model Venta {
-  id        String   @id @default(cuid())
-  numero    Int      @unique @default(autoincrement())
-  fecha     DateTime @default(now())
-  total     Float
-  formaPago String   @default("Efectivo")
-  estado    String   @default("COMPLETADA")
-  createdAt DateTime @default(now())
-
+  id         String      @id @default(cuid())
+  numero     Int         @unique @default(autoincrement())
+  fecha      DateTime    @default(now())
+  total      Float
+  formaPago  String      @default("Efectivo")
+  estado     String      @default("COMPLETADA")
+  createdAt  DateTime    @default(now())
   clienteId  String?
-  cliente    Cliente? @relation(fields: [clienteId], references: [id])
-
   vendedorId String?
-  vendedor   Usuario? @relation(fields: [vendedorId], references: [id])
-
-  items ItemVenta[]
+  items      ItemVenta[]
+  cliente    Cliente?    @relation(fields: [clienteId], references: [id])
+  vendedor   Usuario?    @relation(fields: [vendedorId], references: [id])
 }
 
 model ItemVenta {
-  id       String @id @default(cuid())
-  cantidad Int
-  precio   Float
-  total    Float
-
+  id         String   @id @default(cuid())
+  cantidad   Int
+  precio     Float
+  total      Float
   productoId String
+  ventaId    String
   producto   Producto @relation(fields: [productoId], references: [id])
-
-  ventaId String
-  venta   Venta @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  venta      Venta    @relation(fields: [ventaId], references: [id], onDelete: Cascade)
 }
 
-// ==========================================
-// FINANZAS: CAJAS, COBRANZAS, GASTOS
-// ==========================================
-
 model Caja {
-  id     String @id @default(cuid())
-  nombre String @unique
-
-  usuarioId String? @unique
-  usuario   Usuario? @relation("CajaUsuario", fields: [usuarioId], references: [id])
-
-  movimientos           MovimientoCaja[]
+  id                    String              @id @default(cuid())
+  nombre                String              @unique
+  usuarioId             String?             @unique
+  usuario               Usuario?            @relation("CajaUsuario", fields: [usuarioId], references: [id])
   cobranzas             Cobranza[]
   gastos                Gasto[]
-  transferenciasOrigen  TransferenciaCaja[] @relation("CajaOrigen")
+  movimientos           MovimientoCaja[]
   transferenciasDestino TransferenciaCaja[] @relation("CajaDestino")
+  transferenciasOrigen  TransferenciaCaja[] @relation("CajaOrigen")
 }
 
 model MovimientoCaja {
@@ -381,83 +279,55 @@ model MovimientoCaja {
   ingreso     Float    @default(0)
   egreso      Float    @default(0)
   formaPago   String   @default("Efectivo")
-
-  cajaId String
-  caja   Caja @relation(fields: [cajaId], references: [id])
-
-  cobranzaId String?
-  gastoId    String?
-  chequeId   String?
-}
-
-enum TipoGasto {
-  GASTO_VARIOS
-  SUELDO
-  INSUMOS
-  MANTENIMIENTO
-  IMPUESTOS
-  LOGISTICA
-  EQUIPAMIENTO
+  cajaId      String
+  cobranzaId  String?
+  gastoId     String?
+  chequeId    String?
+  caja        Caja     @relation(fields: [cajaId], references: [id])
 }
 
 model Gasto {
-  id          String    @id @default(cuid())
-  tipo        TipoGasto @default(GASTO_VARIOS)
-  fecha       DateTime  @default(now())
+  id          String     @id @default(cuid())
+  tipo        TipoGasto  @default(GASTO_VARIOS)
+  fecha       DateTime   @default(now())
   descripcion String
   importe     Float
-  formaPago   String    @default("Efectivo")
+  formaPago   String     @default("Efectivo")
   comprobante String?
   firma       String?
   pdfUrl      String?
-  createdAt   DateTime  @default(now())
-
-  empleado String?
-  desde    DateTime?
-  hasta    DateTime?
-
+  createdAt   DateTime   @default(now())
+  empleado    String?
+  desde       DateTime?
+  hasta       DateTime?
   proveedorId String?
+  cajaId      String
+  usuarioId   String
+  chequeId    String?
+  caja        Caja       @relation(fields: [cajaId], references: [id])
+  cheque      Cheque?    @relation(fields: [chequeId], references: [id])
   proveedor   Proveedor? @relation(fields: [proveedorId], references: [id])
-
-  cajaId String
-  caja   Caja @relation(fields: [cajaId], references: [id])
-
-  usuarioId String
-  usuario   Usuario @relation(fields: [usuarioId], references: [id])
-
-  chequeId String?
-  cheque   Cheque? @relation(fields: [chequeId], references: [id])
-}
-
-enum TipoCobranza {
-  PRESUPUESTO
-  COBRANZA_VARIA
+  usuario     Usuario    @relation(fields: [usuarioId], references: [id])
 }
 
 model Cobranza {
-  id          String       @id @default(cuid())
-  tipo        TipoCobranza @default(PRESUPUESTO)
-  fecha       DateTime     @default(now())
-  descripcion String?
-  importe     Float
-  formaPago   String       @default("Efectivo")
-  createdAt   DateTime     @default(now())
-
-  clienteId     String?
-  cliente       Cliente?     @relation(fields: [clienteId], references: [id])
-
-  presupuestoId String?
-  presupuesto   Presupuesto? @relation(fields: [presupuestoId], references: [id])
-
-  cajaId String
-  caja   Caja @relation(fields: [cajaId], references: [id])
-
-  usuarioId String
-  usuario   Usuario @relation(fields: [usuarioId], references: [id])
-
-  chequeId String?
-  cheque   Cheque? @relation(fields: [chequeId], references: [id])
-
+  id              String            @id @default(cuid())
+  tipo            TipoCobranza      @default(PRESUPUESTO)
+  fecha           DateTime          @default(now())
+  descripcion     String?
+  importe         Float
+  formaPago       String            @default("Efectivo")
+  createdAt       DateTime          @default(now())
+  clienteId       String?
+  presupuestoId   String?
+  cajaId          String
+  usuarioId       String
+  chequeId        String?
+  caja            Caja              @relation(fields: [cajaId], references: [id])
+  cheque          Cheque?           @relation(fields: [chequeId], references: [id])
+  cliente         Cliente?          @relation(fields: [clienteId], references: [id])
+  presupuesto     Presupuesto?      @relation(fields: [presupuestoId], references: [id])
+  usuario         Usuario           @relation(fields: [usuarioId], references: [id])
   cuentaCorriente CuentaCorriente[]
 }
 
@@ -468,27 +338,11 @@ model TransferenciaCaja {
   descripcion      String?
   formaPagoOrigen  String   @default("Efectivo")
   formaPagoDestino String   @default("Efectivo")
-
-  cajaOrigenId String
-  cajaOrigen   Caja @relation("CajaOrigen", fields: [cajaOrigenId], references: [id])
-
-  cajaDestinoId String
-  cajaDestino   Caja @relation("CajaDestino", fields: [cajaDestinoId], references: [id])
-
-  chequeId String?
-}
-
-// ==========================================
-// CHEQUES
-// ==========================================
-
-enum EstadoCheque {
-  DEPOSITADO
-  EN_CARTERA
-  ENDOSADO
-  COBRADO
-  RECHAZADO
-  VENCIDO
+  cajaOrigenId     String
+  cajaDestinoId    String
+  chequeId         String?
+  cajaDestino      Caja     @relation("CajaDestino", fields: [cajaDestinoId], references: [id])
+  cajaOrigen       Caja     @relation("CajaOrigen", fields: [cajaOrigenId], references: [id])
 }
 
 model Cheque {
@@ -505,17 +359,137 @@ model Cheque {
   fotoDorso    String?
   endosadoA    String?
   descripcion  String?
-
-  clienteId String?
-  cliente   Cliente? @relation(fields: [clienteId], references: [id])
-
-  gastos    Gasto[]
-  cobranzas Cobranza[]
+  clienteId    String?
+  cliente      Cliente?     @relation(fields: [clienteId], references: [id])
+  cobranzas    Cobranza[]
+  gastos       Gasto[]
 }
 
-// ==========================================
-// CUENTA CORRIENTE
-// ==========================================
+model CuentaCorriente {
+  id            String                 @id @default(cuid())
+  clienteId     String
+  tipo          TipoMovimientoCuenta
+  origen        OrigenMovimientoCuenta
+  monto         Float                  @default(0)
+  fecha         DateTime               @default(now())
+  presupuestoId String?
+  cobranzaId    String?
+  cliente       Cliente                @relation(fields: [clienteId], references: [id])
+  cobranza      Cobranza?              @relation(fields: [cobranzaId], references: [id])
+  presupuesto   Presupuesto?           @relation(fields: [presupuestoId], references: [id])
+}
+
+model Proveedor {
+  id        String   @id @default(cuid())
+  nombre    String
+  empresa   String?
+  cuit      String?
+  email     String?
+  domicilio String?
+  telefono  String?
+  iva       String?
+  createdAt DateTime @default(now())
+  rubro     String?
+  gastos    Gasto[]
+}
+
+model Tarea {
+  id            String         @id @default(cuid())
+  descripcion   String
+  estado        EstadoTarea    @default(PENDIENTE)
+  prioridad     PrioridadTarea @default(MEDIA)
+  fecha         DateTime       @default(now())
+  vencimiento   DateTime?
+  observaciones String?
+  usuarioId     String
+  usuario       Usuario        @relation(fields: [usuarioId], references: [id])
+}
+
+model ColaMensajes {
+  id                String   @id @default(cuid())
+  tipoNotificacion  String
+  destinatario      String?
+  datos             String
+  procesarDespuesDe DateTime
+  estado            String   @default("PENDIENTE")
+  reintentos        Int      @default(0)
+  creadoEn          DateTime @default(now())
+  actualizadoEn     DateTime @updatedAt
+}
+
+model AccesorioCatalogo {
+  id     String @id @default(cuid())
+  nombre String @unique
+}
+
+model Configuracion {
+  clave String @id
+  valor String
+}
+
+enum Rol {
+  ADMIN
+  TECNICO
+  CAJA
+  VENTAS
+  JEFE
+  ADMINISTRACION
+}
+
+enum EstadoOT {
+  RECIBIDO
+  PARA_REVISAR
+  EN_REVISION
+  REVISADO
+  PARA_PRESUPUESTAR
+  PRESUPUESTADO
+  APROBADO
+  EN_REPARACION
+  REPARADO
+  PARA_ENTREGAR
+  ENTREGADO_REALIZADO
+  ENTREGADO_SIN_REALIZAR
+  RECHAZADO
+}
+
+enum EstadoPresupuesto {
+  BORRADOR
+  PRESUPUESTADO
+  APROBADO
+  RECHAZADO
+}
+
+enum EstadoCobro {
+  PENDIENTE
+  APROBACION_PENDIENTE
+  COBRO_PENDIENTE
+  COBRADO
+  PARCIAL
+}
+
+enum TipoGasto {
+  GASTO_VARIOS
+  SUELDO
+  INSUMOS
+  MANTENIMIENTO
+  IMPUESTOS
+  LOGISTICA
+  EQUIPAMIENTO
+}
+
+enum TipoCobranza {
+  PRESUPUESTO
+  COBRANZA_VARIA
+}
+
+enum EstadoCheque {
+  DEPOSITADO
+  EN_CARTERA
+  ENDOSADO
+  COBRADO
+  RECHAZADO
+  VENCIDO
+}
 
 enum TipoMovimientoCuenta {
   DEBE
@@ -527,45 +501,6 @@ enum OrigenMovimientoCuenta {
   COBRANZA
   MANUAL
 }
-
-model CuentaCorriente {
-  id        String                 @id @default(cuid())
-  clienteId String
-  cliente   Cliente                @relation(fields: [clienteId], references: [id])
-  tipo      TipoMovimientoCuenta
-  origen    OrigenMovimientoCuenta
-  monto     Float                  @default(0)
-  fecha     DateTime               @default(now())
-
-  presupuestoId String?
-  presupuesto   Presupuesto? @relation(fields: [presupuestoId], references: [id])
-
-  cobranzaId String?
-  cobranza   Cobranza? @relation(fields: [cobranzaId], references: [id])
-}
-
-// ==========================================
-// PROVEEDORES
-// ==========================================
-
-model Proveedor {
-  id        String   @id @default(cuid())
-  nombre    String
-  empresa   String?
-  cuit      String?
-  email     String?
-  domicilio String?
-  telefono  String?
-  rubro     String?
-  iva       String?
-  createdAt DateTime @default(now())
-
-  gastos Gasto[]
-}
-
-// ==========================================
-// TAREAS
-// ==========================================
 
 enum PrioridadTarea {
   BAJA
@@ -579,52 +514,3 @@ enum EstadoTarea {
   EN_PROGRESO
   COMPLETADA
 }
-
-model Tarea {
-  id            String         @id @default(cuid())
-  descripcion   String
-  estado        EstadoTarea    @default(PENDIENTE)
-  prioridad     PrioridadTarea @default(MEDIA)
-  fecha         DateTime       @default(now())
-  vencimiento   DateTime?
-  observaciones String?
-
-  usuarioId String
-  usuario   Usuario @relation(fields: [usuarioId], references: [id])
-}
-
-// ==========================================
-// AUTOMATIZACIONES Y COLA (CRON)
-// ==========================================
-
-model ColaMensajes {
-  id                String   @id @default(cuid())
-  tipoNotificacion  String   // "WHATSAPP", "EMAIL"
-  destinatario      String?
-  datos             String   // Datos serializados (JSON) de la notificación
-  procesarDespuesDe DateTime
-  estado            String   @default("PENDIENTE") // PENDIENTE, ENVIADO, ERROR
-  reintentos        Int      @default(0)
-  creadoEn          DateTime @default(now())
-  actualizadoEn     DateTime @updatedAt
-}
-
-// ==========================================
-// CATÁLOGO DE ACCESORIOS (CONFIGURACIÓN)
-// ==========================================
-
-model AccesorioCatalogo {
-  id     String @id @default(cuid())
-  nombre String @unique
-}
-
-// ==========================================
-// CONFIGURACIÓN GLOBAL
-// ==========================================
-
-model Configuracion {
-  clave String @id 
-  valor String
-}
-
-

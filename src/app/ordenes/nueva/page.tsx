@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Save, Wrench, User, Calendar, Briefcase, AlertTriangle, Search, X } from "lucide-react";
+import { formatoService } from "@/services/formatoService";
 
 interface Item { id: string; nombre: string; }
 interface Cliente extends Item { empresa?: { nombre: string } | null; telefono?: string; }
@@ -25,13 +26,13 @@ function ComboBox({ label, value, onChange, opciones, placeholder, rows }: any) 
       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-3 pl-1">{label}</label>
       {rows && rows > 1 ? (
         <textarea
-          value={value} onChange={(e) => { onChange(e.target.value); setAbierto(true); }} onFocus={() => setAbierto(true)}
-          rows={rows} className="w-full px-6 py-5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-base font-bold outline-none focus:border-red-600 transition-all uppercase italic tracking-tight placeholder:opacity-30" placeholder={placeholder}
+          value={value} onChange={(e) => { onChange(formatoService.capitalizarPrimeraLetra(e.target.value)); setAbierto(true); }} onFocus={() => setAbierto(true)}
+          rows={rows} className="w-full px-6 py-5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-base font-bold outline-none focus:border-red-600 transition-all italic tracking-tight placeholder:opacity-30" placeholder={placeholder}
         />
       ) : (
         <input
-          type="text" value={value} onChange={(e) => { onChange(e.target.value); setAbierto(true); }} onFocus={() => setAbierto(true)}
-          className="w-full px-6 py-5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-base font-bold outline-none focus:border-red-600 transition-all uppercase italic tracking-tight placeholder:opacity-30" placeholder={placeholder}
+          type="text" value={value} onChange={(e) => { onChange(formatoService.capitalizarPrimeraLetra(e.target.value)); setAbierto(true); }} onFocus={() => setAbierto(true)}
+          className="w-full px-6 py-5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-base font-bold outline-none focus:border-red-600 transition-all italic tracking-tight placeholder:opacity-30" placeholder={placeholder}
         />
       )}
       {abierto && filtradas.length > 0 && (
@@ -130,13 +131,13 @@ export default function NuevaOrdenPage() {
     if (!nuevoNombre.trim()) return;
     setCreandoCliente(true);
     const empresaNombre = esEmpresa && nuevoEmpresa.trim()
-      ? nuevoEmpresa.trim().toUpperCase()
+      ? formatoService.capitalizarPalabras(nuevoEmpresa.trim())
       : null;
     const res = await fetch("/api/clientes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        nombre: nuevoNombre.trim().toUpperCase(),
+        nombre: formatoService.capitalizarPalabras(nuevoNombre.trim()),
         telefono: nuevoTelefono || null,
         empresaNombre,
         cuit: nuevoCuit || null,
@@ -265,9 +266,9 @@ export default function NuevaOrdenPage() {
                         <option value="empresa">Empresa</option>
                       </select>
                       {esEmpresa && (
-                        <input type="text" value={nuevoEmpresa} onChange={e => setNuevoEmpresa(e.target.value)}
+                        <input type="text" value={nuevoEmpresa} onChange={e => setNuevoEmpresa(formatoService.capitalizarPalabras(e.target.value))}
                                placeholder="Nombre de la empresa"
-                               className="flex-1 px-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all uppercase" />
+                               className="flex-1 px-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all" />
                       )}
                     </div>
                   </div>
@@ -275,8 +276,8 @@ export default function NuevaOrdenPage() {
                   {/* Nombre */}
                   <div className="md:col-span-2">
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Nombre / Cliente *</label>
-                    <input type="text" value={nuevoNombre} onChange={e => setNuevoNombre(e.target.value)}
-                           className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all uppercase" />
+                    <input type="text" value={nuevoNombre} onChange={e => setNuevoNombre(formatoService.capitalizarPalabras(e.target.value))}
+                           className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all" />
                   </div>
 
                   {/* CUIT */}
@@ -314,9 +315,9 @@ export default function NuevaOrdenPage() {
                   {/* Domicilio */}
                   <div className="md:col-span-2">
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Domicilio</label>
-                    <input type="text" value={nuevoDomicilio} onChange={e => setNuevoDomicilio(e.target.value)}
+                    <input type="text" value={nuevoDomicilio} onChange={e => setNuevoDomicilio(formatoService.capitalizarPrimeraLetra(e.target.value))}
                            placeholder="Calle, número, localidad"
-                           className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all uppercase" />
+                           className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all" />
                   </div>
 
                   {/* IVA */}
@@ -348,7 +349,7 @@ export default function NuevaOrdenPage() {
                   <input
                     type="text" placeholder="Buscar por nombre o empresa..." value={buscarCliente}
                     onChange={e => { setBuscarCliente(e.target.value); setClienteId(""); }}
-                    className="w-full pl-14 pr-5 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all uppercase"
+                    className="w-full pl-14 pr-5 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all"
                   />
                 </div>
                 {clientesFiltrados.length > 0 && (
@@ -397,8 +398,8 @@ export default function NuevaOrdenPage() {
                   {maquinas.map(m => <option key={m.id} value={m.id}>{m.nombre.toUpperCase()}</option>)}
                 </select>
                 {!maquinaId && (
-                  <input type="text" placeholder="Especificar tipo..." value={maquinaNueva} onChange={e => setMaquinaNueva(e.target.value)}
-                         className="w-full mt-2 px-5 py-3 bg-white border-2 border-red-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 uppercase" />
+                  <input type="text" placeholder="Especificar tipo..." value={maquinaNueva} onChange={e => setMaquinaNueva(formatoService.capitalizarPrimeraLetra(e.target.value))}
+                         className="w-full mt-2 px-5 py-3 bg-white border-2 border-red-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600" />
                 )}
               </div>
               <div>
@@ -409,8 +410,8 @@ export default function NuevaOrdenPage() {
                   {marcas.map(m => <option key={m.id} value={m.id}>{m.nombre.toUpperCase()}</option>)}
                 </select>
                 {!marcaId && (
-                  <input type="text" placeholder="Especificar marca..." value={marcaNueva} onChange={e => setMarcaNueva(e.target.value)}
-                         className="w-full mt-2 px-5 py-3 bg-white border-2 border-red-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 uppercase" />
+                  <input type="text" placeholder="Especificar marca..." value={marcaNueva} onChange={e => setMarcaNueva(formatoService.capitalizarPrimeraLetra(e.target.value))}
+                         className="w-full mt-2 px-5 py-3 bg-white border-2 border-red-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600" />
                 )}
               </div>
               <div>
@@ -421,15 +422,15 @@ export default function NuevaOrdenPage() {
                   {modelos.map(m => <option key={m.id} value={m.id}>{m.nombre.toUpperCase()}</option>)}
                 </select>
                 {!modeloId && (
-                  <input type="text" placeholder="Especificar modelo..." value={modeloNuevo} onChange={e => setModeloNuevo(e.target.value)}
-                         className="w-full mt-2 px-5 py-3 bg-white border-2 border-red-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 uppercase" />
+                  <input type="text" placeholder="Especificar modelo..." value={modeloNuevo} onChange={e => setModeloNuevo(formatoService.capitalizarPrimeraLetra(e.target.value))}
+                         className="w-full mt-2 px-5 py-3 bg-white border-2 border-red-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600" />
                 )}
               </div>
             </div>
 
             <div>
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Número de serie</label>
-              <input type="text" value={nroSerie} onChange={e => setNroSerie(e.target.value)} placeholder="Ej: SN-12345678"
+              <input type="text" value={nroSerie} onChange={e => setNroSerie(e.target.value.toUpperCase())} placeholder="Ej: SN-12345678"
                      className="w-full px-5 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all uppercase" />
             </div>
           </div>
@@ -474,10 +475,10 @@ export default function NuevaOrdenPage() {
 
               <div className="flex gap-3">
                 <input
-                  type="text" value={nuevoAccesorio} onChange={e => setNuevoAccesorio(e.target.value)}
+                  type="text" value={nuevoAccesorio} onChange={e => setNuevoAccesorio(formatoService.capitalizarPrimeraLetra(e.target.value))}
                   onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); agregarAccesorio(); } }}
                   placeholder="Ej: Cargador, Cable HDMI, Batería..."
-                  className="flex-1 px-5 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all uppercase"
+                  className="flex-1 px-5 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all"
                 />
                 <button type="button" onClick={agregarAccesorio}
                         className="bg-red-600 text-white px-6 py-3.5 rounded-2xl text-xs font-bold hover:bg-red-700 transition-all uppercase tracking-wide">
@@ -513,7 +514,7 @@ export default function NuevaOrdenPage() {
             </div>
             <div>
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Observaciones internas</label>
-              <textarea value={observaciones} onChange={e => setObservaciones(e.target.value)} rows={3}
+              <textarea value={observaciones} onChange={e => setObservaciones(formatoService.capitalizarPrimeraLetra(e.target.value))} rows={3}
                         placeholder="Notas internas del equipo..."
                         className="w-full px-5 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all resize-none" />
             </div>

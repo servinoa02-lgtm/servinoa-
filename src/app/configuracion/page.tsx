@@ -9,6 +9,7 @@ import {
   ArrowLeft, Eye, EyeOff, Check, X, Edit2,
   AlertCircle, Lock, HardHat, Wallet
 } from "lucide-react";
+import { formatoService } from "@/services/formatoService";
 
 interface Usuario {
   id: string;
@@ -21,16 +22,16 @@ interface Usuario {
 
 const ROL_LABELS: Record<string, string> = {
   ADMIN: "Administrador de Sistema",
-  TECNICO: "Operador Técnico",
-  CAJA: "Control de Tesorería",
-  VENTAS: "Gestión Comercial",
+  JEFE: "Jefe",
+  ADMINISTRACION: "Administración",
+  TECNICO: "Técnico",
 };
 
 const ROL_COLORS: Record<string, string> = {
   ADMIN: "border-red-600 text-red-600 bg-red-50/50",
+  JEFE: "border-purple-600 text-purple-600 bg-purple-50/50",
+  ADMINISTRACION: "border-blue-600 text-blue-600 bg-blue-50/50",
   TECNICO: "border-gray-900 text-gray-900 bg-gray-50",
-  CAJA: "border-emerald-600 text-emerald-600 bg-emerald-50/50",
-  VENTAS: "border-amber-600 text-amber-600 bg-amber-50/50",
 };
 
 type ActiveTab = "accesorios" | "usuarios" | "cajas";
@@ -50,7 +51,7 @@ export default function ConfiguracionPage() {
   const [nuevaCaja, setNuevaCaja] = useState("");
   const [loadingCajas, setLoadingCajas] = useState(false);
 
-  // Usuarios
+  // Usuarios list
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [showInactivos, setShowInactivos] = useState(false);
@@ -75,7 +76,7 @@ export default function ConfiguracionPage() {
     if (status === "authenticated") {
       cargarAccesorios();
       cargarUsuarios();
-      if ((session?.user as any)?.rol === "ADMIN") {
+      if (["ADMIN", "JEFE"].includes((session?.user as any)?.rol)) {
         cargarCajas();
       }
     }
@@ -108,7 +109,7 @@ export default function ConfiguracionPage() {
     const res = await fetch("/api/accesorios", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombre: nuevoAcc.trim().toUpperCase() }),
+      body: JSON.stringify({ nombre: formatoService.capitalizarPrimeraLetra(nuevoAcc.trim()) }),
     });
     if (res.ok) {
       const data = await res.json();
@@ -128,7 +129,7 @@ export default function ConfiguracionPage() {
     const res = await fetch("/api/cajas", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombre: nuevaCaja.trim().toUpperCase() }),
+      body: JSON.stringify({ nombre: formatoService.capitalizarPrimeraLetra(nuevaCaja.trim()) }),
     });
     if (res.ok) {
       const data = await res.json();
@@ -160,7 +161,7 @@ export default function ConfiguracionPage() {
     setGuardandoUser(true);
     setErrorUser("");
 
-    const body: Record<string, unknown> = { nombre: uNombre.toUpperCase(), email: uEmail.toLowerCase(), rol: uRol, activo: uActivo };
+    const body: Record<string, unknown> = { nombre: formatoService.capitalizarPalabras(uNombre), email: uEmail.toLowerCase(), rol: uRol, activo: uActivo };
     if (uPassword) body.password = uPassword;
 
     const url = editingUser ? `/api/usuarios/${editingUser.id}` : "/api/usuarios";
@@ -223,7 +224,7 @@ export default function ConfiguracionPage() {
         <div className="max-w-7xl mx-auto px-6 flex gap-8">
           {[
             { key: "accesorios" as ActiveTab, label: "Componentes", icon: <Wrench size={18} /> },
-            ((session?.user as any)?.rol === "ADMIN") && { key: "cajas" as ActiveTab, label: "Entidades / Cajas", icon: <Wallet size={18} /> },
+            (["ADMIN", "JEFE"].includes((session?.user as any)?.rol)) && { key: "cajas" as ActiveTab, label: "Entidades / Cajas", icon: <Wallet size={18} /> },
             { key: "usuarios" as ActiveTab, label: "Gestión de Personal", icon: <Users size={18} /> },
           ].filter(Boolean).map((tab: any) => (
             <button
@@ -257,7 +258,7 @@ export default function ConfiguracionPage() {
                     value={nuevoAcc}
                     onChange={(e) => setNuevoAcc(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && addAcc()}
-                    className="flex-1 sm:w-64 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:border-red-600 transition-all uppercase"
+                    className="flex-1 sm:w-64 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:border-red-600 transition-all"
                     placeholder="Nuevo item..."
                   />
                   <button
@@ -303,7 +304,7 @@ export default function ConfiguracionPage() {
           </section>
         )}
 
-        {activeTab === "cajas" && (session?.user as any)?.rol === "ADMIN" && (
+        {activeTab === "cajas" && ["ADMIN", "JEFE"].includes((session?.user as any)?.rol) && (
           <section className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-12">
             <div className="p-8 border-b border-gray-100 bg-gray-50/20 flex flex-col sm:flex-row items-center justify-between gap-6">
                 <div>
@@ -316,7 +317,7 @@ export default function ConfiguracionPage() {
                     value={nuevaCaja}
                     onChange={(e) => setNuevaCaja(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && addCaja()}
-                    className="flex-1 sm:w-64 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:border-red-600 transition-all uppercase"
+                    className="flex-1 sm:w-64 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:border-red-600 transition-all"
                     placeholder="Efectivo, Banco X..."
                   />
                   <button
@@ -401,7 +402,7 @@ export default function ConfiguracionPage() {
                       type="text"
                       value={uNombre}
                       onChange={(e) => setUNombre(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none transition-all uppercase"
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none transition-all"
                     />
                   </div>
                   <div className="space-y-2">

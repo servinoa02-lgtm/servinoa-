@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Save, AlertCircle } from "lucide-react";
+import { formatoService } from "@/services/formatoService";
 
 export function GlobalNoteForm({ initialNote }: { initialNote: string }) {
   const [nota, setNota] = useState(initialNote);
@@ -13,7 +14,7 @@ export function GlobalNoteForm({ initialNote }: { initialNote: string }) {
       await fetch("/api/dashboard/nota", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nota: nota.toUpperCase() }),
+        body: JSON.stringify({ nota: formatoService.capitalizarPrimeraLetra(nota) }),
       });
     } catch (e) {
       console.error(e);
@@ -29,8 +30,8 @@ export function GlobalNoteForm({ initialNote }: { initialNote: string }) {
       </div>
       <textarea
         value={nota}
-        onChange={(e) => setNota(e.target.value)}
-        className="w-full h-32 resize-none bg-white border border-gray-200 rounded-xl p-4 text-sm font-medium text-gray-900 outline-none focus:border-red-600 transition-all uppercase placeholder:text-gray-300"
+        onChange={(e) => setNota(formatoService.capitalizarPrimeraLetra(e.target.value))}
+        className="w-full h-32 resize-none bg-white border border-gray-200 rounded-xl p-4 text-sm font-medium text-gray-900 outline-none focus:border-red-600 transition-all placeholder:text-gray-300"
         placeholder="Escriba un anuncio o recordatorio..."
       />
       <div className="flex justify-end">

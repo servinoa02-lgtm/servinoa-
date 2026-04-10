@@ -23,7 +23,7 @@ export async function requireAuth(requiredRole?: string | string[]) {
 
   if (requiredRole) {
     const roles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
-    const userRole = (session.user as { role?: string }).role;
+    const userRole = (session.user as { rol?: string }).rol;
     if (!userRole || !roles.includes(userRole)) {
       return NextResponse.json(
         { error: "Sin permisos para esta acción" },

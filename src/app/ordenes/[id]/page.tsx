@@ -10,6 +10,7 @@ import { formatFecha, formatFechaHora } from "@/lib/dateUtils";
 import { Wrench, Phone, FileText, Send, AlertTriangle, ArrowLeft, Printer, User, Calendar, ChevronRight, CheckCircle2, MoreHorizontal, ShieldCheck } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { CierreOTModal } from "@/components/ot/CierreOTModal";
+import { formatoService } from "@/services/formatoService";
 
 export default function OrdenDetallePage() {
   const { data: session, status } = useSession();
@@ -95,7 +96,7 @@ export default function OrdenDetallePage() {
     await fetch(`/api/ordenes/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ revisionTecnica: revisionTexto.toUpperCase() }),
+      body: JSON.stringify({ revisionTecnica: formatoService.capitalizarPrimeraLetra(revisionTexto) }),
     });
     cargarOT();
     setActualizando(false);
@@ -107,7 +108,7 @@ export default function OrdenDetallePage() {
     await fetch(`/api/ordenes/${id}/notas`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ texto: nuevaNota.toUpperCase(), esSeguimiento }),
+      body: JSON.stringify({ texto: formatoService.capitalizarPrimeraLetra(nuevaNota), esSeguimiento }),
     });
     setNuevaNota("");
     setEsSeguimiento(false);
@@ -377,8 +378,8 @@ export default function OrdenDetallePage() {
                        {orden.revisionTecnica && <CheckCircle2 size={16} className="text-emerald-500" />}
                     </div>
                     <textarea 
-                       value={revisionTexto} onChange={e => setRevisionTexto(e.target.value)}
-                       className="w-full flex-1 min-h-[250px] p-6 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:border-red-600 focus:bg-white text-sm font-bold italic transition-all uppercase leading-relaxed"
+                       value={revisionTexto} onChange={e => setRevisionTexto(formatoService.capitalizarPrimeraLetra(e.target.value))}
+                       className="w-full flex-1 min-h-[250px] p-6 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:border-red-600 focus:bg-white text-sm font-bold italic transition-all leading-relaxed"
                        placeholder="Describa el diagnóstico aquí..."
                     />
                     <div className="flex justify-end pt-4">
@@ -390,7 +391,7 @@ export default function OrdenDetallePage() {
                 {activeTab === "notas" && (
                   <div className="space-y-8 animate-in fade-in">
                     <div className="bg-gray-50 border border-gray-100 p-6 rounded-2xl space-y-4">
-                      <textarea value={nuevaNota} onChange={e => setNuevaNota(e.target.value)} className="w-full p-4 bg-white border border-gray-100 rounded-xl text-xs font-bold italic outline-none focus:border-red-600 transition-all uppercase" rows={3} placeholder="REGISTRAR NUEVO EVENTO..." />
+                      <textarea value={nuevaNota} onChange={e => setNuevaNota(formatoService.capitalizarPrimeraLetra(e.target.value))} className="w-full p-4 bg-white border border-gray-100 rounded-xl text-xs font-bold italic outline-none focus:border-red-600 transition-all" rows={3} placeholder="Registrar nuevo evento..." />
                       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                         <label className="flex items-center gap-3 text-[9px] text-gray-500 font-bold uppercase cursor-pointer">
                           <input type="checkbox" checked={esSeguimiento} onChange={e => setEsSeguimiento(e.target.checked)} className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-600" />

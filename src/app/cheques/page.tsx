@@ -13,6 +13,7 @@ import { Drawer } from "@/components/ui/Drawer";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Toast } from "@/components/ui/Toast";
 import { formatFecha } from "@/lib/dateUtils";
+import { formatoService } from "@/services/formatoService";
 
 interface Cheque {
   id: string;
@@ -97,13 +98,13 @@ export default function ChequesPage() {
         body: JSON.stringify({ 
           clienteId: clienteId || null, 
           numeroCheque, 
-          banco: banco.toUpperCase(), 
-          librador: librador.toUpperCase(), 
+          banco: formatoService.capitalizarPalabras(banco), 
+          librador: formatoService.capitalizarPalabras(librador), 
           importe, 
           fechaEmision, 
           fechaCobro, 
           endosadoA, 
-          descripcion: (descripcion || "").toUpperCase(), 
+          descripcion: formatoService.capitalizarPrimeraLetra(descripcion || ""), 
           estado: estadoForm 
         }),
       });
@@ -274,17 +275,17 @@ export default function ChequesPage() {
              </div>
              <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Banco</label>
-                <input type="text" value={banco} onChange={e => setBanco(e.target.value)}
+                <input type="text" value={banco} onChange={e => setBanco(formatoService.capitalizarPalabras(e.target.value))}
                   placeholder="Banco emisor..."
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none uppercase placeholder:text-gray-300" />
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none placeholder:text-gray-300" />
              </div>
           </div>
 
           <div className="space-y-2">
              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Librador (Firmante)</label>
-             <input type="text" value={librador} onChange={e => setLibrador(e.target.value)}
+             <input type="text" value={librador} onChange={e => setLibrador(formatoService.capitalizarPalabras(e.target.value))}
                placeholder="Nombre de quien firma..."
-               className="w-full px-5 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none uppercase placeholder:text-gray-300" />
+               className="w-full px-5 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none placeholder:text-gray-300" />
           </div>
 
           <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">

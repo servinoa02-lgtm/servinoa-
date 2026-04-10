@@ -15,6 +15,7 @@ import { ProveedorQuickAdd } from "@/components/ui/ProveedorQuickAdd";
 import { Toast } from "@/components/ui/Toast";
 import { formatFecha } from "@/lib/dateUtils";
 import { FORMAS_PAGO } from "@/lib/constants";
+import { formatoService } from "@/services/formatoService";
 
 interface Gasto {
   id: string;
@@ -130,13 +131,13 @@ export default function GastosPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tipo,
-          descripcion: tipo === "SUELDO" ? `SUELDO ${empleado.toUpperCase()}` : descripcion.toUpperCase(),
+          descripcion: tipo === "SUELDO" ? `SUELDO ${empleado.toUpperCase()}` : formatoService.capitalizarPrimeraLetra(descripcion),
           importe,
           formaPago,
           cajaId,
           usuarioId: (session?.user as { id?: string })?.id,
           proveedorId: proveedorId || null,
-          comprobante: comprobante.toUpperCase() || null,
+          comprobante: formatoService.capitalizarPalabras(comprobante) || null,
           empleado: tipo === "SUELDO" ? empleado.toUpperCase() : null,
           desde: desde || null,
           hasta: hasta || null,
@@ -320,15 +321,15 @@ export default function GastosPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Descripción *</label>
-                  <textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)}
+                  <textarea value={descripcion} onChange={(e) => setDescripcion(formatoService.capitalizarPrimeraLetra(e.target.value))}
                     placeholder="Detalle el motivo del gasto..."
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-medium outline-none min-h-[80px] resize-none" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">N° Comprobante (Opcional)</label>
-                  <input type="text" value={comprobante} onChange={(e) => setComprobante(e.target.value)}
+                  <input type="text" value={comprobante} onChange={(e) => setComprobante(formatoService.capitalizarPalabras(e.target.value))}
                     placeholder="Factura, Recibo, etc..."
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-medium outline-none uppercase" />
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-medium outline-none" />
                 </div>
               </>
             ) : (

@@ -14,6 +14,7 @@ import { Drawer } from "@/components/ui/Drawer";
 import { ProveedorQuickAdd } from "@/components/ui/ProveedorQuickAdd";
 import { formatFecha, hoyISO } from "@/lib/dateUtils";
 import { FORMAS_PAGO } from "@/lib/constants";
+import { formatoService } from "@/services/formatoService";
 
 
 function campo(label: string, children: React.ReactNode) {
@@ -252,14 +253,14 @@ export default function FinanzasPage() {
         tipo: cobroTipo,
         clienteId: cobroClienteId || null,
         presupuestoId: cobroTipo === "PRESUPUESTO" ? cobroPptoId : null,
-        descripcion: (cobroDescripcion || "Cobro varios").toUpperCase(),
+        descripcion: formatoService.capitalizarPrimeraLetra(cobroDescripcion || "Cobro varios"),
         importe: parseFloat(cobroImporte),
         formaPago: cobroFormaPago,
         cajaId: cobroCajaId,
         usuarioId: (session?.user as any)?.id,
         fecha: cobroFecha,
         ...(cobroFormaPago === "Cheque" && {
-          chequeNumero: chqNumero, chequeBanco: chqBanco,
+          chequeNumero: formatoService.capitalizarPalabras(chqNumero), chequeBanco: formatoService.capitalizarPalabras(chqBanco),
           chequeFechaEmision: chqEmision, chequeFechaCobro: chqCobro,
         }),
       }),
@@ -282,13 +283,13 @@ export default function FinanzasPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         tipo: gastoTipo,
-        descripcion: gastoTipo === "SUELDO" ? `SUELDO ${gastoEmpleado.toUpperCase()}` : gastoDescripcion.toUpperCase(),
+        descripcion: gastoTipo === "SUELDO" ? `SUELDO ${gastoEmpleado.toUpperCase()}` : formatoService.capitalizarPrimeraLetra(gastoDescripcion),
         importe: gastoImporte,
         formaPago: gastoFormaPago,
         cajaId: gastoCajaId,
         usuarioId: (session?.user as any)?.id,
         proveedorId: gastoProveedorId || null,
-        comprobante: gastoComprobante.toUpperCase() || null,
+        comprobante: formatoService.capitalizarPalabras(gastoComprobante) || null,
         empleado: gastoTipo === "SUELDO" ? gastoEmpleado.toUpperCase() : null,
         desde: gastoDesde || null,
         hasta: gastoHasta || null,
@@ -631,9 +632,9 @@ export default function FinanzasPage() {
               <input
                 type="text"
                 value={cobroDescripcion}
-                onChange={e => setCobroDescripcion(e.target.value)}
+                onChange={e => setCobroDescripcion(formatoService.capitalizarPrimeraLetra(e.target.value))}
                 placeholder="Motivo del cobro..."
-                className={inputCls + " uppercase"}
+                className={inputCls}
               />
             </div>
           )}
@@ -698,10 +699,10 @@ export default function FinanzasPage() {
             <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-4">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Datos del cheque</p>
               <div className="grid grid-cols-2 gap-3">
-                <input type="text" placeholder="N° de cheque" value={chqNumero} onChange={e => setChqNumero(e.target.value)}
-                  className={inputCls + " uppercase"} />
-                <input type="text" placeholder="Banco emisor" value={chqBanco} onChange={e => setChqBanco(e.target.value)}
-                  className={inputCls + " uppercase"} />
+                <input type="text" placeholder="N° de cheque" value={chqNumero} onChange={e => setChqNumero(formatoService.capitalizarPalabras(e.target.value))}
+                  className={inputCls} />
+                <input type="text" placeholder="Banco emisor" value={chqBanco} onChange={e => setChqBanco(formatoService.capitalizarPalabras(e.target.value))}
+                  className={inputCls} />
                 <div>
                   <label className="text-[9px] font-bold text-gray-400 uppercase block mb-1">Fecha emisión</label>
                   <input type="date" value={chqEmision} onChange={e => setChqEmision(e.target.value)} className={inputCls} />
@@ -764,7 +765,7 @@ export default function FinanzasPage() {
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Descripción *</label>
                 <textarea
                   value={gastoDescripcion}
-                  onChange={e => setGastoDescripcion(e.target.value)}
+                  onChange={e => setGastoDescripcion(formatoService.capitalizarPrimeraLetra(e.target.value))}
                   placeholder="Detalle el motivo del gasto..."
                   className={inputCls + " min-h-[70px] resize-none"}
                 />
@@ -772,9 +773,9 @@ export default function FinanzasPage() {
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Comprobante (opcional)</label>
                 <input
-                  type="text" value={gastoComprobante} onChange={e => setGastoComprobante(e.target.value)}
+                  type="text" value={gastoComprobante} onChange={e => setGastoComprobante(formatoService.capitalizarPalabras(e.target.value))}
                   placeholder="Factura, recibo, etc..."
-                  className={inputCls + " uppercase"}
+                  className={inputCls}
                 />
               </div>
             </>

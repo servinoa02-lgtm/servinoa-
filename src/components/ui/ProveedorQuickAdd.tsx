@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus, X, Save, Building2 } from "lucide-react";
+import { formatoService } from "@/services/formatoService";
 
 interface Proveedor {
   id: string;
@@ -43,10 +44,10 @@ export function ProveedorQuickAdd({ value, proveedores, onChange, onCreated }: P
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        nombre: nombre.trim().toUpperCase(),
-        domicilio: domicilio.trim().toUpperCase() || null,
+        nombre: formatoService.capitalizarPalabras(nombre.trim()),
+        domicilio: formatoService.capitalizarPrimeraLetra(domicilio.trim()) || null,
         telefono: telefono.trim() || null,
-        rubro: rubro.trim().toUpperCase() || null,
+        rubro: formatoService.capitalizarPrimeraLetra(rubro.trim()) || null,
       }),
     });
     if (res.ok) {
@@ -81,9 +82,9 @@ export function ProveedorQuickAdd({ value, proveedores, onChange, onCreated }: P
             <input
               type="text"
               value={nombre}
-              onChange={e => setNombre(e.target.value)}
-              placeholder="Ej: FERRETERÍA EL TORNILLO"
-              className={inputCls + " uppercase"}
+              onChange={e => setNombre(formatoService.capitalizarPalabras(e.target.value))}
+              placeholder="Ej: Ferretería El Tornillo"
+              className={inputCls}
               autoFocus
             />
           </div>
@@ -92,9 +93,9 @@ export function ProveedorQuickAdd({ value, proveedores, onChange, onCreated }: P
             <input
               type="text"
               value={rubro}
-              onChange={e => setRubro(e.target.value)}
+              onChange={e => setRubro(formatoService.capitalizarPrimeraLetra(e.target.value))}
               placeholder="Ej: Ferretería, Electricidad, Transporte..."
-              className={inputCls + " uppercase"}
+              className={inputCls}
             />
           </div>
           <div>
@@ -102,9 +103,9 @@ export function ProveedorQuickAdd({ value, proveedores, onChange, onCreated }: P
             <input
               type="text"
               value={domicilio}
-              onChange={e => setDomicilio(e.target.value)}
+              onChange={e => setDomicilio(formatoService.capitalizarPrimeraLetra(e.target.value))}
               placeholder="Calle y número, ciudad..."
-              className={inputCls + " uppercase"}
+              className={inputCls}
             />
           </div>
           <div>

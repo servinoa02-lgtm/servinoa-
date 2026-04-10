@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { formatFecha } from "@/lib/dateUtils";
+import { formatoService } from "@/services/formatoService";
 
 interface Transferencia {
   id: string;
@@ -82,7 +83,7 @@ function TransferenciasContent() {
         cajaOrigenId, 
         cajaDestinoId, 
         monto, 
-        descripcion: (descripcion || "Transferencia operativa").toUpperCase(), 
+        descripcion: formatoService.capitalizarPrimeraLetra(descripcion || "Transferencia operativa"), 
         formaPagoOrigen, 
         formaPagoDestino 
       }),
@@ -227,7 +228,7 @@ function TransferenciasContent() {
           <div className="space-y-2">
              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Descripción (Opcional)</label>
              <input 
-               type="text" value={descripcion} onChange={e => setDescripcion(e.target.value)}
+               type="text" value={descripcion} onChange={e => setDescripcion(formatoService.capitalizarPrimeraLetra(e.target.value))}
                placeholder="Motivo de la transferencia..."
                className="w-full px-5 py-4 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-medium outline-none" 
              />

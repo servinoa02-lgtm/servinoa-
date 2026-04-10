@@ -9,6 +9,7 @@ import { Drawer } from "@/components/ui/Drawer";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Toast } from "@/components/ui/Toast";
 import Link from "next/link";
+import { formatoService } from "@/services/formatoService";
 
 interface Cliente {
   id: string;
@@ -97,12 +98,12 @@ export default function ClientesPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          nombre: fNombre.toUpperCase(),
-          empresaNombre: fEmpresa ? fEmpresa.toUpperCase() : null,
+          nombre: formatoService.capitalizarPalabras(fNombre),
+          empresaNombre: fEmpresa ? formatoService.capitalizarPalabras(fEmpresa) : null,
           telefono: fTelefono || null,
           email: fEmail || null,
           dni: fDni || null,
-          domicilio: fDomicilio ? fDomicilio.toUpperCase() : null,
+          domicilio: fDomicilio ? formatoService.capitalizarPalabras(fDomicilio) : null,
           iva: fIva,
         }),
       });
@@ -281,16 +282,16 @@ export default function ClientesPage() {
           <div className="space-y-4">
              <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Empresa / Razón Social</label>
-                <input type="text" value={fEmpresa} onChange={(e) => setFEmpresa(e.target.value)}
+                <input type="text" value={fEmpresa} onChange={(e) => setFEmpresa(formatoService.capitalizarPalabras(e.target.value))}
                   placeholder="Nombre de la empresa (Opcional)..."
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none uppercase" />
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none" />
              </div>
              
              <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Nombre Completo *</label>
-                <input type="text" value={fNombre} onChange={(e) => setFNombre(e.target.value)}
+                <input type="text" value={fNombre} onChange={(e) => setFNombre(formatoService.capitalizarPalabras(e.target.value))}
                   placeholder="Nombre del titular o particular..."
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none uppercase" />
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none" />
              </div>
 
              <div className="grid grid-cols-2 gap-4">
@@ -314,8 +315,8 @@ export default function ClientesPage() {
 
              <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Domicilio</label>
-                <input type="text" value={fDomicilio} onChange={(e) => setFDomicilio(e.target.value.toUpperCase())}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold outline-none uppercase" />
+                <input type="text" value={fDomicilio} onChange={(e) => setFDomicilio(formatoService.capitalizarPalabras(e.target.value))}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold outline-none" />
              </div>
 
              <div className="space-y-2">

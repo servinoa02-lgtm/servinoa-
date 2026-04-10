@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Eraser, PenLine, ShieldCheck, AlertTriangle } from "lucide-react";
 import { formatEstado } from "@/lib/estados";
+import { formatoService } from "@/services/formatoService";
 
 interface CierreOTModalProps {
   isOpen: boolean;
@@ -152,7 +153,7 @@ export function CierreOTModal({
     try {
       setSubmitting(true);
       await onConfirm({
-        nombre: nombre.trim().toUpperCase(),
+        nombre: formatoService.capitalizarPalabras(nombre.trim()),
         dni: dni.trim(),
         firma: dataUrl,
       });
@@ -215,10 +216,10 @@ export function CierreOTModal({
               <input
                 type="text"
                 value={nombre}
-                onChange={(e) => setNombre(e.target.value.toUpperCase())}
-                placeholder="JUAN PÉREZ"
+                onChange={(e) => setNombre(formatoService.capitalizarPalabras(e.target.value))}
+                placeholder="Juan Pérez"
                 disabled={submitting}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold uppercase tracking-tight outline-none focus:border-gray-900 focus:bg-white transition-all disabled:opacity-50"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold tracking-tight outline-none focus:border-gray-900 focus:bg-white transition-all disabled:opacity-50"
               />
             </div>
             <div>

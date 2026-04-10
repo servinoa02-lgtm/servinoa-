@@ -5,6 +5,7 @@ import { Plus, Check, Clock, AlertCircle, Search, User, Calendar, Activity } fro
 import { Drawer } from "@/components/ui/Drawer";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatFecha } from "@/lib/dateUtils";
+import { formatoService } from "@/services/formatoService";
 
 export function TareasClient({ usuarios }: { usuarios: any[] }) {
   const [tareas, setTareas] = useState<any[]>([]);
@@ -44,7 +45,7 @@ export function TareasClient({ usuarios }: { usuarios: any[] }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...form,
-        descripcion: form.descripcion.toUpperCase()
+        descripcion: formatoService.capitalizarPrimeraLetra(form.descripcion)
       })
     });
     setMostrarForm(false);
@@ -160,8 +161,8 @@ export function TareasClient({ usuarios }: { usuarios: any[] }) {
             <div className="space-y-2">
                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Descripción</label>
                <textarea 
-                 value={form.descripcion} onChange={e => setForm({...form, descripcion: e.target.value})}
-                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none uppercase min-h-[120px]" 
+                 value={form.descripcion} onChange={e => setForm({...form, descripcion: formatoService.capitalizarPrimeraLetra(e.target.value)})}
+                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-red-600 rounded-xl text-sm font-bold outline-none min-h-[120px]" 
                  placeholder="Instrucciones de la tarea..." 
                />
             </div>

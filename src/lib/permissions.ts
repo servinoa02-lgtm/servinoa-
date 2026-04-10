@@ -1,44 +1,44 @@
 /**
- * Roles disponibles en el sistema según schema.prisma:
- * ADMIN, TECNICO, CAJA, VENTAS
+ * Roles disponibles en el sistema según schema.prisma (limitados a uso actual):
+ * ADMIN, JEFE, ADMINISTRACION, TECNICO
  */
 
 export const ROLES = {
   ADMIN: "ADMIN",
+  JEFE: "JEFE",
+  ADMINISTRACION: "ADMINISTRACION",
   TECNICO: "TECNICO",
-  CAJA: "CAJA",
-  VENTAS: "VENTAS",
 } as const;
 
 type Role = keyof typeof ROLES;
 
 export const permissions = {
   /**
-   * Solo el ADMIN tiene control total.
+   * ADMIN y JEFE tienen control total del sistema.
    */
   isAdmin(role?: string | null): boolean {
-    return role === ROLES.ADMIN;
+    return role === ROLES.ADMIN || role === ROLES.JEFE;
   },
 
   /**
-   * Para cobrar o ver finanzas fuertes, se requiere ADMIN o CAJA.
+   * Para cobrar, ver finanzas y Cajas, se requiere ADMIN, JEFE o ADMINISTRACION.
    */
   canManageFinances(role?: string | null): boolean {
-    return role === ROLES.ADMIN || role === ROLES.CAJA;
+    return role === ROLES.ADMIN || role === ROLES.JEFE || role === ROLES.ADMINISTRACION;
   },
 
   /**
-   * Técnicos pueden editar OTs y sus estados de diagnóstico.
-   * Admin y Ventas también. Caja generalmente no edita reparaciones.
+   * Todos los roles pueden ver y operar OTs de forma básica,
+   * pero aquí se valida el permiso extendido de edición (presupuestar, estados, etc).
    */
   canEditOT(role?: string | null): boolean {
-    return role === ROLES.ADMIN || role === ROLES.TECNICO || role === ROLES.VENTAS;
+    return role === ROLES.ADMIN || role === ROLES.JEFE || role === ROLES.ADMINISTRACION || role === ROLES.TECNICO;
   },
 
   /**
-   * Borrar registros (Hard Delete) solo permitido a ADMIN.
+   * Borrar registros (Hard Delete) solo permitido a ADMIN y JEFE.
    */
   canDelete(role?: string | null): boolean {
-    return role === ROLES.ADMIN;
+    return role === ROLES.ADMIN || role === ROLES.JEFE;
   }
 };

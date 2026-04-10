@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import { ArrowLeft, Plus, Trash2, Save, User, Wrench, CreditCard, ChevronRight, FileText, Receipt, AlertTriangle } from "lucide-react";
 import Link from "next/link";
+import { formatoService } from "@/services/formatoService";
 
 interface Cliente {
   id: string;
@@ -90,7 +91,7 @@ function NuevoPresupuestoForm() {
 
   const actualizarItem = (idx: number, campo: keyof Item, valor: string | number) => {
     const nuevos = [...items];
-    nuevos[idx] = { ...nuevos[idx], [campo]: campo === "descripcion" ? (valor as string).toUpperCase() : parseFloat(valor as string) || 0 };
+    nuevos[idx] = { ...nuevos[idx], [campo]: campo === "descripcion" ? formatoService.capitalizarPrimeraLetra(valor as string) : parseFloat(valor as string) || 0 };
     setItems(nuevos);
   };
 
@@ -101,9 +102,9 @@ function NuevoPresupuestoForm() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        nombre: nuevoNombre.toUpperCase(),
+        nombre: formatoService.capitalizarPalabras(nuevoNombre),
         telefono: nuevoTelefono || null,
-        empresaNombre: nuevoEmpresa.trim() ? nuevoEmpresa.toUpperCase() : null,
+        empresaNombre: nuevoEmpresa.trim() ? formatoService.capitalizarPalabras(nuevoEmpresa) : null,
         dni: null,
       }),
     });
@@ -225,11 +226,11 @@ function NuevoPresupuestoForm() {
                   const c = clientes.find(cl => cl.id === id);
                   if (c) setIncluyeIva(c.iva === "Incluyen IVA");
                 }}
-                        className="w-full px-6 py-4 bg-gray-50 border-2 border-gray-100 focus:border-red-600 rounded-2xl text-sm font-bold outline-none transition-all uppercase">
+                        className="w-full px-6 py-4 bg-gray-50 border-2 border-gray-100 focus:border-red-600 rounded-2xl text-sm font-bold outline-none transition-all">
                   <option value="">Seleccionar cliente...</option>
                   {clientes.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.empresa ? `${c.empresa.nombre} — ${c.nombre}`.toUpperCase() : c.nombre.toUpperCase()}
+                      {c.empresa ? `${c.empresa.nombre} — ${c.nombre}` : c.nombre}
                     </option>
                   ))}
                 </select>
@@ -239,7 +240,7 @@ function NuevoPresupuestoForm() {
                   <div className="mt-5">
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">OT vinculada (opcional)</label>
                     <select value={ordenId} onChange={(e) => setOrdenId(e.target.value)}
-                            className="w-full px-6 py-4 bg-gray-50 border-2 border-gray-100 focus:border-red-600 rounded-2xl text-sm font-bold outline-none transition-all uppercase">
+                            className="w-full px-6 py-4 bg-gray-50 border-2 border-gray-100 focus:border-red-600 rounded-2xl text-sm font-bold outline-none transition-all">
                       <option value="">Sin OT vinculada (venta directa)</option>
                       {ordenesFiltradas.map((o) => (
                         <option key={o.id} value={o.id}>
@@ -258,8 +259,8 @@ function NuevoPresupuestoForm() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Nombre *</label>
-                    <input type="text" value={nuevoNombre} onChange={(e) => setNuevoNombre(e.target.value)}
-                           className="w-full px-5 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all uppercase" />
+                    <input type="text" value={nuevoNombre} onChange={(e) => setNuevoNombre(formatoService.capitalizarPalabras(e.target.value))}
+                           className="w-full px-5 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all" />
                   </div>
                   <div>
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Teléfono</label>
@@ -268,8 +269,8 @@ function NuevoPresupuestoForm() {
                   </div>
                   <div className="md:col-span-2">
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Empresa (opcional)</label>
-                    <input type="text" value={nuevoEmpresa} onChange={(e) => setNuevoEmpresa(e.target.value)} placeholder="Particular"
-                           className="w-full px-5 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all uppercase" />
+                    <input type="text" value={nuevoEmpresa} onChange={(e) => setNuevoEmpresa(formatoService.capitalizarPalabras(e.target.value))} placeholder="Particular"
+                           className="w-full px-5 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all" />
                   </div>
                 </div>
                 <button onClick={handleCrearCliente} disabled={!nuevoNombre || creandoCliente}
@@ -309,7 +310,7 @@ function NuevoPresupuestoForm() {
                          className="col-span-1 px-3 py-3 bg-white border border-gray-100 rounded-xl text-sm font-bold text-center outline-none focus:border-red-600 transition-all" />
                   <input type="text" value={item.descripcion} onChange={(e) => actualizarItem(idx, "descripcion", e.target.value)}
                          placeholder="Descripción del trabajo o repuesto..."
-                         className="col-span-6 px-4 py-3 bg-white border border-gray-100 rounded-xl text-sm font-bold outline-none focus:border-red-600 transition-all uppercase" />
+                         className="col-span-6 px-4 py-3 bg-white border border-gray-100 rounded-xl text-sm font-bold outline-none focus:border-red-600 transition-all" />
                   <input type="number" min="0" step="0.01" value={item.precio || ""} onChange={(e) => actualizarItem(idx, "precio", e.target.value)}
                          placeholder="0.00"
                          className="col-span-2 px-4 py-3 bg-white border border-gray-100 rounded-xl text-sm font-bold text-right outline-none focus:border-red-600 transition-all font-mono" />
@@ -351,7 +352,7 @@ function NuevoPresupuestoForm() {
             <div>
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">IVA</label>
               <select value={incluyeIva ? "si" : "no"} onChange={(e) => setIncluyeIva(e.target.value === "si")}
-                      className="w-full px-5 py-4 bg-gray-50 border-2 border-gray-100 focus:border-red-600 rounded-2xl text-sm font-bold outline-none transition-all uppercase">
+                      className="w-full px-5 py-4 bg-gray-50 border-2 border-gray-100 focus:border-red-600 rounded-2xl text-sm font-bold outline-none transition-all">
                 <option value="no">Sin IVA</option>
                 <option value="si">Con IVA (21%)</option>
               </select>
@@ -359,7 +360,7 @@ function NuevoPresupuestoForm() {
             <div>
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Forma de pago</label>
               <select value={formaPago} onChange={(e) => setFormaPago(e.target.value)}
-                      className="w-full px-5 py-4 bg-gray-50 border-2 border-gray-100 focus:border-red-600 rounded-2xl text-sm font-bold outline-none transition-all uppercase">
+                      className="w-full px-5 py-4 bg-gray-50 border-2 border-gray-100 focus:border-red-600 rounded-2xl text-sm font-bold outline-none transition-all">
                 <option>Contado</option>
                 <option>Transferencia</option>
                 <option>Cheque 30 días</option>
@@ -376,7 +377,7 @@ function NuevoPresupuestoForm() {
           </div>
           <div>
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Observaciones</label>
-            <textarea value={observaciones} onChange={(e) => setObservaciones(e.target.value.toUpperCase())} rows={3}
+            <textarea value={observaciones} onChange={(e) => setObservaciones(formatoService.capitalizarPrimeraLetra(e.target.value))} rows={3}
                       placeholder="Aclaraciones técnicas o comerciales..."
                       className="w-full px-5 py-4 bg-gray-50 border-2 border-gray-100 focus:border-red-600 rounded-2xl text-sm font-bold outline-none resize-none transition-all" />
           </div>
