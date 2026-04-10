@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { 
   BarChart3, 
   Wrench, 
@@ -50,16 +51,20 @@ export function Sidebar() {
 
   if (pathname === "/login") return null;
 
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const userRole = (session?.user as any)?.rol;
 
-  // Filtrar items según rol
-  const filteredItems = menuItems.filter(item => {
+  // Filtrar items según rol (mientras carga no mostramos nada para evitar saltos)
+  const filteredItems = status === "loading" ? [] : menuItems.filter(item => {
     if (userRole === "TECNICO") {
       return ["Dashboard", "Taller (OT)", "Tareas"].includes(item.name);
     }
     if (userRole === "ADMINISTRACION") {
       return item.name !== "Configuración";
+    }
+    // Para roles extra (CAJA, VENTAS) o desconocidos, limitamos igual que Administración por seguridad
+    if (userRole !== "ADMIN" && userRole !== "JEFE") {
+       return item.name !== "Configuración";
     }
     return true; // ADMIN y JEFE ven todo
   });
