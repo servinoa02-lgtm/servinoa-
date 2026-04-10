@@ -41,11 +41,8 @@ type ActiveTab = "accesorios" | "usuarios" | "cajas";
 export default function ConfiguracionPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<ActiveTab>("accesorios");
   
-  return (
-    <RoleGuard allowedRoles={["ADMIN", "JEFE"]}>
-      <div className="p-0"> {/* Wrapper opcional */}
+  const [activeTab, setActiveTab] = useState<ActiveTab>("accesorios");
 
   // Accesorios
   const [accesorios, setAccesorios] = useState<{ id: string; nombre: string }[]>([]);
@@ -208,7 +205,8 @@ export default function ConfiguracionPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+    <RoleGuard allowedRoles={["ADMIN", "JEFE"]}>
+      <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
       <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 md:h-20 flex items-center justify-between">
           <div className="flex items-center gap-3 md:gap-6">
