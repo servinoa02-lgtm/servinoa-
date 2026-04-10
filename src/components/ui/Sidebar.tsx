@@ -50,11 +50,25 @@ export function Sidebar() {
 
   if (pathname === "/login") return null;
 
+  const { data: session } = useSession();
+  const userRole = (session?.user as any)?.rol;
+
+  // Filtrar items según rol
+  const filteredItems = menuItems.filter(item => {
+    if (userRole === "TECNICO") {
+      return ["Dashboard", "Taller (OT)", "Tareas"].includes(item.name);
+    }
+    if (userRole === "ADMINISTRACION") {
+      return item.name !== "Configuración";
+    }
+    return true; // ADMIN y JEFE ven todo
+  });
+
   const navContent = (
     <>
       {/* Navigation */}
       <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
-        {menuItems.map((item) => {
+        {filteredItems.map((item) => {
           const isActive = item.activeFor
           ? item.activeFor.some((p) => pathname.startsWith(p))
           : pathname.startsWith(item.href);

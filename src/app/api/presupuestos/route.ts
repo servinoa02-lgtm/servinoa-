@@ -5,7 +5,7 @@ import { calcularTotalConIVA } from "@/lib/constants";
 
 
 export async function GET() {
-  const sesion = await requireAuth();
+  const sesion = await requireAuth(["ADMIN", "JEFE", "ADMINISTRACION"]);
   if (sesion instanceof NextResponse) return sesion;
 
   try {
@@ -35,7 +35,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const sesion = await requireAuth(["ADMIN", "VENTAS"]);
+  const sesion = await requireAuth(["ADMIN", "JEFE", "ADMINISTRACION"]);
   if (sesion instanceof NextResponse) return sesion;
 
   try {
