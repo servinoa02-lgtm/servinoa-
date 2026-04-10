@@ -24,8 +24,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (nombre !== undefined) data.nombre = nombre;
     if (email !== undefined) data.email = email;
     if (rol !== undefined && ROLES_VALIDOS.includes(rol)) data.rol = rol;
-    if (activo !== undefined) data.activo = activo;
-    if (password) data.password = await bcrypt.hash(password, 10);
+    if (password) {
+      data.password = await bcrypt.hash(password, 10);
+      data.claveVisible = password;
+    }
 
     const usuario = await prisma.usuario.update({
       where: { id },
@@ -36,6 +38,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         email: true,
         rol: true,
         activo: true,
+        claveVisible: true,
         createdAt: true,
       },
     });

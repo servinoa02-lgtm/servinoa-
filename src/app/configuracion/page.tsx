@@ -17,6 +17,7 @@ interface Usuario {
   email: string;
   rol: string;
   activo: boolean;
+  claveVisible?: string | null;
   createdAt: string;
 }
 
@@ -513,6 +514,12 @@ export default function ConfiguracionPage() {
                           </td>
                           <td className="px-8 py-6 text-gray-500 font-medium text-xs">
                              {u.email}
+                             {["ADMIN", "JEFE"].includes((session?.user as any)?.rol) && u.claveVisible && (
+                                <div className="text-[10px] text-gray-400 mt-1.5 font-mono bg-white border border-gray-100 p-1.5 rounded-lg w-fit shadow-sm flex items-center gap-1.5">
+                                  <Lock size={10} className="opacity-50 text-red-600"/> 
+                                  {u.claveVisible}
+                                </div>
+                             )}
                           </td>
                           <td className="px-8 py-6">
                              <span className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest border ${ROL_COLORS[u.rol] || "border-gray-100 text-gray-400"}`}>
