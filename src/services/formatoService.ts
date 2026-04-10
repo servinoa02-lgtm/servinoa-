@@ -5,24 +5,15 @@ export const formatoService = {
    */
   capitalizarPrimeraLetra(texto: string | null | undefined): string {
     if (!texto) return "";
-    
-    const trimText = texto.trim();
-    if (trimText.length === 0) return "";
-
-    return trimText.charAt(0).toUpperCase() + trimText.slice(1);
+    return texto.replace(/^(.)/, (m) => m.toUpperCase());
   },
 
   /**
    * Capitaliza la primera letra de cada palabra (Title Case).
-   * Ideal para Nombres de Clientes o Marcas.
+   * Mantiene todos los espacios intactos.
    */
   capitalizarPalabras(texto: string | null | undefined): string {
     if (!texto) return "";
-    
-    return texto
-      .trim()
-      .split(/\s+/)
-      .map(palabra => palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase())
-      .join(" ");
+    return texto.replace(/\b(\w)/g, (m) => m.toUpperCase());
   }
 };

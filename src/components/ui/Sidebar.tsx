@@ -108,7 +108,7 @@ export function Sidebar() {
         <LogoutButton showLabel={!collapsed || mobileOpen} />
         {(!collapsed || mobileOpen) && (
           <p className="text-[10px] text-gray-400 text-center mt-4 font-medium uppercase tracking-wider">
-            v3.0.0 Stable
+            v3.0.1 Stable (Fix-Spaces)
           </p>
         )}
       </div>
