@@ -20,7 +20,7 @@ import {
 import Link from "next/link";
 import { GlobalNoteForm } from "./GlobalNoteForm";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { FinanceChart } from "@/components/ui/FinanceChart";
+import { FinanceChartConfigurable } from "@/components/ui/FinanceChartConfigurable";
 import { Card, StatCard } from "@/components/ui/Card";
 import { formatFecha, formatHora, inicioMesAR, finMesAR, haceNDiasAR, labelDiaMes, anoActualAR } from "@/lib/dateUtils";
 
@@ -80,34 +80,49 @@ export default async function DashboardPage() {
   const mesEgresos = movsCaja._sum.egreso || 0;
   const mesBalance = mesIngresos - mesEgresos;
 
-  // 7. Gráfico: últimos 30 días
-  const hace30 = haceNDiasAR(29);
-
-  const movs30 = await prisma.movimientoCaja.findMany({
-    where: { fecha: { gte: hace30 } },
+  // 7. Gráfico: Histórico Total (Predeterminado)
+  const movsTotales = await prisma.movimientoCaja.findMany({
     select: { fecha: true, ingreso: true, egreso: true },
-    orderBy: { fecha: "asc" },
+    orderBy: { fecha: 'asc' },
   });
 
-  const dayMap = new Map<string, { ingresos: number; egresos: number }>();
-  for (let i = 0; i < 30; i++) {
-    const d = new Date(hace30.getTime() + i * 86400000);
-    const key = labelDiaMes(d);
-    dayMap.set(key, { ingresos: 0, egresos: 0 });
-  }
-  for (const m of movs30) {
-    const key = labelDiaMes(new Date(m.fecha));
-    const existing = dayMap.get(key);
-    if (existing) {
-      existing.ingresos += m.ingreso || 0;
-      existing.egresos += m.egreso || 0;
+  const mesesLabels = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  const buckets = new Map<string, { fecha: string; ingresos: number; egresos: number }>();
+
+  if (movsTotales.length > 0) {
+    const firstDate = new Date(movsTotales[0].fecha);
+    const lastDate = new Date();
+    
+    let currY = firstDate.getFullYear();
+    let currM = firstDate.getMonth();
+    const lastY = lastDate.getFullYear();
+    const lastM = lastDate.getMonth();
+
+    while (currY < lastY || (currY === lastY && currM <= lastM)) {
+      const k = `${currY}-${currM}`;
+      buckets.set(k, {
+        fecha: `${mesesLabels[currM]} ${String(currY).slice(2)}`,
+        ingresos: 0,
+        egresos: 0
+      });
+      currM++;
+      if (currM > 11) {
+        currM = 0;
+        currY++;
+      }
+    }
+
+    for (const m of movsTotales) {
+      const k = `${m.fecha.getFullYear()}-${m.fecha.getMonth()}`;
+      const b = buckets.get(k);
+      if (b) {
+        b.ingresos += m.ingreso || 0;
+        b.egresos += m.egreso || 0;
+      }
     }
   }
-  const chartData = Array.from(dayMap.entries()).map(([fecha, v]) => ({
-    fecha,
-    ingresos: v.ingresos,
-    egresos: v.egresos,
-  }));
+  
+  const chartData = Array.from(buckets.values());
 
   const notaGlobal = await prisma.configuracion.findUnique({
     where: { clave: "NOTA_GLOBAL" }
@@ -170,13 +185,12 @@ export default async function DashboardPage() {
           <div className="lg:col-span-8">
             <Card
               title="Flujo de Operaciones"
-              subtitle="Movimientos de los últimos 30 días"
               icon={<BarChart2 size={20} className="text-red-600" />}
               action={<Link href="/cajas" className="text-xs font-bold text-red-600 hover:underline flex items-center gap-1">Ver todos <ChevronRight size={14} /></Link>}
               className="h-full rounded-2xl shadow-sm border border-gray-200"
             >
               <div className="py-4">
-                <FinanceChart data={chartData} />
+                <FinanceChartConfigurable initialData={chartData} initialPeriodo="total" />
               </div>
             </Card>
           </div>
