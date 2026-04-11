@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+import { adjustDateForBusinessCycle } from "@/lib/businessCycle";
+
 const TZ = "America/Argentina/Buenos_Aires";
 
 function getARParts(date: Date = new Date()) {
@@ -76,7 +78,8 @@ export async function GET(req: NextRequest) {
     }
 
     for (const m of movs) {
-      const p = getARPartsFromDate(new Date(m.fecha));
+      const adjusted = adjustDateForBusinessCycle(new Date(m.fecha));
+      const p = getARPartsFromDate(adjusted);
       const k = `${p.year}-${p.month}`;
       const b = buckets.get(k);
       if (b) {
@@ -133,7 +136,8 @@ export async function GET(req: NextRequest) {
       });
     }
     for (const m of movs) {
-      const p = getARPartsFromDate(new Date(m.fecha));
+      const adjusted = adjustDateForBusinessCycle(new Date(m.fecha));
+      const p = getARPartsFromDate(adjusted);
       const k = `${p.year}-${p.month}`;
       const b = buckets.get(k);
       if (b) {
@@ -157,7 +161,8 @@ export async function GET(req: NextRequest) {
       buckets.set(y, { fecha: String(y), ingresos: 0, egresos: 0 });
     }
     for (const m of movs) {
-      const p = getARPartsFromDate(new Date(m.fecha));
+      const adjusted = adjustDateForBusinessCycle(new Date(m.fecha));
+      const p = getARPartsFromDate(adjusted);
       const b = buckets.get(p.year);
       if (b) {
         b.ingresos += m.ingreso || 0;

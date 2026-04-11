@@ -23,6 +23,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { FinanceChartConfigurable } from "@/components/ui/FinanceChartConfigurable";
 import { Card, StatCard } from "@/components/ui/Card";
 import { formatFecha, formatHora, inicioMesAR, finMesAR, haceNDiasAR, labelDiaMes, anoActualAR } from "@/lib/dateUtils";
+import { adjustDateForBusinessCycle } from "@/lib/businessCycle";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -113,7 +114,8 @@ export default async function DashboardPage() {
     }
 
     for (const m of movsTotales) {
-      const k = `${m.fecha.getFullYear()}-${m.fecha.getMonth()}`;
+      const adjusted = adjustDateForBusinessCycle(new Date(m.fecha));
+      const k = `${adjusted.getFullYear()}-${adjusted.getMonth()}`;
       const b = buckets.get(k);
       if (b) {
         b.ingresos += m.ingreso || 0;
