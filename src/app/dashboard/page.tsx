@@ -80,8 +80,8 @@ export default async function DashboardPage() {
   const movsParaResumen = await prisma.movimientoCaja.findMany({
     where: {
       fecha: {
-        gte: haceNDiasAR(inicioMesStd, 10),
-        lte: haceNDiasAR(finMesStd, -10)
+        gte: new Date(inicioMesStd.getTime() - 10 * 24 * 60 * 60 * 1000),
+        lte: new Date(finMesStd.getTime() + 10 * 24 * 60 * 60 * 1000)
       }
     },
     select: { fecha: true, ingreso: true, egreso: true }
@@ -117,6 +117,21 @@ export default async function DashboardPage() {
     const total = p.incluyeIva ? subtotal * 1.21 : subtotal;
     const cobrado = p.cobranzas.reduce((acc, c) => acc + c.importe, 0);
     saldoEnCalle += Math.max(0, total - cobrado);
+  });
+
+  const totalPatrimonio = capitalTotal + saldoEnCalle;
+
+  const cajas = await prisma.caja.findMany({
+    include: {
+      movimientos: {
+        select: { ingreso: true, egreso: true }
+      }
+    }
+  });
+
+  const cajasConSaldo = cajas.map(c => {
+    const totalCaja = c.movimientos.reduce((acc, m) => acc + (m.ingreso || 0) - (m.egreso || 0), 0);
+    return { nombre: c.nombre, saldo: totalCaja };
   });
 
   // 7. Gráfico: Histórico Total

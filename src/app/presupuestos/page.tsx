@@ -277,8 +277,6 @@ export default function PresupuestosPage() {
           </div>
         </div>
 
-        </div>
-
         {/* ─── Paginación ─── */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
