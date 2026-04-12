@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { Trash2, ArrowLeft, Plus, Search, FileText, ChevronRight } from "lucide-react";
+import { useSort } from "@/hooks/useSort";
+import { SortHeader } from "@/components/ui/SortHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Toast } from "@/components/ui/Toast";
@@ -105,6 +107,15 @@ export default function PresupuestosPage() {
     return coincideTexto && coincideEstado;
   });
 
+  const { sorted: ordenados, sortKey, sortDirection, toggle } = useSort(filtrados, {
+    numero: (p) => p.numero,
+    cliente: (p) => p.cliente?.empresa?.nombre || p.cliente?.nombre || "",
+    vinculo: (p) => p.orden?.numero ?? -1,
+    total: (p) => p.total,
+    saldo: (p) => p.saldo,
+    estado: (p) => p.estado,
+  });
+
   if (status === "loading" || loading) {
     return (
       <div className="flex flex-col items-center justify-center p-40">
@@ -172,17 +183,17 @@ export default function PresupuestosPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50/50 border-b border-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                  <th className="text-left px-6 py-4">N° Documento</th>
-                  <th className="text-left px-6 py-4">Cliente / Empresa</th>
-                  <th className="text-left px-6 py-4">Vínculo OT</th>
-                  <th className="text-right px-6 py-4">Total</th>
-                  <th className="text-right px-6 py-4">Saldo</th>
-                  <th className="text-center px-6 py-4">Estado</th>
+                  <SortHeader label="N° Documento" sortKey="numero" currentKey={sortKey} direction={sortDirection} onToggle={toggle} />
+                  <SortHeader label="Cliente / Empresa" sortKey="cliente" currentKey={sortKey} direction={sortDirection} onToggle={toggle} />
+                  <SortHeader label="Vínculo OT" sortKey="vinculo" currentKey={sortKey} direction={sortDirection} onToggle={toggle} />
+                  <SortHeader label="Total" sortKey="total" currentKey={sortKey} direction={sortDirection} onToggle={toggle} align="right" />
+                  <SortHeader label="Saldo" sortKey="saldo" currentKey={sortKey} direction={sortDirection} onToggle={toggle} align="right" />
+                  <SortHeader label="Estado" sortKey="estado" currentKey={sortKey} direction={sortDirection} onToggle={toggle} align="center" />
                   <th className="text-right px-6 py-4">Acción</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-              {filtrados.map((p) => (
+              {ordenados.map((p) => (
                   <tr
                     key={p.id}
                     className="hover:bg-gray-50 group transition-all cursor-pointer"

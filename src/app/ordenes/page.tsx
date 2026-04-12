@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { Search, Plus, ArrowLeft, Wrench, Calendar, ClipboardList } from "lucide-react";
+import { useSort } from "@/hooks/useSort";
+import { SortHeader } from "@/components/ui/SortHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Toast } from "@/components/ui/Toast";
 import Link from "next/link";
@@ -62,6 +64,14 @@ export default function OrdenesPage() {
     );
   });
 
+  const { sorted: ordenadas, sortKey, sortDirection, toggle } = useSort(filtradas, {
+    numero: (o) => o.numero,
+    cliente: (o) => o.cliente?.nombre || "",
+    equipo: (o) => [o.maquina?.nombre, o.marca?.nombre, o.modelo?.nombre].filter(Boolean).join(" ") || "",
+    estado: (o) => o.estado,
+    recepcion: (o) => o.fechaRecepcion,
+  });
+
   if (status === "loading" || loading) {
     return (
       <div className="flex flex-col items-center justify-center p-40">
@@ -116,15 +126,15 @@ export default function OrdenesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50/50 border-b border-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                  <th className="text-left px-6 py-4">N° Orden</th>
-                  <th className="text-left px-6 py-4">Cliente / Empresa</th>
-                  <th className="text-left px-6 py-4">Equipo / Marca</th>
-                  <th className="text-left px-6 py-4">Estado</th>
-                  <th className="text-right px-6 py-4">Recepción</th>
+                  <SortHeader label="N° Orden" sortKey="numero" currentKey={sortKey} direction={sortDirection} onToggle={toggle} />
+                  <SortHeader label="Cliente / Empresa" sortKey="cliente" currentKey={sortKey} direction={sortDirection} onToggle={toggle} />
+                  <SortHeader label="Equipo / Marca" sortKey="equipo" currentKey={sortKey} direction={sortDirection} onToggle={toggle} />
+                  <SortHeader label="Estado" sortKey="estado" currentKey={sortKey} direction={sortDirection} onToggle={toggle} />
+                  <SortHeader label="Recepción" sortKey="recepcion" currentKey={sortKey} direction={sortDirection} onToggle={toggle} align="right" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filtradas.map((o) => (
+                {ordenadas.map((o) => (
                   <tr
                     key={o.id}
                     className="hover:bg-gray-50 group transition-all cursor-pointer"

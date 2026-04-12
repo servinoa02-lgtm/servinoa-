@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { Plus, Search, Building2, Phone, Mail, FileText, ArrowLeft, Trash2, ChevronRight, Contact, Briefcase } from "lucide-react";
+import { useSort } from "@/hooks/useSort";
+import { SortHeader } from "@/components/ui/SortHeader";
 import { Drawer } from "@/components/ui/Drawer";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Toast } from "@/components/ui/Toast";
@@ -75,6 +77,14 @@ export default function ClientesPage() {
       (c.telefono || "").includes(texto) ||
       (c.email || "").toLowerCase().includes(texto)
     );
+  });
+
+  const { sorted: ordenados, sortKey, sortDirection, toggle } = useSort(filtrados, {
+    titular: (c) => c.nombre,
+    empresa: (c) => c.empresa?.nombre || "Particular",
+    contacto: (c) => c.telefono || "",
+    saldo: (c) => c.saldo ?? 0,
+    condicion: (c) => c.iva,
   });
 
   const eliminarCliente = async (id: string) => {
@@ -178,15 +188,15 @@ export default function ClientesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50/50 border-b border-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                  <th className="text-left px-6 py-4">Titular / Empresa</th>
-                  <th className="text-left px-6 py-4">Contacto</th>
-                  <th className="text-right px-6 py-4">Saldo</th>
-                  <th className="text-left px-6 py-4">Condición</th>
+                  <SortHeader label="Titular / Empresa" sortKey="titular" currentKey={sortKey} direction={sortDirection} onToggle={toggle} />
+                  <SortHeader label="Contacto" sortKey="contacto" currentKey={sortKey} direction={sortDirection} onToggle={toggle} />
+                  <SortHeader label="Saldo" sortKey="saldo" currentKey={sortKey} direction={sortDirection} onToggle={toggle} align="right" />
+                  <SortHeader label="Condición" sortKey="condicion" currentKey={sortKey} direction={sortDirection} onToggle={toggle} />
                   <th className="text-right px-6 py-4">Acción</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filtrados.map((c) => (
+                {ordenados.map((c) => (
                   <tr
                     key={c.id}
                     className="hover:bg-gray-50 group transition-all cursor-pointer"
