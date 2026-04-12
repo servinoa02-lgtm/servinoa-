@@ -22,6 +22,9 @@ import { GlobalNoteForm } from "./GlobalNoteForm";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { FinanceChartConfigurable } from "@/components/ui/FinanceChartConfigurable";
 import { Card, StatCard } from "@/components/ui/Card";
+import { SortableEquipos } from "./SortableEquipos";
+import { SortableTareas } from "./SortableTareas";
+import { SortableAlertas } from "./SortableAlertas";
 import { formatFecha, formatHora, inicioMesAR, finMesAR, haceNDiasAR, labelDiaMes, anoActualAR } from "@/lib/dateUtils";
 import { adjustDateForBusinessCycle } from "@/lib/businessCycle";
 
@@ -205,24 +208,7 @@ export default async function DashboardPage() {
             icon={<Bell size={20} className="text-red-600" />}
             className="h-full border border-gray-200 rounded-2xl shadow-sm"
           >
-            <div className="space-y-4">
-              {seguimientos.length === 0 ? (
-                <div className="text-center py-12">
-                  <AlertTriangle size={40} className="mx-auto mb-2 text-gray-200" />
-                  <p className="text-xs text-gray-400 font-medium font-sans">Sin alertas pendientes</p>
-                </div>
-              ) : (
-                seguimientos.map(s => (
-                  <Link key={s.id} href={`/ordenes/${s.orden.id}`} className="block p-4 rounded-xl border border-gray-100 bg-white hover:border-red-600 hover:shadow-md transition-all group">
-                    <div className="text-[10px] font-bold text-red-600 mb-2 uppercase tracking-wider flex items-center justify-between">
-                      <span>OT #{s.orden.numero} — {s.orden.cliente.nombre}</span>
-                      <ExternalLink size={12} />
-                    </div>
-                    <p className="text-xs text-gray-700 leading-relaxed font-medium">"{s.texto}"</p>
-                  </Link>
-                ))
-              )}
-            </div>
+            <SortableAlertas seguimientos={seguimientos.map(s => ({ ...s, fecha: s.fecha }))} />
           </Card>
         </div>
       </div>
@@ -236,29 +222,7 @@ export default async function DashboardPage() {
           action={<span className="text-[10px] font-bold bg-gray-900 text-white px-3 py-1 rounded-md">{misTareas.length}</span>}
           className="rounded-2xl shadow-sm border border-gray-200"
         >
-          <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
-            {misTareas.length === 0 ? (
-              <div className="text-center py-12">
-                <CheckCircle size={40} className="mx-auto mb-2 text-gray-200" />
-                <p className="text-xs text-gray-400 font-medium">Cronograma al día</p>
-              </div>
-            ) : (
-              misTareas.map(t => {
-                const isVencida = t.vencimiento && t.vencimiento < hoy;
-                return (
-                  <Link key={t.id} href="/tareas" className="block">
-                    <div className={`p-4 rounded-xl border transition-all ${isVencida ? 'border-red-200 bg-red-50' : 'border-gray-50 bg-gray-50/50 hover:bg-white hover:border-red-200'}`}>
-                      <div className="flex justify-between items-start mb-2">
-                        <StatusBadge status={isVencida ? 'URGENTE' : t.prioridad} />
-                        {t.vencimiento && <span className="text-[9px] font-bold text-gray-400">{formatFecha(t.vencimiento)}</span>}
-                      </div>
-                      <p className="text-xs font-bold text-gray-900 uppercase leading-snug">{t.descripcion}</p>
-                    </div>
-                  </Link>
-                );
-              })
-            )}
-          </div>
+          <SortableTareas tareas={misTareas.map(t => ({ ...t }))} hoy={hoy.toISOString()} />
         </Card>
 
         {/* Taller */}
@@ -268,31 +232,7 @@ export default async function DashboardPage() {
           action={<span className="text-[10px] font-bold border border-gray-200 px-3 py-1 rounded-md">{otsEnProceso.length}</span>}
           className="rounded-2xl shadow-sm border border-gray-200"
         >
-          <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
-            {otsEnProceso.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-xs text-gray-400 font-medium">Sin equipos en reparación</p>
-              </div>
-            ) : (
-              otsEnProceso.map(ot => (
-                <Link key={ot.id} href={`/ordenes/${ot.id}`} className="block p-4 rounded-xl bg-white border border-gray-100 hover:border-red-600 transition-all shadow-sm">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-bold text-red-600 uppercase">OT #{ot.numero}</span>
-                    <StatusBadge status={ot.estado} />
-                  </div>
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tight truncate border-b border-gray-50 pb-2 mb-2">{ot.cliente.nombre}</div>
-                  {ot.fechaEstimadaEntrega && (
-                    <div className="flex items-center gap-2 text-[9px] font-bold text-gray-400 uppercase">
-                      Entrega:
-                      <span className={`px-1.5 py-0.5 rounded ${ot.fechaEstimadaEntrega < hoy ? "bg-red-600 text-white" : "bg-gray-100 text-gray-700"}`}>
-                        {formatFecha(ot.fechaEstimadaEntrega)}
-                      </span>
-                    </div>
-                  )}
-                </Link>
-              ))
-            )}
-          </div>
+          <SortableEquipos ots={otsEnProceso.map(ot => ({ ...ot }))} hoy={hoy.toISOString()} />
         </Card>
 
         {/* Comunicaciones */}

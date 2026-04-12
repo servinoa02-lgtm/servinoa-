@@ -227,9 +227,7 @@ export default function PresupuestosPage() {
                     <td className="px-6 py-5 text-center">
                         <div className="flex flex-col items-center gap-1">
                           <StatusBadge status={p.estado} />
-                          <span className={`text-[9px] font-bold uppercase tracking-wider ${cobroColors[p.estadoCobro] || "text-gray-400"}`}>
-                            {cobroLabel[p.estadoCobro] || p.estadoCobro}
-                          </span>
+                          <StatusBadge status={p.estadoCobro} className="!text-[8px]" />
                         </div>
                     </td>
                     <td className="px-6 py-5 text-right" onClick={(e) => e.stopPropagation()}>
@@ -269,9 +267,7 @@ export default function PresupuestosPage() {
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <StatusBadge status={p.estado} />
-                  <span className={`text-[9px] font-bold uppercase ${cobroColors[p.estadoCobro] || "text-gray-400"}`}>
-                    {cobroLabel[p.estadoCobro] || p.estadoCobro}
-                  </span>
+                  <StatusBadge status={p.estadoCobro} className="!text-[8px]" />
                 </div>
               </div>
               <p className="font-bold text-gray-900 uppercase text-sm">{p.cliente?.empresa?.nombre || "Particular"}</p>
