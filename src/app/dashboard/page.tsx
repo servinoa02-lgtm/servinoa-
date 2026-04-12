@@ -245,80 +245,77 @@ export default async function DashboardPage() {
         />
       )}
 
-      {/* Grid de Operaciones */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-        {/* Columna Izquierda: Resúmenes */}
-        <div className="lg:col-span-4 space-y-6">
-          {canSeeFinances && (
-            <Card title="Disponibilidad por Caja" icon={<DollarSign size={20} className="text-red-600" />}>
-              <div className="space-y-3">
-                {cajasConSaldo.map(c => (
-                  <div key={c.nombre} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                    <span className="text-xs font-bold text-gray-600 uppercase tracking-tight">{c.nombre}</span>
-                    <span className={`text-sm font-bold tabular-nums ${c.saldo >= 0 ? "text-emerald-700" : "text-red-600"}`}>
-                      ${c.saldo.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                ))}
+      {/* Resumen Rápido: Taller, Cajas, Alertas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card
+          title="Estado del Taller"
+          icon={<ClipboardList size={20} className="text-gray-900" />}
+          subtitle="Equipos en proceso crítico"
+        >
+          <div className="grid grid-cols-2 gap-3">
+            {estadosCriticos.map(e => (
+              <div key={e.estado} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center justify-center hover:bg-white hover:shadow-sm transition-all group">
+                <span className="text-2xl font-black text-gray-900 group-hover:text-red-600 transition-colors">{e._count.id}</span>
+                <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest text-center mt-1 leading-tight">
+                  {e.estado.replace(/_/g, ' ')}
+                </span>
               </div>
-            </Card>
-          )}
+            ))}
+          </div>
+        </Card>
 
-          <Card
-            title="Estado del Taller"
-            icon={<ClipboardList size={20} className="text-gray-900" />}
-            subtitle="Equipos en proceso crítico"
-          >
-            <div className="grid grid-cols-2 gap-3">
-              {estadosCriticos.map(e => (
-                <div key={e.estado} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center justify-center hover:bg-white hover:shadow-sm transition-all group">
-                  <span className="text-2xl font-black text-gray-900 group-hover:text-red-600 transition-colors">{e._count.id}</span>
-                  <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest text-center mt-1 leading-tight">
-                    {e.estado.replace(/_/g, ' ')}
+        {canSeeFinances && (
+          <Card title="Disponibilidad por Caja" icon={<DollarSign size={20} className="text-red-600" />}>
+            <div className="space-y-3">
+              {cajasConSaldo.map(c => (
+                <div key={c.nombre} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                  <span className="text-xs font-bold text-gray-600 uppercase tracking-tight">{c.nombre}</span>
+                  <span className={`text-sm font-bold tabular-nums ${c.saldo >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+                    ${c.saldo.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                   </span>
                 </div>
               ))}
             </div>
           </Card>
+        )}
 
-          <Card
-            title="Alertas de Seguimiento"
-            icon={<Bell size={20} className="text-red-600" />}
-          >
-            <SortableAlertas seguimientos={seguimientos.map(s => ({ ...s, fecha: s.fecha }))} />
-          </Card>
-
-          <Card
-            title="Avisos del Equipo"
-            icon={<MessageSquare size={20} className="text-gray-900" />}
-          >
-            <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 border-dashed">
-              <GlobalNoteForm initialNote={notaGlobal?.valor || ""} />
-            </div>
-            <p className="text-[9px] text-gray-400 font-medium text-center mt-4 uppercase tracking-widest">ServiNOA © {anoActualAR()}</p>
-          </Card>
-        </div>
-
-        {/* Columna Derecha: Listados Activos */}
-        <div className="lg:col-span-8 space-y-6">
-          <Card
-            title="Tareas Pendientes"
-            icon={<Target size={20} className="text-gray-900" />}
-            action={<span className="text-[10px] font-bold bg-gray-900 text-white px-3 py-1 rounded-md">{misTareas.length}</span>}
-          >
-            <SortableTareas tareas={misTareas.map(t => ({ ...t }))} hoy={hoy.toISOString()} />
-          </Card>
-
-          <Card
-            title="Equipos en Taller (OTs Activas)"
-            icon={<Wrench size={20} className="text-gray-900" />}
-            action={<span className="text-[10px] font-bold border border-gray-200 px-3 py-1 rounded-md text-gray-500">{otsEnProceso.length} activas</span>}
-          >
-            <SortableEquipos ots={otsEnProceso.map(ot => ({ ...ot }))} hoy={hoy.toISOString()} />
-          </Card>
-        </div>
+        <Card
+          title="Alertas de Seguimiento"
+          icon={<Bell size={20} className="text-red-600" />}
+        >
+          <SortableAlertas seguimientos={seguimientos.map(s => ({ ...s, fecha: s.fecha }))} />
+        </Card>
       </div>
+
+      {/* Operaciones: Tareas y Equipos */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card
+          title="Tareas Pendientes"
+          icon={<Target size={20} className="text-gray-900" />}
+          action={<span className="text-[10px] font-bold bg-gray-900 text-white px-3 py-1 rounded-md">{misTareas.length}</span>}
+        >
+          <SortableTareas tareas={misTareas.map(t => ({ ...t }))} hoy={hoy.toISOString()} />
+        </Card>
+
+        <Card
+          title="Equipos en Taller (OTs Activas)"
+          icon={<Wrench size={20} className="text-gray-900" />}
+          action={<span className="text-[10px] font-bold border border-gray-200 px-3 py-1 rounded-md text-gray-500">{otsEnProceso.length} activas</span>}
+        >
+          <SortableEquipos ots={otsEnProceso.map(ot => ({ ...ot }))} hoy={hoy.toISOString()} />
+        </Card>
+      </div>
+
+      {/* Avisos del Equipo */}
+      <Card
+        title="Avisos del Equipo"
+        icon={<MessageSquare size={20} className="text-gray-900" />}
+      >
+        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 border-dashed">
+          <GlobalNoteForm initialNote={notaGlobal?.valor || ""} />
+        </div>
+        <p className="text-[9px] text-gray-400 font-medium text-center mt-4 uppercase tracking-widest">ServiNOA © {anoActualAR()}</p>
+      </Card>
     </div>
   );
 }
