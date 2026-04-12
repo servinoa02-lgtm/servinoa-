@@ -4,40 +4,28 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   Wrench,
-  CheckCircle,
-  AlertTriangle,
   MessageSquare,
   TrendingUp,
   TrendingDown,
   DollarSign,
-  BarChart2,
   Clock,
-  ExternalLink,
-  ChevronRight,
   Target,
   Bell,
   Activity,
-  Users,
-  Box,
   ClipboardList
 } from "lucide-react";
-import Link from "next/link";
 import { GlobalNoteForm } from "./GlobalNoteForm";
-import { StatusBadge } from "@/components/ui/StatusBadge";
-import { FinanceChartConfigurable } from "@/components/ui/FinanceChartConfigurable";
-import { WorkshopChart } from "@/components/ui/WorkshopChart";
 import { Card, StatCard } from "@/components/ui/Card";
-import { 
-  obtenerSaldosCajas, 
-  calcularCapitalCajas, 
-  calcularSaldoEnCalle, 
-  calcularPatrimonioTotal 
+import {
+  obtenerSaldosCajas,
+  calcularCapitalCajas,
+  calcularSaldoEnCalle
 } from "@/lib/financeUtils";
 import { SortableEquipos } from "./SortableEquipos";
 import { SortableTareas } from "./SortableTareas";
 import { SortableAlertas } from "./SortableAlertas";
 import { UnifiedDashboardPanel } from "@/components/dashboard/UnifiedDashboardPanel";
-import { formatFecha, formatHora, inicioMesAR, finMesAR, haceNDiasAR, labelDiaMes, anoActualAR } from "@/lib/dateUtils";
+import { formatFecha, formatHora, inicioMesAR, finMesAR, anoActualAR } from "@/lib/dateUtils";
 import { adjustDateForBusinessCycle } from "@/lib/businessCycle";
 
 export default async function DashboardPage() {
@@ -49,7 +37,6 @@ export default async function DashboardPage() {
 
   const userId = session.user.id;
   const role = (session.user as any).rol;
-  const isAdminOrJefe = ["ADMIN", "JEFE"].includes(role);
   const canSeeFinances = ["ADMIN", "JEFE", "ADMINISTRACION"].includes(role);
   const hoy = new Date();
 
@@ -107,8 +94,6 @@ export default async function DashboardPage() {
       mesEgresos += m.egreso || 0;
     }
   });
-
-  const mesBalance = mesIngresos - mesEgresos;
 
   // 6. Capital Total del Sistema (Histórico) - Usando utilidad unificada
   const capitalTotal = await calcularCapitalCajas();
@@ -260,121 +245,79 @@ export default async function DashboardPage() {
         />
       )}
 
-      {/* Grid de Operaciones en Tiempo Real */}
+      {/* Grid de Operaciones */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* Panel Izquierdo: Resúmenes Rápidos */}
-        <div className="lg:col-span-4 space-y-8">
+
+        {/* Columna Izquierda: Resúmenes */}
+        <div className="lg:col-span-4 space-y-6">
           {canSeeFinances && (
             <Card title="Disponibilidad por Caja" icon={<DollarSign size={20} className="text-red-600" />}>
-               <div className="space-y-3">
-                  {cajasConSaldo.map(c => (
-                    <div key={c.nombre} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                      <span className="text-xs font-bold text-gray-600 uppercase tracking-tight">{c.nombre}</span>
-                      <span className={`text-sm font-bold tabular-nums ${c.saldo >= 0 ? "text-emerald-700" : "text-red-600"}`}>
-                        ${c.saldo.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                  ))}
-               </div>
+              <div className="space-y-3">
+                {cajasConSaldo.map(c => (
+                  <div key={c.nombre} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="text-xs font-bold text-gray-600 uppercase tracking-tight">{c.nombre}</span>
+                    <span className={`text-sm font-bold tabular-nums ${c.saldo >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+                      ${c.saldo.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </Card>
           )}
 
           <Card
-            title="Estado Actual del Taller"
+            title="Estado del Taller"
             icon={<ClipboardList size={20} className="text-gray-900" />}
             subtitle="Equipos en proceso crítico"
           >
-             <div className="grid grid-cols-2 gap-4">
-                {estadosCriticos.map(e => (
-                   <div key={e.estado} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center justify-center hover:bg-white hover:shadow-sm transition-all group">
-                      <span className="text-2xl font-black text-gray-900 group-hover:text-red-600 transition-colors">{e._count.id}</span>
-                      <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest text-center mt-1 leading-tight">
-                        {e.estado.replace(/_/g, ' ')}
-                      </span>
-                   </div>
-                ))}
-             </div>
+            <div className="grid grid-cols-2 gap-3">
+              {estadosCriticos.map(e => (
+                <div key={e.estado} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center justify-center hover:bg-white hover:shadow-sm transition-all group">
+                  <span className="text-2xl font-black text-gray-900 group-hover:text-red-600 transition-colors">{e._count.id}</span>
+                  <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest text-center mt-1 leading-tight">
+                    {e.estado.replace(/_/g, ' ')}
+                  </span>
+                </div>
+              ))}
+            </div>
           </Card>
 
           <Card
             title="Alertas de Seguimiento"
             icon={<Bell size={20} className="text-red-600" />}
-            className="border border-gray-200 rounded-2xl shadow-sm"
           >
             <SortableAlertas seguimientos={seguimientos.map(s => ({ ...s, fecha: s.fecha }))} />
           </Card>
+
+          <Card
+            title="Avisos del Equipo"
+            icon={<MessageSquare size={20} className="text-gray-900" />}
+          >
+            <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 border-dashed">
+              <GlobalNoteForm initialNote={notaGlobal?.valor || ""} />
+            </div>
+            <p className="text-[9px] text-gray-400 font-medium text-center mt-4 uppercase tracking-widest">ServiNOA © {anoActualAR()}</p>
+          </Card>
         </div>
 
-        {/* Panel Derecho: Listados Activos */}
-        <div className="lg:col-span-8 space-y-8">
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <Card
-                title="Tareas Pendientes"
-                icon={<Target size={20} className="text-gray-900" />}
-                action={<span className="text-[10px] font-bold bg-gray-900 text-white px-3 py-1 rounded-md">{misTareas.length}</span>}
-                className="rounded-2xl shadow-sm border border-gray-200"
-              >
-                <SortableTareas tareas={misTareas.map(t => ({ ...t }))} hoy={hoy.toISOString()} />
-              </Card>
+        {/* Columna Derecha: Listados Activos */}
+        <div className="lg:col-span-8 space-y-6">
+          <Card
+            title="Tareas Pendientes"
+            icon={<Target size={20} className="text-gray-900" />}
+            action={<span className="text-[10px] font-bold bg-gray-900 text-white px-3 py-1 rounded-md">{misTareas.length}</span>}
+          >
+            <SortableTareas tareas={misTareas.map(t => ({ ...t }))} hoy={hoy.toISOString()} />
+          </Card>
 
-              <Card
-                title="Comunicaciones"
-                icon={<MessageSquare size={20} className="text-gray-900" />}
-                className="rounded-2xl shadow-sm border border-gray-200"
-              >
-                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 border-dashed">
-                  <GlobalNoteForm initialNote={notaGlobal?.valor || ""} />
-                </div>
-                <p className="text-[9px] text-gray-400 font-medium text-center mt-6 uppercase tracking-widest">ServiNOA © {anoActualAR()}</p>
-              </Card>
-           </div>
-
-           <Card
+          <Card
             title="Equipos en Taller (OTs Activas)"
             icon={<Wrench size={20} className="text-gray-900" />}
             action={<span className="text-[10px] font-bold border border-gray-200 px-3 py-1 rounded-md text-gray-500">{otsEnProceso.length} activas</span>}
-            className="rounded-2xl shadow-sm border border-gray-200"
           >
             <SortableEquipos ots={otsEnProceso.map(ot => ({ ...ot }))} hoy={hoy.toISOString()} />
           </Card>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-
-        {/* Tareas */}
-        <Card
-          title="Tareas Pendientes"
-          icon={<Target size={20} className="text-gray-900" />}
-          action={<span className="text-[10px] font-bold bg-gray-900 text-white px-3 py-1 rounded-md">{misTareas.length}</span>}
-          className="rounded-2xl shadow-sm border border-gray-200"
-        >
-          <SortableTareas tareas={misTareas.map(t => ({ ...t }))} hoy={hoy.toISOString()} />
-        </Card>
-
-        {/* Taller */}
-        <Card
-          title="Equipos en Taller"
-          icon={<Wrench size={20} className="text-gray-900" />}
-          action={<span className="text-[10px] font-bold border border-gray-200 px-3 py-1 rounded-md">{otsEnProceso.length}</span>}
-          className="rounded-2xl shadow-sm border border-gray-200"
-        >
-          <SortableEquipos ots={otsEnProceso.map(ot => ({ ...ot }))} hoy={hoy.toISOString()} />
-        </Card>
-
-        {/* Comunicaciones */}
-        <Card
-          title="Avisos del Equipo"
-          icon={<MessageSquare size={20} className="text-gray-900" />}
-          className="rounded-2xl shadow-sm border border-gray-200"
-        >
-          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 border-dashed">
-            <GlobalNoteForm initialNote={notaGlobal?.valor || ""} />
-          </div>
-          <p className="text-[9px] text-gray-400 font-medium text-center mt-6 uppercase tracking-widest">ServiNOA © {anoActualAR()}</p>
-        </Card>
-
       </div>
     </div>
   );

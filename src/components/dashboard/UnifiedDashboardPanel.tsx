@@ -4,13 +4,11 @@ import { useEffect, useState } from "react";
 import { FinanceChart } from "../ui/FinanceChart";
 import { WorkshopChart } from "../ui/WorkshopChart";
 import { Card } from "../ui/Card";
-import { 
-  BarChart2, 
-  Wrench, 
-  Users, 
-  ChevronRight,
-  TrendingUp,
-  TrendingDown
+import {
+  BarChart2,
+  Wrench,
+  Users,
+  ChevronRight
 } from "lucide-react";
 import Link from "next/link";
 
@@ -154,20 +152,6 @@ export function UnifiedDashboardPanel({
             </div>
           </Card>
 
-          {/* Resumen de Rendimiento (Placeholder para futuras métricas de rentabilidad) */}
-          <Card title="Tendencias Rápidas" icon={<TrendingUp size={20} className="text-emerald-500" />}>
-             <div className="space-y-4">
-                <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
-                   <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">Crecimiento Operativo</p>
-                   <p className="text-xs text-emerald-800 font-medium leading-relaxed">
-                     Análisis automático de flujo de trabajo basado en ingresos históricos.
-                   </p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 text-center">
-                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Métricas en tiempo real</p>
-                </div>
-             </div>
-          </Card>
         </div>
       </div>
     </div>
