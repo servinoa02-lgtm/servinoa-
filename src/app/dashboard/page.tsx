@@ -16,12 +16,16 @@ import {
   ChevronRight,
   Target,
   Bell,
-  Activity
+  Activity,
+  Users,
+  Box,
+  ClipboardList
 } from "lucide-react";
 import Link from "next/link";
 import { GlobalNoteForm } from "./GlobalNoteForm";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { FinanceChartConfigurable } from "@/components/ui/FinanceChartConfigurable";
+import { WorkshopChart } from "@/components/ui/WorkshopChart";
 import { Card, StatCard } from "@/components/ui/Card";
 import { 
   obtenerSaldosCajas, 
@@ -165,6 +169,59 @@ export default async function DashboardPage() {
     where: { clave: "NOTA_GLOBAL" }
   });
 
+  // 8. Taller: Volumen y Métricas Agregadas
+  const doceMesesAtras = new Date();
+  doceMesesAtras.setMonth(hoy.getMonth() - 12);
+
+  const otsRecientes = await prisma.ordenTrabajo.findMany({
+    where: { fechaRecepcion: { gte: doceMesesAtras } },
+    select: { fechaRecepcion: true }
+  });
+
+  const otBuckets = new Map<string, { label: string; valor: number }>();
+  // Inicializar buckets vacíos
+  let tempDate = new Date(doceMesesAtras);
+  while (tempDate <= hoy) {
+    const k = `${tempDate.getFullYear()}-${tempDate.getMonth()}`;
+    otBuckets.set(k, {
+      label: `${mesesLabels[tempDate.getMonth()]} ${String(tempDate.getFullYear()).slice(2)}`,
+      valor: 0
+    });
+    tempDate.setMonth(tempDate.getMonth() + 1);
+  }
+
+  otsRecientes.forEach(ot => {
+    const k = `${ot.fechaRecepcion.getFullYear()}-${ot.fechaRecepcion.getMonth()}`;
+    const b = otBuckets.get(k);
+    if (b) b.valor++;
+  });
+  const workshopChartData = Array.from(otBuckets.values());
+
+  // Top Clientes
+  const rawTopClientes = await prisma.ordenTrabajo.groupBy({
+    by: ['clienteId'],
+    _count: { id: true },
+    orderBy: { _count: { id: 'desc' } },
+    take: 5
+  });
+
+  const clientesNombres = await prisma.cliente.findMany({
+    where: { id: { in: rawTopClientes.map(c => c.clienteId) } },
+    select: { id: true, nombre: true }
+  });
+
+  const topClientes = rawTopClientes.map(c => ({
+    nombre: clientesNombres.find(cl => cl.id === c.clienteId)?.nombre || 'Desconocido',
+    cantidad: c._count.id
+  }));
+
+  // Distribución Crítica
+  const estadosCriticos = await prisma.ordenTrabajo.groupBy({
+    by: ['estado'],
+    where: { estado: { in: ['PARA_PRESUPUESTAR', 'EN_REVISION', 'APROBADO', 'EN_REPARACION'] } },
+    _count: { id: true }
+  });
+
   return (
     <div className="p-4 md:p-6 lg:p-10 space-y-8 md:space-y-10 bg-gray-50 font-sans">
 
@@ -270,6 +327,54 @@ export default async function DashboardPage() {
             className="border border-gray-200 rounded-2xl shadow-sm"
           >
             <SortableAlertas seguimientos={seguimientos.map(s => ({ ...s, fecha: s.fecha }))} />
+          </Card>
+        </div>
+      </div>
+
+      {/* Sección Operativa: Taller y Productividad */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-8">
+          <Card 
+            title="Volumen de Ingresos al Taller" 
+            icon={<Wrench size={20} className="text-gray-900" />}
+            className="rounded-2xl shadow-sm border border-gray-200"
+          >
+            <div className="py-4">
+              <WorkshopChart data={workshopChartData} title="Máquinas Ingresadas" color="#111827" />
+            </div>
+          </Card>
+        </div>
+
+        <div className="lg:col-span-4 space-y-8">
+          {/* Top Clientes */}
+          <Card title="Clientes con Más Equipos" icon={<Users size={20} className="text-gray-900" />}>
+            <div className="space-y-4">
+              {topClientes.map((c, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-bold bg-gray-200 text-gray-600 w-5 h-5 flex items-center justify-center rounded-full">{idx + 1}</span>
+                    <span className="text-xs font-bold text-gray-700 truncate max-w-[150px]">{c.nombre}</span>
+                  </div>
+                  <span className="text-xs font-bold text-gray-900 bg-white px-3 py-1 rounded-md border border-gray-100">
+                    {c.cantidad} <span className="text-[10px] text-gray-400 font-medium">Equipos</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Estados Críticos */}
+          <Card title="Estado de la Operación" icon={<ClipboardList size={20} className="text-gray-900" />}>
+             <div className="grid grid-cols-2 gap-4">
+                {estadosCriticos.map(e => (
+                   <div key={e.estado} className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col items-center justify-center">
+                      <span className="text-2xl font-black text-gray-900">{e._count.id}</span>
+                      <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest text-center mt-1">
+                        {e.estado.replace(/_/g, ' ')}
+                      </span>
+                   </div>
+                ))}
+             </div>
           </Card>
         </div>
       </div>
