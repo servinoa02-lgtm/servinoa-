@@ -2,20 +2,63 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const sesion = await requireAuth(["ADMIN", "JEFE", "ADMINISTRACION"]);
   if (sesion instanceof NextResponse) return sesion;
 
   try {
-    const gastos = await prisma.gasto.findMany({
-      include: {
-        usuario: { select: { nombre: true } },
-        caja: { select: { nombre: true } },
-        proveedor: { select: { nombre: true } },
-      },
-      orderBy: { fecha: "desc" },
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "15");
+    const search = searchParams.get("search") || "";
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (search) {
+      where.OR = [
+        { descripcion: { contains: search, mode: "insensitive" } },
+        { proveedor: { nombre: { contains: search, mode: "insensitive" } } },
+        { caja: { nombre: { contains: search, mode: "insensitive" } } },
+        { empleado: { contains: search, mode: "insensitive" } },
+        { tipo: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    const ahora = new Date();
+    const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+
+    const [gastos, totalCount, totals] = await Promise.all([
+      prisma.gasto.findMany({
+        where,
+        include: {
+          usuario: { select: { nombre: true } },
+          caja: { select: { nombre: true } },
+          proveedor: { select: { nombre: true } },
+        },
+        orderBy: { fecha: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.gasto.count({ where }),
+      prisma.gasto.aggregate({
+        where: {
+          AND: [
+            where,
+            { fecha: { gte: inicioMes } }
+          ]
+        },
+        _sum: { importe: true }
+      })
+    ]);
+
+    return NextResponse.json({
+      data: gastos,
+      total: totalCount,
+      totalMonth: totals._sum.importe || 0,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit)
     });
-    return NextResponse.json(gastos);
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Error al cargar gastos" }, { status: 500 });

@@ -9,8 +9,9 @@ import { useSort } from "@/hooks/useSort";
 import { SortHeader } from "@/components/ui/SortHeader";
 import { Drawer } from "@/components/ui/Drawer";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { Toast } from "@/components/ui/Toast";
 import { RoleGuard } from "@/components/auth/RoleGuard";
+import { useToast } from "@/context/ToastContext";
+import { useDebounce } from "@/hooks/useDebounce";
 import Link from "next/link";
 import { formatoService } from "@/services/formatoService";
 
@@ -33,11 +34,15 @@ export default function ClientesPage() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
+  const [debouncedSearch] = useDebounce(busqueda, 500);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [globalSaldo, setGlobalSaldo] = useState(0);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; nombre: string } | null>(null);
   const [eliminando, setEliminando] = useState(false);
-  const [errorDelete, setErrorDelete] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const { showToast } = useToast();
 
   // Formulario nuevo cliente
   const [fNombre, setFNombre] = useState("");
@@ -54,30 +59,29 @@ export default function ClientesPage() {
   }, [status, router]);
 
   const cargar = () => {
-    fetch("/api/clientes")
+    setLoading(true);
+    fetch(`/api/clientes?page=${page}&limit=20&search=${debouncedSearch}`)
       .then((r) => {
         if (!r.ok) throw new Error("Error al cargar clientes");
         return r.json();
       })
-      .then((data) => { setClientes(data); setLoading(false); })
+      .then((res) => { 
+        setClientes(res.data);
+        setTotal(res.total);
+        setTotalPages(res.totalPages);
+        setGlobalSaldo(res.globalSaldo || 0);
+        setLoading(false); 
+      })
       .catch((e) => {
         setLoading(false);
-        setToast({ message: e.message, type: "error" });
+        showToast(e.message, "error");
       });
   };
 
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => { cargar(); }, [page, debouncedSearch]);
   useAutoRefresh(cargar);
 
-  const filtrados = clientes.filter((c) => {
-    const texto = busqueda.toLowerCase();
-    return (
-      c.nombre.toLowerCase().includes(texto) ||
-      (c.empresa?.nombre || "").toLowerCase().includes(texto) ||
-      (c.telefono || "").includes(texto) ||
-      (c.email || "").toLowerCase().includes(texto)
-    );
-  });
+  const filtrados = clientes;
 
   const { sorted: ordenados, sortKey, sortDirection, toggle } = useSort(filtrados, {
     titular: (c) => c.nombre,
@@ -89,12 +93,11 @@ export default function ClientesPage() {
 
   const eliminarCliente = async (id: string) => {
     setEliminando(true);
-    setErrorDelete(null);
     const res = await fetch(`/api/clientes/${id}`, { method: "DELETE" });
     const data = await res.json();
     setEliminando(false);
     if (!res.ok) {
-      setErrorDelete(data.error || "Error al eliminar cliente");
+      showToast(data.error || "Error al eliminar cliente", "error");
       return;
     }
     setConfirmDelete(null);
@@ -124,10 +127,10 @@ export default function ClientesPage() {
       }
       setMostrarForm(false);
       setFNombre(""); setFEmpresa(""); setFTelefono(""); setFEmail(""); setFDni(""); setFDomicilio("");
-      setToast({ message: "Cliente creado correctamente", type: "success" });
+      showToast("Cliente creado correctamente", "success");
       cargar();
     } catch (e: any) {
-      setToast({ message: e.message || "Error al crear cliente", type: "error" });
+      showToast(e.message || "Error al crear cliente", "error");
     } finally {
       setGuardando(false);
     }
@@ -166,19 +169,29 @@ export default function ClientesPage() {
       </header>
 
       <main className="flex-1 max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-10 w-full space-y-6 md:space-y-8">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-3 md:p-4 rounded-2xl border border-gray-200 shadow-sm">
-           <div className="relative w-full max-w-lg">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-              <input 
-                type="text" 
-                placeholder="Buscar por nombre, empresa o contacto..." 
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                className="w-full pl-12 pr-4 py-2.5 bg-gray-50 border border-transparent focus:border-red-600 rounded-xl text-sm font-medium outline-none transition-all"
-              />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+           <div className="md:col-span-2 flex items-center gap-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+              <div className="relative w-full">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                  <input 
+                    type="text" 
+                    placeholder="Buscar por nombre, empresa o contacto..." 
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    className="w-full pl-12 pr-4 py-2.5 bg-gray-50 border border-transparent focus:border-red-600 rounded-xl text-sm font-medium outline-none transition-all"
+                  />
+              </div>
            </div>
-           <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50 px-3 py-2 rounded-lg border border-gray-100 italic">
-              {filtrados.length} clientes encontrados
+
+           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm border-l-4 border-l-red-600 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest mb-1">Deuda Total Clientes</p>
+                <p className="text-xl font-bold text-red-700">${globalSaldo.toLocaleString("es-AR")}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{total} Clientes</p>
+                <p className="text-[10px] font-bold text-gray-400 italic">Cargados en total</p>
+              </div>
            </div>
         </div>
 
@@ -251,38 +264,30 @@ export default function ClientesPage() {
           </div>
         </div>
 
-        {/* ─── Mobile: Cards ─── */}
-        <div className="md:hidden space-y-3">
-          {filtrados.map((c) => (
-            <div
-              key={c.id}
-              onClick={() => router.push(`/clientes/${c.id}`)}
-              className="bg-white rounded-xl border border-gray-200 p-4 active:bg-gray-50 transition-all cursor-pointer shadow-sm"
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <p className="font-bold text-gray-900 uppercase text-sm">{c.nombre}</p>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase flex items-center gap-1 mt-0.5">
-                    <Building2 size={10} className="opacity-50" />
-                    {c.empresa?.nombre || "Particular"}
-                  </p>
-                </div>
-                <span className={`px-3 py-1 rounded-lg border font-bold text-xs tabular-nums ${(c.saldo ?? 0) > 0 ? "text-red-600 bg-red-50 border-red-100" : "text-emerald-700 bg-emerald-50 border-emerald-100"}`}>
-                  ${(c.saldo ?? 0).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                </span>
-              </div>
-              <div className="flex items-center gap-4 text-[10px] font-bold text-gray-500 uppercase mt-2 pt-2 border-t border-gray-100">
-                <span className="flex items-center gap-1"><Phone size={10} className="text-red-600/50" /> {c.telefono || "---"}</span>
-                <span className="flex items-center gap-1"><Mail size={10} className="text-red-600/50" /> {c.email || "---"}</span>
-              </div>
-            </div>
-          ))}
-          {filtrados.length === 0 && (
-            <div className="text-center py-16 text-gray-400 font-medium italic text-sm">
-              No se encontraron clientes
-            </div>
-          )}
         </div>
+
+        {/* ─── Paginación ─── */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 disabled:opacity-50 transition-all border border-gray-100"
+            >
+              Anterior
+            </button>
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+              Página <span className="text-gray-900">{page}</span> de <span className="text-gray-900">{totalPages}</span>
+            </div>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 disabled:opacity-50 transition-all border border-gray-100"
+            >
+              Siguiente
+            </button>
+          </div>
+        )}
       </main>
 
       <Drawer
@@ -362,21 +367,7 @@ export default function ClientesPage() {
         onConfirm={() => confirmDelete && eliminarCliente(confirmDelete.id)}
       />
 
-      {errorDelete && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 border border-red-600 text-red-100 px-6 py-3 rounded-xl shadow-xl flex items-center gap-3 text-sm font-bold animate-in slide-in-from-bottom">
-          <span className="w-2 h-2 rounded-full bg-red-600" />
-          {errorDelete}
-          <button onClick={() => setErrorDelete(null)} className="ml-4 text-[10px] uppercase underline text-gray-400">Cerrar</button>
-        </div>
-      )}
-
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+      {/* Toast global ya manejado por ToastProvider */}
     </div>
     </RoleGuard>
   );

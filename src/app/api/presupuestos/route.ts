@@ -4,20 +4,64 @@ import { requireAuth } from "@/lib/requireAuth";
 import { calcularTotalConIVA } from "@/lib/constants";
 
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const sesion = await requireAuth(["ADMIN", "JEFE", "ADMINISTRACION"]);
   if (sesion instanceof NextResponse) return sesion;
 
   try {
-    const presupuestos = await prisma.presupuesto.findMany({
-      include: {
-        cliente: { include: { empresa: true } },
-        orden: { select: { numero: true, id: true } },
-        usuario: { select: { nombre: true } },
-        items: true,
-        cobranzas: { select: { importe: true } },
-      },
-      orderBy: { numero: "desc" },
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+    const search = searchParams.get("search") || "";
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (search) {
+      where.OR = [
+        { cliente: { nombre: { contains: search, mode: "insensitive" } } },
+        { cliente: { empresa: { nombre: { contains: search, mode: "insensitive" } } } },
+        { usuario: { nombre: { contains: search, mode: "insensitive" } } },
+        { observaciones: { contains: search, mode: "insensitive" } },
+        { facturaNumero: { contains: search, mode: "insensitive" } },
+        ...(isNaN(parseInt(search)) ? [] : [{ numero: parseInt(search) }]),
+        ...(isNaN(parseInt(search)) ? [] : [{ orden: { numero: parseInt(search) } }])
+      ];
+    }
+
+    const [presupuestos, totalCount, allFiltered] = await Promise.all([
+      prisma.presupuesto.findMany({
+        where,
+        include: {
+          cliente: { include: { empresa: true } },
+          orden: { select: { numero: true, id: true } },
+          usuario: { select: { nombre: true } },
+          items: true,
+          cobranzas: { select: { importe: true } },
+        },
+        orderBy: { numero: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.presupuesto.count({ where }),
+      prisma.presupuesto.findMany({
+        where,
+        select: {
+          incluyeIva: true,
+          items: { select: { total: true } },
+          cobranzas: { select: { importe: true } }
+        }
+      })
+    ]);
+
+    // Resumen global del filtro
+    let globalTotal = 0;
+    let globalCobrado = 0;
+    allFiltered.forEach(p => {
+      const subtotal = p.items.reduce((sum, item) => sum + item.total, 0);
+      const total = calcularTotalConIVA(subtotal, p.incluyeIva);
+      const cobrado = p.cobranzas.reduce((sum, c) => sum + c.importe, 0);
+      globalTotal += total;
+      globalCobrado += cobrado;
     });
 
     const data = presupuestos.map((p) => {
@@ -27,7 +71,16 @@ export async function GET() {
       return { ...p, total, subtotal, cobrado, saldo: total - cobrado };
     });
 
-    return NextResponse.json(data);
+    return NextResponse.json({
+      data,
+      total: totalCount,
+      globalTotal,
+      globalCobrado,
+      globalSaldo: globalTotal - globalCobrado,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit)
+    });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Error al cargar presupuestos" }, { status: 500 });

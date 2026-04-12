@@ -17,7 +17,6 @@ export async function GET() {
         email: true,
         rol: true,
         activo: true,
-        claveVisible: true,
         createdAt: true,
       },
       orderBy: { nombre: "asc" },
@@ -56,7 +55,6 @@ export async function POST(req: NextRequest) {
         nombre,
         email,
         password: hash,
-        claveVisible: password,
         rol: rolFinal,
         activo: true,
       },
@@ -66,7 +64,6 @@ export async function POST(req: NextRequest) {
         email: true,
         rol: true,
         activo: true,
-        claveVisible: true,
         createdAt: true,
       },
     });

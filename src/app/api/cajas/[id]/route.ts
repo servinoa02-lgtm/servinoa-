@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/requireAuth";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await requireAuth();
+  if (session instanceof NextResponse) return session;
+
   const { id } = await params;
   try {
     const caja = await prisma.caja.findUnique({
@@ -38,6 +42,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await requireAuth(["ADMIN", "JEFE", "ADMINISTRACION"]);
+  if (session instanceof NextResponse) return session;
+
   const { id } = await params;
   try {
     const body = await req.json();

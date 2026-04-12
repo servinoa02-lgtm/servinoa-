@@ -15,7 +15,6 @@ model Usuario {
   password         String
   rol              Rol            @default(TECNICO)
   activo           Boolean        @default(true)
-  claveVisible     String?
   foto             String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
@@ -61,6 +60,8 @@ model Cliente {
   presupuestos    Presupuesto[]
   servicios       Servicio[]
   ventas          Venta[]
+
+  @@index([empresaId])
 }
 
 model Maquina {
@@ -89,11 +90,6 @@ model Modelo {
   ordenes OrdenTrabajo[]
 
   @@unique([nombre, marcaId])
-}
-
-model Falla {
-  id     String @id @default(cuid())
-  nombre String @unique
 }
 
 model OrdenTrabajo {
@@ -129,6 +125,13 @@ model OrdenTrabajo {
   tecnico              Usuario?      @relation("TecnicoOT", fields: [tecnicoId], references: [id])
   presupuestos         Presupuesto[]
   retiros              Retiro[]
+
+  @@index([clienteId])
+  @@index([creadorId])
+  @@index([tecnicoId])
+  @@index([maquinaId])
+  @@index([marcaId])
+  @@index([modeloId])
 }
 
 model HistorialOT {
@@ -139,6 +142,8 @@ model HistorialOT {
   comentario     String?
   ordenId        String
   orden          OrdenTrabajo @relation(fields: [ordenId], references: [id])
+
+  @@index([ordenId])
 }
 
 model Foto {
@@ -147,6 +152,8 @@ model Foto {
   fecha   DateTime     @default(now())
   ordenId String
   orden   OrdenTrabajo @relation(fields: [ordenId], references: [id])
+
+  @@index([ordenId])
 }
 
 model Nota {
@@ -158,6 +165,9 @@ model Nota {
   esSeguimiento Boolean      @default(false)
   orden         OrdenTrabajo @relation(fields: [ordenId], references: [id])
   usuario       Usuario      @relation(fields: [usuarioId], references: [id])
+
+  @@index([ordenId])
+  @@index([usuarioId])
 }
 
 model Retiro {
@@ -170,6 +180,8 @@ model Retiro {
   realizada Boolean      @default(false)
   ordenId   String
   orden     OrdenTrabajo @relation(fields: [ordenId], references: [id])
+
+  @@index([ordenId])
 }
 
 model Presupuesto {
@@ -196,6 +208,10 @@ model Presupuesto {
   cliente         Cliente           @relation(fields: [clienteId], references: [id])
   orden           OrdenTrabajo?     @relation(fields: [ordenId], references: [id])
   usuario         Usuario           @relation(fields: [usuarioId], references: [id])
+
+  @@index([clienteId])
+  @@index([usuarioId])
+  @@index([ordenId])
 }
 
 model ItemPresupuesto {
@@ -206,6 +222,8 @@ model ItemPresupuesto {
   total         Float
   presupuestoId String
   presupuesto   Presupuesto @relation(fields: [presupuestoId], references: [id], onDelete: Cascade)
+
+  @@index([presupuestoId])
 }
 
 model Servicio {
@@ -220,6 +238,9 @@ model Servicio {
   tecnicoId   String?
   cliente     Cliente  @relation(fields: [clienteId], references: [id])
   tecnico     Usuario? @relation(fields: [tecnicoId], references: [id])
+
+  @@index([clienteId])
+  @@index([tecnicoId])
 }
 
 model Producto {
@@ -248,6 +269,9 @@ model Venta {
   items      ItemVenta[]
   cliente    Cliente?    @relation(fields: [clienteId], references: [id])
   vendedor   Usuario?    @relation(fields: [vendedorId], references: [id])
+
+  @@index([clienteId])
+  @@index([vendedorId])
 }
 
 model ItemVenta {
@@ -259,6 +283,9 @@ model ItemVenta {
   ventaId    String
   producto   Producto @relation(fields: [productoId], references: [id])
   venta      Venta    @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+
+  @@index([productoId])
+  @@index([ventaId])
 }
 
 model Caja {
@@ -285,6 +312,11 @@ model MovimientoCaja {
   gastoId     String?
   chequeId    String?
   caja        Caja     @relation(fields: [cajaId], references: [id])
+
+  @@index([cajaId])
+  @@index([cobranzaId])
+  @@index([gastoId])
+  @@index([chequeId])
 }
 
 model Gasto {
@@ -309,6 +341,11 @@ model Gasto {
   cheque      Cheque?    @relation(fields: [chequeId], references: [id])
   proveedor   Proveedor? @relation(fields: [proveedorId], references: [id])
   usuario     Usuario    @relation(fields: [usuarioId], references: [id])
+
+  @@index([proveedorId])
+  @@index([cajaId])
+  @@index([usuarioId])
+  @@index([chequeId])
 }
 
 model Cobranza {
@@ -330,6 +367,12 @@ model Cobranza {
   presupuesto     Presupuesto?      @relation(fields: [presupuestoId], references: [id])
   usuario         Usuario           @relation(fields: [usuarioId], references: [id])
   cuentaCorriente CuentaCorriente[]
+
+  @@index([clienteId])
+  @@index([presupuestoId])
+  @@index([cajaId])
+  @@index([usuarioId])
+  @@index([chequeId])
 }
 
 model TransferenciaCaja {
@@ -344,6 +387,10 @@ model TransferenciaCaja {
   chequeId         String?
   cajaDestino      Caja     @relation("CajaDestino", fields: [cajaDestinoId], references: [id])
   cajaOrigen       Caja     @relation("CajaOrigen", fields: [cajaOrigenId], references: [id])
+
+  @@index([cajaOrigenId])
+  @@index([cajaDestinoId])
+  @@index([chequeId])
 }
 
 model Cheque {
@@ -364,6 +411,8 @@ model Cheque {
   cliente      Cliente?     @relation(fields: [clienteId], references: [id])
   cobranzas    Cobranza[]
   gastos       Gasto[]
+
+  @@index([clienteId])
 }
 
 model CuentaCorriente {
@@ -378,6 +427,10 @@ model CuentaCorriente {
   cliente       Cliente                @relation(fields: [clienteId], references: [id])
   cobranza      Cobranza?              @relation(fields: [cobranzaId], references: [id])
   presupuesto   Presupuesto?           @relation(fields: [presupuestoId], references: [id])
+
+  @@index([clienteId])
+  @@index([presupuestoId])
+  @@index([cobranzaId])
 }
 
 model Proveedor {
@@ -404,6 +457,18 @@ model Tarea {
   observaciones String?
   usuarioId     String
   usuario       Usuario        @relation(fields: [usuarioId], references: [id])
+
+  @@index([usuarioId])
+}
+
+model Falla {
+  id     String @id @default(cuid())
+  nombre String @unique
+}
+
+model AccesorioCatalogo {
+  id     String @id @default(cuid())
+  nombre String @unique
 }
 
 model ColaMensajes {
@@ -416,11 +481,6 @@ model ColaMensajes {
   reintentos        Int      @default(0)
   creadoEn          DateTime @default(now())
   actualizadoEn     DateTime @updatedAt
-}
-
-model AccesorioCatalogo {
-  id     String @id @default(cuid())
-  nombre String @unique
 }
 
 model Configuracion {

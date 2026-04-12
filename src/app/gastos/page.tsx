@@ -12,11 +12,12 @@ import {
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Drawer } from "@/components/ui/Drawer";
 import { ProveedorQuickAdd } from "@/components/ui/ProveedorQuickAdd";
-import { Toast } from "@/components/ui/Toast";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { formatFecha } from "@/lib/dateUtils";
 import { FORMAS_PAGO } from "@/lib/constants";
 import { formatoService } from "@/services/formatoService";
+import { useToast } from "@/context/ToastContext";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface Gasto {
   id: string;
@@ -55,6 +56,12 @@ export default function GastosPage() {
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [loading, setLoading] = useState(true);
   const [mostrarForm, setMostrarForm] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch] = useDebounce(searchTerm, 500);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalMonth, setTotalMonth] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   // Form
   const [tipo, setTipo] = useState<string>("GASTO_VARIOS");
@@ -73,28 +80,33 @@ export default function GastosPage() {
   const [guardando, setGuardando] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [eliminando, setEliminando] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
-
-  const [searchTerm, setSearchTerm] = useState("");
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
 
   const cargar = () => {
-    fetch("/api/gastos")
+    setLoading(true);
+    fetch(`/api/gastos?page=${page}&limit=15&search=${debouncedSearch}`)
       .then((r) => {
         if (!r.ok) throw new Error("Error al cargar gastos");
         return r.json();
       })
-      .then((d) => { setGastos(d); setLoading(false); })
+      .then((res) => { 
+        setGastos(res.data);
+        setTotal(res.total);
+        setTotalMonth(res.totalMonth);
+        setTotalPages(res.totalPages);
+        setLoading(false); 
+      })
       .catch((e) => {
         setLoading(false);
-        setToast({ message: e.message || "Error al cargar gastos", type: "error" });
+        showToast(e.message || "Error al cargar gastos", "error");
       });
   };
 
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => { cargar(); }, [page, debouncedSearch]);
 
   useEffect(() => {
     fetch("/api/cajas").then((r) => r.json()).then((d) => { setCajas(d); if (d.length > 0) setCajaId(d[0].id); });
@@ -110,10 +122,10 @@ export default function GastosPage() {
         const data = await res.json();
         throw new Error(data.error || "Error al eliminar gasto");
       }
-      setToast({ message: "Gasto eliminado correctamente", type: "success" });
+      showToast("Gasto eliminado correctamente", "success");
       cargar();
     } catch (e: any) {
-      setToast({ message: e.message || "Error al eliminar gasto", type: "error" });
+      showToast(e.message || "Error al eliminar gasto", "error");
     } finally {
       setEliminando(false);
       setConfirmDelete(null);
@@ -152,23 +164,15 @@ export default function GastosPage() {
 
       setMostrarForm(false);
       setImporte(""); setDescripcion(""); setComprobante(""); setEmpleado(""); setDesde(""); setHasta(""); setProveedorId("");
-      setToast({ message: "Gasto registrado correctamente", type: "success" });
+      showToast("Gasto registrado correctamente", "success");
       cargar();
     } catch (e: any) {
-      setToast({ message: e.message || "Error al registrar gasto", type: "error" });
+      showToast(e.message || "Error al registrar gasto", "error");
     } finally {
       setGuardando(false);
     }};
 
-  const totalDelMes = () => {
-    const ahora = new Date();
-    return gastos
-      .filter((g) => {
-        const f = new Date(g.fecha);
-        return f.getMonth() === ahora.getMonth() && f.getFullYear() === ahora.getFullYear();
-      })
-      .reduce((sum, g) => sum + g.importe, 0);
-  };
+  // Eliminado totalDelMes local ya que se calcula en el servidor para considerar todos los registros
 
   if (status === "loading" || loading) return (
     <div className="flex flex-col items-center justify-center p-40">
@@ -177,11 +181,7 @@ export default function GastosPage() {
     </div>
   );
 
-  const filteredGastos = gastos.filter(g => 
-    g.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    g.empleado?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    g.proveedor?.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredGastos = gastos;
 
   return (
     <RoleGuard allowedRoles={["ADMIN", "JEFE", "ADMINISTRACION"]}>
@@ -199,12 +199,12 @@ export default function GastosPage() {
           </div>
           
           <div className="flex items-center gap-3 md:gap-6">
-             <div className="hidden md:block bg-red-50 px-4 py-2 rounded-xl border border-red-100">
+              <div className="hidden md:block bg-red-50 px-4 py-2 rounded-xl border border-red-100">
                 <p className="text-[9px] font-bold text-red-600 uppercase tracking-wider mb-0.5">Total del Mes</p>
                 <p className="text-lg font-bold tabular-nums text-red-700">
-                   ${totalDelMes().toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                   ${totalMonth.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                 </p>
-             </div>
+              </div>
              <button
               onClick={() => setMostrarForm(true)}
               className="bg-red-600 text-white px-3 md:px-5 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/10 flex items-center gap-1.5 md:gap-2"
@@ -228,7 +228,7 @@ export default function GastosPage() {
               />
            </div>
            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50 px-3 py-2 rounded-lg border border-gray-100 italic">
-              {filteredGastos.length} gastos encontrados
+              {total} gastos en total
            </div>
         </div>
 
@@ -284,13 +284,30 @@ export default function GastosPage() {
               </div>
             </div>
           ))}
-          {filteredGastos.length === 0 && (
-            <div className="py-20 text-center bg-white rounded-3xl border-2 border-dashed border-gray-100">
-               <Receipt size={48} className="text-gray-100 mx-auto mb-4" />
-               <p className="text-gray-400 font-medium">No hay gastos registrados</p>
-            </div>
-          )}
         </div>
+
+        {/* ─── Paginación ─── */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 disabled:opacity-50 transition-all border border-gray-100"
+            >
+              Anterior
+            </button>
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+              Página <span className="text-gray-900">{page}</span> de <span className="text-gray-900">{totalPages}</span>
+            </div>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 disabled:opacity-50 transition-all border border-gray-100"
+            >
+              Siguiente
+            </button>
+          </div>
+        )}
       </main>
 
       <Drawer 
@@ -408,13 +425,7 @@ export default function GastosPage() {
         onConfirm={() => confirmDelete && eliminarGasto(confirmDelete)}
       />
 
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+      {/* Toast global ya manejado por ToastProvider */}
     </div>
     </RoleGuard>
   );

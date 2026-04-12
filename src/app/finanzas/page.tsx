@@ -58,7 +58,10 @@ export default function FinanzasPage() {
   const [cobrosP, setCobrosP] = useState<Presupuesto[]>([]);
   const [cheques, setCheques] = useState<Cheque[]>([]);
   const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
-  const [allMovimientos, setAllMovimientos] = useState<Movimiento[]>([]);
+  const [totalCajas, setTotalCajas] = useState(0);
+  const [totalCobrosMes, setTotalCobrosMes] = useState(0);
+  const [totalGastosMes, setTotalGastosMes] = useState(0);
+  const [totalDeudaClientes, setTotalDeudaClientes] = useState(0);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [usuarios, setUsuarios] = useState<{ id: string; nombre: string }[]>([]);
@@ -142,16 +145,23 @@ export default function FinanzasPage() {
       );
 
       setCajas(rCajas);
-      setClientes(rClientes);
+      setClientes(rClientes.data);
       setProveedores(rProveedores);
       setUsuarios(rUsuarios);
+
+      // Totales globales para KPIs
+      setTotalCajas(rCajas.reduce((s: any, c: any) => s + c.saldo, 0));
+      setTotalCobrosMes(rCobros.totalMonth || 0);
+      setTotalGastosMes(rGastos.totalMonth || 0);
+      setTotalDeudaClientes(rClientes.globalSaldo || 0);
 
       if (rCajas.length > 0) {
         setCobroCajaId(prev => prev || rCajas[0].id);
         setGastoCajaId(prev => prev || rCajas[0].id);
       }
 
-      setCobrosP((rPptos as Presupuesto[]).filter((p: any) => p.estado === "APROBADO" && p.saldo > 0));
+      const pptoList = rPptos.data || rPptos;
+      setCobrosP(pptoList.filter((p: any) => p.estado === "APROBADO" && p.saldo > 0));
 
       const hoy = new Date();
       const en30 = new Date(hoy); en30.setDate(hoy.getDate() + 30);
@@ -160,14 +170,17 @@ export default function FinanzasPage() {
         return new Date(c.fechaCobro) <= en30;
       }));
 
-      const ingresos: Movimiento[] = (rCobros as any[]).map(c => ({
+      const cobrosData = rCobros.data || rCobros;
+      const gastosData = rGastos.data || rGastos;
+
+      const ingresos: Movimiento[] = (cobrosData as any[]).map(c => ({
         id: c.id, origen: "INGRESO" as const, fecha: c.fecha,
         descripcion: c.presupuesto ? `Cobro Ppto #${c.presupuesto.numero}` : c.descripcion || "Cobro varios",
         importe: c.importe, formaPago: c.formaPago,
         cliente: c.cliente?.empresa?.nombre ?? c.cliente?.nombre,
         caja: c.caja?.nombre,
       }));
-      const egresos: Movimiento[] = (rGastos as any[]).map(g => ({
+      const egresos: Movimiento[] = (gastosData as any[]).map(g => ({
         id: g.id, origen: "EGRESO" as const, fecha: g.fecha,
         descripcion: g.descripcion, importe: g.importe, formaPago: g.formaPago,
         caja: g.caja?.nombre,
@@ -176,8 +189,7 @@ export default function FinanzasPage() {
       const todos = [...ingresos, ...egresos]
         .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
 
-      setAllMovimientos(todos);
-      setMovimientos(todos.slice(0, 20));
+      setMovimientos(todos);
     } catch (e: any) {
       console.error(e);
       setErrorCarga(e.message || "Error al cargar datos financieros");
@@ -194,26 +206,16 @@ export default function FinanzasPage() {
     if (cobroClienteId && cobroTipo === "PRESUPUESTO") {
       fetch("/api/presupuestos")
         .then(r => r.json())
-        .then((d: Presupuesto[]) =>
-          setPptosDeCiente(d.filter(p => p.clienteId === cobroClienteId && p.estado === "APROBADO" && p.saldo > 0))
-        );
+        .then((res: any) => {
+          const d = res.data || res;
+          setPptosDeCiente(d.filter((p: any) => p.clienteId === cobroClienteId && p.estado === "APROBADO" && p.saldo > 0));
+        });
     } else {
       setPptosDeCiente([]);
     }
   }, [cobroClienteId, cobroTipo]);
 
-  // ── KPIs (calculados sobre TODOS los movimientos, no los 20 mostrados) ───
-  const ahora = new Date();
-  const delMes = (movs: Movimiento[]) => movs.filter(m => {
-    const f = new Date(m.fecha);
-    return f.getMonth() === ahora.getMonth() && f.getFullYear() === ahora.getFullYear();
-  });
-  const ingresosList = allMovimientos.filter(m => m.origen === "INGRESO");
-  const egresosList = allMovimientos.filter(m => m.origen === "EGRESO");
-  const totalCajas = cajas.reduce((s, c) => s + c.saldo, 0);
-  const cobrosDelMes = delMes(ingresosList).reduce((s, m) => s + m.importe, 0);
-  const gastosDelMes = delMes(egresosList).reduce((s, m) => s + m.importe, 0);
-  const resultadoMes = cobrosDelMes - gastosDelMes;
+  const resultadoMes = totalCobrosMes - totalGastosMes;
 
   // ── Helpers form ───────────────────────────────────────────────────────────
   const abrirFormCobro = (ppto?: Presupuesto) => {
@@ -373,9 +375,9 @@ export default function FinanzasPage() {
               </div>
             </div>
             <p className="text-2xl font-bold tabular-nums text-emerald-600">
-              ${cobrosDelMes.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+              ${totalCobrosMes.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
             </p>
-            <p className="text-[10px] text-gray-400 mt-1">{delMes(ingresosList).length} cobros registrados</p>
+            <p className="text-[10px] text-gray-400 mt-1">Total recaudado este mes</p>
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
@@ -386,9 +388,9 @@ export default function FinanzasPage() {
               </div>
             </div>
             <p className="text-2xl font-bold tabular-nums text-red-600">
-              ${gastosDelMes.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+              ${totalGastosMes.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
             </p>
-            <p className="text-[10px] text-gray-400 mt-1">{delMes(egresosList).length} gastos registrados</p>
+            <p className="text-[10px] text-gray-400 mt-1">Total egresos este mes</p>
           </div>
 
           <div className={`rounded-2xl shadow-sm p-6 ${resultadoMes >= 0 ? "bg-emerald-600" : "bg-red-600"}`}>

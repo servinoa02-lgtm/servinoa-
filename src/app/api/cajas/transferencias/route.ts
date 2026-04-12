@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/requireAuth";
 
 export async function GET() {
+  const session = await requireAuth();
+  if (session instanceof NextResponse) return session;
+
   try {
     const transferencias = await prisma.transferenciaCaja.findMany({
       include: {
@@ -18,6 +22,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const session = await requireAuth(["ADMIN", "JEFE", "ADMINISTRACION"]);
+  if (session instanceof NextResponse) return session;
+
   try {
     const body = await req.json();
     const { cajaOrigenId, cajaDestinoId, monto, descripcion, formaPagoOrigen, formaPagoDestino } = body;

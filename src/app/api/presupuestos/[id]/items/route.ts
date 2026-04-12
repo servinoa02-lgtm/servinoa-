@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { presupuestoService } from "@/services/presupuestoService";
+import { requireAuth } from "@/lib/requireAuth";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await requireAuth(["ADMIN", "JEFE", "ADMINISTRACION"]);
+  if (session instanceof NextResponse) return session;
+
   const { id } = await params;
   try {
     const body = await req.json();

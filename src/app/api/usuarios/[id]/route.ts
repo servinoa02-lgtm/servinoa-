@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { requireAuth } from "@/lib/requireAuth";
 
 const ROLES_VALIDOS = ["ADMIN", "JEFE", "ADMINISTRACION", "TECNICO", "CAJA", "VENTAS"];
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await requireAuth("ADMIN");
+  if (session instanceof NextResponse) return session;
+
   const { id } = await params;
   try {
     const body = await req.json();
@@ -26,7 +30,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (rol !== undefined && ROLES_VALIDOS.includes(rol)) data.rol = rol;
     if (password) {
       data.password = await bcrypt.hash(password, 10);
-      data.claveVisible = password;
     }
 
     const usuario = await prisma.usuario.update({
@@ -38,7 +41,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         email: true,
         rol: true,
         activo: true,
-        claveVisible: true,
         createdAt: true,
       },
     });
@@ -51,6 +53,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await requireAuth("ADMIN");
+  if (session instanceof NextResponse) return session;
+
   const { id } = await params;
   try {
     // No borrar físicamente, solo desactivar para preservar histórico

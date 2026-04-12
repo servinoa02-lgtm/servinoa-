@@ -15,7 +15,8 @@ import {
   ExternalLink,
   ChevronRight,
   Target,
-  Bell
+  Bell,
+  Activity
 } from "lucide-react";
 import Link from "next/link";
 import { GlobalNoteForm } from "./GlobalNoteForm";
@@ -72,19 +73,53 @@ export default async function DashboardPage() {
     orderBy: { fecha: "desc" }
   });
 
-  // 5. Resumen Financiero Mes Actual
-  const inicioMes = inicioMesAR();
-  const finMes = finMesAR();
-
-  const movsCaja = await prisma.movimientoCaja.aggregate({
-    where: { fecha: { gte: inicioMes, lte: finMes } },
-    _sum: { ingreso: true, egreso: true }
+  // 5. Resumen Financiero Mes Actual (Sincronizado con Ciclo Comercial)
+  const inicioMesStd = inicioMesAR();
+  const finMesStd = finMesAR();
+  
+  const movsParaResumen = await prisma.movimientoCaja.findMany({
+    where: {
+      fecha: {
+        gte: haceNDiasAR(inicioMesStd, 10),
+        lte: haceNDiasAR(finMesStd, -10)
+      }
+    },
+    select: { fecha: true, ingreso: true, egreso: true }
   });
-  const mesIngresos = movsCaja._sum.ingreso || 0;
-  const mesEgresos = movsCaja._sum.egreso || 0;
+
+  let mesIngresos = 0;
+  let mesEgresos = 0;
+  movsParaResumen.forEach(m => {
+    const adjusted = adjustDateForBusinessCycle(new Date(m.fecha));
+    if (adjusted >= inicioMesStd && adjusted <= finMesStd) {
+      mesIngresos += m.ingreso || 0;
+      mesEgresos += m.egreso || 0;
+    }
+  });
+
   const mesBalance = mesIngresos - mesEgresos;
 
-  // 7. Gráfico: Histórico Total (Predeterminado)
+  // 6. Capital Total del Sistema (Histórico)
+  const capitalAgg = await prisma.movimientoCaja.aggregate({
+    _sum: { ingreso: true, egreso: true }
+  });
+  const capitalTotal = (capitalAgg._sum.ingreso || 0) - (capitalAgg._sum.egreso || 0);
+
+  // 6c. Saldo en Calle (Presupuestos APROBADOS con deuda)
+  const pptos = await prisma.presupuesto.findMany({
+    where: { estado: "APROBADO" },
+    include: { items: true, cobranzas: { select: { importe: true } } }
+  });
+
+  let saldoEnCalle = 0;
+  pptos.forEach(p => {
+    const subtotal = p.items.reduce((acc, item) => acc + item.total, 0);
+    const total = p.incluyeIva ? subtotal * 1.21 : subtotal;
+    const cobrado = p.cobranzas.reduce((acc, c) => acc + c.importe, 0);
+    saldoEnCalle += Math.max(0, total - cobrado);
+  });
+
+  // 7. Gráfico: Histórico Total
   const movsTotales = await prisma.movimientoCaja.findMany({
     select: { fecha: true, ingreso: true, egreso: true },
     orderBy: { fecha: 'asc' },
@@ -160,25 +195,39 @@ export default async function DashboardPage() {
 
       {/* Resumen Financiero */}
       {canSeeFinances && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           <StatCard
-            label="Ingresos del Mes"
+            label="Total del Sistema"
+            value={`$${totalPatrimonio.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`}
+            icon={<Activity size={20} />}
+            color="primary"
+            trend={{ value: "Efectivo + Deuda", positive: totalPatrimonio >= 0 }}
+          />
+          <StatCard
+            label="Capital en Cajas"
+            value={`$${capitalTotal.toLocaleString("es-AR")}`}
+            icon={<DollarSign size={20} />}
+            color="emerald"
+            trend={{ value: "Dinero Líquido", positive: capitalTotal >= 0 }}
+          />
+          <StatCard
+            label="Deuda en Calle"
+            value={`$${saldoEnCalle.toLocaleString("es-AR")}`}
+            icon={<Target size={20} />}
+            color="rose"
+            trend={{ value: "Saldo Pendiente", positive: false }}
+          />
+          <StatCard
+            label="Ingresos Mes"
             value={`$${mesIngresos.toLocaleString("es-AR")}`}
             icon={<TrendingUp size={20} />}
             color="emerald"
           />
           <StatCard
-            label="Egresos del Mes"
+            label="Egresos Mes"
             value={`$${mesEgresos.toLocaleString("es-AR")}`}
             icon={<TrendingDown size={20} />}
             color="rose"
-          />
-          <StatCard
-            label="Balance de Caja"
-            value={`$${mesBalance.toLocaleString("es-AR")}`}
-            icon={<DollarSign size={20} />}
-            color={mesBalance >= 0 ? "primary" : "rose"}
-            trend={{ value: "Saldo Neto", positive: mesBalance >= 0 }}
           />
         </div>
       )}
@@ -201,12 +250,27 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {/* Alertas */}
-        <div className={canSeeFinances ? "lg:col-span-4 h-full" : "lg:col-span-12 h-full"}>
+        {/* Alertas y Saldos de Caja */}
+        <div className={canSeeFinances ? "lg:col-span-4 space-y-8" : "lg:col-span-12 h-full"}>
+          {canSeeFinances && (
+            <Card title="Disponibilidad por Caja" icon={<DollarSign size={20} className="text-red-600" />}>
+               <div className="space-y-3">
+                  {cajasConSaldo.map(c => (
+                    <div key={c.nombre} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                      <span className="text-xs font-bold text-gray-600 uppercase tracking-tight">{c.nombre}</span>
+                      <span className={`text-sm font-bold tabular-nums ${c.saldo >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+                        ${c.saldo.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  ))}
+               </div>
+            </Card>
+          )}
+
           <Card
             title="Alertas de Seguimiento"
             icon={<Bell size={20} className="text-red-600" />}
-            className="h-full border border-gray-200 rounded-2xl shadow-sm"
+            className="border border-gray-200 rounded-2xl shadow-sm"
           >
             <SortableAlertas seguimientos={seguimientos.map(s => ({ ...s, fecha: s.fecha }))} />
           </Card>

@@ -4,26 +4,64 @@ import { cuentaCorrienteService } from "@/services/cuentaCorrienteService";
 import { requireAuth } from "@/lib/requireAuth";
 import { calcularTotalConIVA } from "@/lib/constants";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const sesion = await requireAuth(["ADMIN", "JEFE", "ADMINISTRACION"]);
   if (sesion instanceof NextResponse) return sesion;
 
   try {
-    const cobranzas = await prisma.cobranza.findMany({
-      include: {
-        cliente: { include: { empresa: true } },
-        presupuesto: {
-          include: {
-            items: true,
-            cobranzas: { select: { importe: true } },
-            orden: { select: { numero: true } },
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "20");
+    const search = searchParams.get("search") || "";
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (search) {
+      where.OR = [
+        { descripcion: { contains: search, mode: "insensitive" } },
+        { cliente: { nombre: { contains: search, mode: "insensitive" } } },
+        { cliente: { empresa: { nombre: { contains: search, mode: "insensitive" } } } },
+        { presupuesto: { facturaNumero: { contains: search, mode: "insensitive" } } },
+      ];
+    }
+
+    const ahora = new Date();
+    const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+
+    const [cobranzas, totalCount, aggregate, monthlyAggregate] = await Promise.all([
+      prisma.cobranza.findMany({
+        where,
+        include: {
+          cliente: { include: { empresa: true } },
+          presupuesto: {
+            include: {
+              items: true,
+              cobranzas: { select: { importe: true } },
+              orden: { select: { numero: true } },
+            },
           },
+          caja: { select: { nombre: true } },
+          usuario: { select: { nombre: true } },
         },
-        caja: { select: { nombre: true } },
-        usuario: { select: { nombre: true } },
-      },
-      orderBy: { fecha: "desc" },
-    });
+        orderBy: { fecha: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.cobranza.count({ where }),
+      prisma.cobranza.aggregate({
+        where,
+        _sum: { importe: true }
+      }),
+      prisma.cobranza.aggregate({
+        where: {
+          AND: [
+            where,
+            { fecha: { gte: inicioMes } }
+          ]
+        },
+        _sum: { importe: true }
+      })
+    ]);
 
     const data = cobranzas.map((c) => {
       const ppto = c.presupuesto;
@@ -37,7 +75,15 @@ export async function GET() {
       return { ...c, montoPresupuesto, saldo };
     });
 
-    return NextResponse.json(data);
+    return NextResponse.json({
+      data,
+      total: totalCount,
+      totalSum: aggregate._sum.importe || 0,
+      totalMonth: monthlyAggregate._sum.importe || 0,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit)
+    });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Error al cargar cobranzas" }, { status: 500 });

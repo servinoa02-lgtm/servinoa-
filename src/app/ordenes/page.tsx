@@ -8,7 +8,8 @@ import { Search, Plus, ArrowLeft, Wrench, Calendar, ClipboardList } from "lucide
 import { useSort } from "@/hooks/useSort";
 import { SortHeader } from "@/components/ui/SortHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { Toast } from "@/components/ui/Toast";
+import { useToast } from "@/context/ToastContext";
+import { useDebounce } from "@/hooks/useDebounce";
 import Link from "next/link";
 import { formatFecha } from "@/lib/dateUtils";
 
@@ -31,38 +32,41 @@ export default function OrdenesPage() {
   const [ordenes, setOrdenes] = useState<Orden[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [debouncedSearch] = useDebounce(busqueda, 500);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
 
   const cargar = () => {
-    fetch("/api/ordenes")
+    setLoading(true);
+    fetch(`/api/ordenes?page=${page}&limit=20&search=${debouncedSearch}`)
       .then((r) => {
         if (!r.ok) throw new Error("Error al cargar órdenes");
         return r.json();
       })
-      .then((data) => { setOrdenes(data); setLoading(false); })
+      .then((res) => { 
+        setOrdenes(res.data); 
+        setTotal(res.total);
+        setTotalPages(res.totalPages);
+        setLoading(false); 
+      })
       .catch((e) => {
         setLoading(false);
-        setToast({ message: e.message || "Error al cargar órdenes", type: "error" });
+        showToast(e.message || "Error al cargar órdenes", "error");
       });
   };
 
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => { cargar(); }, [page, debouncedSearch]);
   useAutoRefresh(cargar);
 
-  const filtradas = ordenes.filter((o) => {
-    const texto = busqueda.toLowerCase();
-    return (
-      o.numero.toString().includes(texto) ||
-      o.cliente?.nombre?.toLowerCase().includes(texto) ||
-      o.cliente?.empresa?.nombre?.toLowerCase().includes(texto) ||
-      o.maquina?.nombre?.toLowerCase().includes(texto) ||
-      o.estado.toLowerCase().includes(texto)
-    );
-  });
+  // Filtramos solo por búsqueda si queremos mantener coherencia, 
+  // pero ya viene filtrado del servidor.
+  const filtradas = ordenes;
 
   const { sorted: ordenadas, sortKey, sortDirection, toggle } = useSort(filtradas, {
     numero: (o) => o.numero,
@@ -115,10 +119,10 @@ export default function OrdenesPage() {
                 className="w-full pl-12 pr-4 py-2.5 bg-gray-50 border border-transparent focus:border-red-600 rounded-xl text-sm font-medium outline-none transition-all"
               />
            </div>
-           <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50 px-3 py-2 rounded-lg border border-gray-100 italic">
-              {filtradas.length} órdenes encontradas
-           </div>
-        </div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50 px-3 py-2 rounded-lg border border-gray-100 italic">
+               {total} órdenes en total
+            </div>
+         </div>
 
         {/* ─── Desktop: Tabla ─── */}
         <div className="hidden md:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -179,47 +183,33 @@ export default function OrdenesPage() {
           </div>
         </div>
 
-        {/* ─── Mobile: Cards ─── */}
-        <div className="md:hidden space-y-3">
-          {filtradas.map((o) => (
-            <div
-              key={o.id}
-              onClick={() => router.push(`/ordenes/${o.id}`)}
-              className="bg-white rounded-xl border border-gray-200 p-4 active:bg-gray-50 transition-all cursor-pointer shadow-sm"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <span className="font-bold text-red-600 text-lg">#{o.numero}</span>
-                <StatusBadge status={o.estado} />
-              </div>
-              <p className="font-bold text-gray-900 uppercase text-sm mb-1">{o.cliente?.nombre}</p>
-              {o.cliente?.empresa?.nombre && (
-                <p className="text-[10px] text-gray-400 font-bold uppercase mb-2">{o.cliente.empresa.nombre}</p>
-              )}
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
-                <span className="text-[10px] text-gray-500 font-medium uppercase">
-                  {[o.maquina?.nombre, o.marca?.nombre].filter(Boolean).join(" — ") || "Sin equipo"}
-                </span>
-                <span className="text-[10px] text-gray-400 font-bold font-mono">
-                  {formatFecha(o.fechaRecepcion)}
-                </span>
-              </div>
-            </div>
-          ))}
-          {filtradas.length === 0 && (
-            <div className="text-center py-16 text-gray-400 font-medium italic text-sm">
-              No se encontraron órdenes
-            </div>
-          )}
         </div>
+
+        {/* ─── Paginación ─── */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 disabled:opacity-50 transition-all border border-gray-100"
+            >
+              Anterior
+            </button>
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+              Página <span className="text-gray-900">{page}</span> de <span className="text-gray-900">{totalPages}</span>
+            </div>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 disabled:opacity-50 transition-all border border-gray-100"
+            >
+              Siguiente
+            </button>
+          </div>
+        )}
       </main>
 
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+      {/* Toast global ya manejado por ToastProvider */}
     </div>
   );
 }
