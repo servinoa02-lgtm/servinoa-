@@ -1,5 +1,7 @@
 "use client";
 
+import { obtenerSaldosCajas } from "@/lib/financeUtils";
+
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
@@ -62,6 +64,7 @@ export default function FinanzasPage() {
   const [totalCobrosMes, setTotalCobrosMes] = useState(0);
   const [totalGastosMes, setTotalGastosMes] = useState(0);
   const [totalDeudaClientes, setTotalDeudaClientes] = useState(0);
+  const [cutoffMode, setCutoffMode] = useState(false); // Nuevo: Modo corte 10/04
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [usuarios, setUsuarios] = useState<{ id: string; nombre: string }[]>([]);
@@ -144,16 +147,24 @@ export default function FinanzasPage() {
         responses.map(r => r.json())
       );
 
-      setCajas(rCajas);
-      setClientes(rClientes.data);
-      setProveedores(rProveedores);
-      setUsuarios(rUsuarios);
+      // Si estamos en modo corte, recalculamos los saldos de las cajas
+      let finalCajas = rCajas;
+      if (cutoffMode) {
+        // En un escenario real, llamaríamos a la API con parámetro o filtraríamos localmente
+        const resCorte = await fetch("/api/cajas?date=2026-04-11T00:00:00Z").then(r => r.json());
+        finalCajas = resCorte;
+      }
 
-      // Totales globales para KPIs
-      setTotalCajas(rCajas.reduce((s: any, c: any) => s + c.saldo, 0));
-      setTotalCobrosMes(rCobros.totalMonth || 0);
-      setTotalGastosMes(rGastos.totalMonth || 0);
-      setTotalDeudaClientes(rClientes.globalSaldo || 0);
+      setCajas(finalCajas);
+      setClientes(rClientes.data);
+      setProveedores(rProveedores.data || rProveedores);
+      setUsuarios(rUsuarios.data || rUsuarios);
+
+      // Totales globales para KPIs (Asegurar que sean números para evitar React #300)
+      setTotalCajas(Number(finalCajas.reduce((s: any, c: any) => s + (c.saldo || 0), 0)));
+      setTotalCobrosMes(Number(rCobros.totalMonth || 0));
+      setTotalGastosMes(Number(rGastos.totalMonth || 0));
+      setTotalDeudaClientes(Number(rClientes.globalSaldo || 0));
 
       if (rCajas.length > 0) {
         setCobroCajaId(prev => prev || rCajas[0].id);
@@ -334,6 +345,20 @@ export default function FinanzasPage() {
             </div>
           </div>
           <div className="flex items-center gap-2 md:gap-3">
+            <button
+              onClick={() => {
+                setCutoffMode(!cutoffMode);
+                cargar(true);
+              }}
+              className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-bold transition-all shadow-sm ${
+                cutoffMode 
+                  ? "bg-amber-100 text-amber-700 ring-2 ring-amber-500 ring-offset-1" 
+                  : "bg-white text-gray-600 border border-gray-200 hover:border-blue-500 hover:text-blue-600"
+              }`}
+            >
+              <Clock size={14} />
+              <span className="hidden sm:inline">{cutoffMode ? "Modo Corte: 10/04" : "Ver al Corte"}</span>
+            </button>
             <button
               onClick={() => { resetCobro(); setMostrarCobro(true); }}
               className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-emerald-600 text-white rounded-xl text-[10px] md:text-xs font-bold hover:bg-emerald-700 transition-all shadow-md"

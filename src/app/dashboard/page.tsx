@@ -23,6 +23,12 @@ import { GlobalNoteForm } from "./GlobalNoteForm";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { FinanceChartConfigurable } from "@/components/ui/FinanceChartConfigurable";
 import { Card, StatCard } from "@/components/ui/Card";
+import { 
+  obtenerSaldosCajas, 
+  calcularCapitalCajas, 
+  calcularSaldoEnCalle, 
+  calcularPatrimonioTotal 
+} from "@/lib/financeUtils";
 import { SortableEquipos } from "./SortableEquipos";
 import { SortableTareas } from "./SortableTareas";
 import { SortableAlertas } from "./SortableAlertas";
@@ -99,40 +105,16 @@ export default async function DashboardPage() {
 
   const mesBalance = mesIngresos - mesEgresos;
 
-  // 6. Capital Total del Sistema (Histórico)
-  const capitalAgg = await prisma.movimientoCaja.aggregate({
-    _sum: { ingreso: true, egreso: true }
-  });
-  const capitalTotal = (capitalAgg._sum.ingreso || 0) - (capitalAgg._sum.egreso || 0);
+  // 6. Capital Total del Sistema (Histórico) - Usando utilidad unificada
+  const capitalTotal = await calcularCapitalCajas();
 
-  // 6c. Saldo en Calle (Presupuestos APROBADOS con deuda)
-  const pptos = await prisma.presupuesto.findMany({
-    where: { estado: "APROBADO" },
-    include: { items: true, cobranzas: { select: { importe: true } } }
-  });
-
-  let saldoEnCalle = 0;
-  pptos.forEach(p => {
-    const subtotal = p.items.reduce((acc, item) => acc + item.total, 0);
-    const total = p.incluyeIva ? subtotal * 1.21 : subtotal;
-    const cobrado = p.cobranzas.reduce((acc, c) => acc + c.importe, 0);
-    saldoEnCalle += Math.max(0, total - cobrado);
-  });
+  // 6c. Saldo en Calle (Deuda de clientes) - Usando utilidad unificada
+  const saldoEnCalle = await calcularSaldoEnCalle();
 
   const totalPatrimonio = capitalTotal + saldoEnCalle;
 
-  const cajas = await prisma.caja.findMany({
-    include: {
-      movimientos: {
-        select: { ingreso: true, egreso: true }
-      }
-    }
-  });
-
-  const cajasConSaldo = cajas.map(c => {
-    const totalCaja = c.movimientos.reduce((acc, m) => acc + (m.ingreso || 0) - (m.egreso || 0), 0);
-    return { nombre: c.nombre, saldo: totalCaja };
-  });
+  // Cajas para el desglose lateral
+  const cajasConSaldo = await obtenerSaldosCajas();
 
   // 7. Gráfico: Histórico Total
   const movsTotales = await prisma.movimientoCaja.findMany({

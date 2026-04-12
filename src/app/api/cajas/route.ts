@@ -1,25 +1,18 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
+import { obtenerSaldosCajas } from "@/lib/financeUtils";
 
-export async function GET() {
+export async function GET(req: Request) {
   const sesion = await requireAuth(["ADMIN", "JEFE", "ADMINISTRACION"]);
   if (sesion instanceof NextResponse) return sesion;
 
   try {
-    const cajas = await prisma.caja.findMany({ orderBy: { nombre: "asc" } });
+    const { searchParams } = new URL(req.url);
+    const dateStr = searchParams.get("date");
+    const cutoffDate = dateStr ? new Date(dateStr) : undefined;
 
-    const cajasConSaldo = await Promise.all(
-      cajas.map(async (caja) => {
-        const agg = await prisma.movimientoCaja.aggregate({
-          where: { cajaId: caja.id },
-          _sum: { ingreso: true, egreso: true },
-        });
-        const saldo = (agg._sum.ingreso || 0) - (agg._sum.egreso || 0);
-        return { ...caja, saldo };
-      })
-    );
-
+    const cajasConSaldo = await obtenerSaldosCajas(cutoffDate);
     return NextResponse.json(cajasConSaldo);
   } catch (error) {
     console.error(error);
