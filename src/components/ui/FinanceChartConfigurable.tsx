@@ -18,8 +18,8 @@ interface Props {
 
 const OPCIONES: { value: Periodo; label: string; subtitle: string }[] = [
   { value: "dia", label: "Día", subtitle: "Últimos 30 días" },
-  { value: "mes", label: "Mes", subtitle: "Últimos 12 meses" },
-  { value: "ano", label: "Año", subtitle: "Últimos 5 años" },
+  { value: "mes", label: "Mes", subtitle: "Mes actual (desde el 1ro)" },
+  { value: "ano", label: "Año", subtitle: "Ejercicio actual (desde 5 Ene)" },
   { value: "total", label: "Total", subtitle: "Histórico completo" },
 ];
 

@@ -117,28 +117,27 @@ export async function GET(req: NextRequest) {
   }
 
   if (periodo === "mes") {
-    // Últimos 12 meses, agrupado por mes
-    const start = arMidnightUTC(today.year, today.month - 11, 1);
+    // Mes actual desde el día 1, agrupado por día
+    const start = arMidnightUTC(today.year, today.month, 1);
     const movs = await prisma.movimientoCaja.findMany({
       where: { fecha: { gte: start } },
       select: { fecha: true, ingreso: true, egreso: true },
     });
-    const meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+
+    // Calcular cuántos días tiene el mes hasta hoy
+    const daysCount = today.day;
     const buckets = new Map<string, { fecha: string; ingresos: number; egresos: number }>();
-    for (let i = 0; i < 12; i++) {
-      const d = new Date(Date.UTC(today.year, today.month - 11 + i, 1, 3, 0, 0));
+    
+    for (let i = 0; i < daysCount; i++) {
+      const d = new Date(start.getTime() + i * 86400000);
       const p = getARPartsFromDate(d);
-      const k = `${p.year}-${p.month}`;
-      buckets.set(k, {
-        fecha: `${meses[p.month]} ${String(p.year).slice(2)}`,
-        ingresos: 0,
-        egresos: 0,
-      });
+      const key = `${String(p.day).padStart(2, "0")}/${String(p.month + 1).padStart(2, "0")}`;
+      buckets.set(`${p.year}-${p.month}-${p.day}`, { fecha: key, ingresos: 0, egresos: 0 });
     }
+
     for (const m of movs) {
-      const adjusted = adjustDateForBusinessCycle(new Date(m.fecha));
-      const p = getARPartsFromDate(adjusted);
-      const k = `${p.year}-${p.month}`;
+      const p = getARPartsFromDate(new Date(m.fecha));
+      const k = `${p.year}-${p.month}-${p.day}`;
       const b = buckets.get(k);
       if (b) {
         b.ingresos += m.ingreso || 0;
@@ -149,24 +148,38 @@ export async function GET(req: NextRequest) {
   }
 
   if (periodo === "ano") {
-    // Últimos 5 años, agrupado por año
-    const start = arMidnightUTC(today.year - 4, 0, 1);
+    // Ejercicio comercial actual (desde 5 Ene), agrupado por mes
+    // Incluidos los días 1-4 de Ene que se mueven al 5 Ene
+    const start = arMidnightUTC(today.year, 0, 1);
     const movs = await prisma.movimientoCaja.findMany({
       where: { fecha: { gte: start } },
       select: { fecha: true, ingreso: true, egreso: true },
     });
-    const buckets = new Map<number, { fecha: string; ingresos: number; egresos: number }>();
-    for (let i = 0; i < 5; i++) {
-      const y = today.year - 4 + i;
-      buckets.set(y, { fecha: String(y), ingresos: 0, egresos: 0 });
+
+    const mesesLabels = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+    const buckets = new Map<string, { fecha: string; ingresos: number; egresos: number }>();
+    
+    // Poblamos los meses desde Enero hasta el mes actual
+    for (let m = 0; m <= today.month; m++) {
+      const k = `${today.year}-${m}`;
+      buckets.set(k, {
+        fecha: mesesLabels[m],
+        ingresos: 0,
+        egresos: 0
+      });
     }
+
     for (const m of movs) {
       const adjusted = adjustDateForBusinessCycle(new Date(m.fecha));
       const p = getARPartsFromDate(adjusted);
-      const b = buckets.get(p.year);
-      if (b) {
-        b.ingresos += m.ingreso || 0;
-        b.egresos += m.egreso || 0;
+      // Solo tomamos del año actual (por si acaso el adjustDate moviera algo raramente, aunque solo mueve dentro del año o al anterior para Dic 25)
+      if (p.year === today.year) {
+        const k = `${p.year}-${p.month}`;
+        const b = buckets.get(k);
+        if (b) {
+          b.ingresos += m.ingreso || 0;
+          b.egresos += m.egreso || 0;
+        }
       }
     }
     return NextResponse.json({ data: Array.from(buckets.values()) });
