@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { GlobalNoteForm } from "./GlobalNoteForm";
 import { Card, StatCard } from "@/components/ui/Card";
+import Link from "next/link";
 import {
   obtenerSaldosCajas,
   calcularCapitalCajas,
@@ -325,7 +326,16 @@ export default async function DashboardPage() {
         <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 border-dashed">
           <GlobalNoteForm initialNote={notaGlobal?.valor || ""} />
         </div>
-        <p className="text-[9px] text-gray-400 font-medium text-center mt-4 uppercase tracking-widest">ServiNOA © {anoActualAR()}</p>
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-[9px] text-gray-400 font-medium uppercase tracking-widest">ServiNOA © {anoActualAR()}</p>
+          <Link
+            href="/configuracion/whatsapp"
+            className="flex items-center gap-1.5 text-[10px] font-bold text-green-600 hover:text-green-700 hover:bg-green-50 px-2.5 py-1.5 rounded-lg transition-all border border-green-100"
+          >
+            <Bell size={12} />
+            Config WhatsApp
+          </Link>
+        </div>
       </Card>
     </div>
   );

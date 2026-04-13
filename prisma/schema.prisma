@@ -16,6 +16,7 @@ model Usuario {
   rol              Rol            @default(TECNICO)
   activo           Boolean        @default(true)
   foto             String?
+  telefono         String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   cajaAsignada     Caja?          @relation("CajaUsuario")

@@ -42,4 +42,7 @@ next-env.d.ts
 
 /src/generated/prisma
 
+# WhatsApp auth session
+/data/wa-auth
+
 .vercel

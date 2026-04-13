@@ -1,9 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import { EstadoTarea, PrioridadTarea } from "@prisma/client";
+import { whatsappService } from "@/lib/whatsapp";
+
+const PRIORIDAD_EMOJI: Record<PrioridadTarea, string> = {
+  ALTA: "🔴",
+  URGENTE: "🚨",
+  MEDIA: "🟡",
+  BAJA: "🟢",
+};
 
 export const tareaService = {
   /**
-   * Crea una nueva Tarea asignada a un usuario.
+   * Crea una nueva Tarea asignada a un usuario y notifica por WhatsApp.
    */
   async crearTarea(data: {
     descripcion: string;
@@ -12,15 +20,36 @@ export const tareaService = {
     usuarioId: string;
     observaciones?: string;
   }) {
-    return await prisma.tarea.create({
+    const tarea = await prisma.tarea.create({
       data: {
         descripcion: data.descripcion,
         prioridad: data.prioridad,
         vencimiento: data.vencimiento,
         usuarioId: data.usuarioId,
         observaciones: data.observaciones,
-      }
+      },
+      include: {
+        usuario: { select: { nombre: true, telefono: true } },
+      },
     });
+
+    // Notificación WA (no bloquea la respuesta)
+    if (tarea.usuario.telefono) {
+      const emoji = PRIORIDAD_EMOJI[data.prioridad] ?? "📋";
+      const appUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+      const vencStr = data.vencimiento
+        ? `\n📅 Vence: ${data.vencimiento.toLocaleDateString("es-AR")}`
+        : "";
+
+      const mensaje =
+        `🔔 *ServiNOA* — Nueva tarea asignada\n\n` +
+        `${emoji} ${data.descripcion}${vencStr}\n\n` +
+        `Ver sistema: ${appUrl}/tareas`;
+
+      whatsappService.enviarMensaje(tarea.usuario.telefono, mensaje).catch(() => {});
+    }
+
+    return tarea;
   },
 
   /**
@@ -31,8 +60,8 @@ export const tareaService = {
       where: incluirCompletadas ? undefined : { estado: { not: "COMPLETADA" } },
       include: { usuario: { select: { nombre: true } } },
       orderBy: [
-        { vencimiento: 'asc' },
-        { prioridad: 'desc' },
+        { vencimiento: "asc" },
+        { prioridad: "desc" },
       ],
     });
   },
@@ -44,8 +73,8 @@ export const tareaService = {
     return await prisma.tarea.findMany({
       where: { usuarioId, estado: { not: "COMPLETADA" } },
       orderBy: [
-        { vencimiento: 'asc' },
-        { prioridad: 'desc' },
+        { vencimiento: "asc" },
+        { prioridad: "desc" },
       ],
     });
   },
@@ -56,7 +85,7 @@ export const tareaService = {
   async cambiarEstado(id: string, estado: EstadoTarea) {
     return await prisma.tarea.update({
       where: { id },
-      data: { estado }
+      data: { estado },
     });
-  }
+  },
 };
