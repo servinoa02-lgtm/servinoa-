@@ -15,6 +15,7 @@ import { RoleGuard } from "@/components/auth/RoleGuard";
 import { Toast } from "@/components/ui/Toast";
 import { formatFecha } from "@/lib/dateUtils";
 import { formatoService } from "@/services/formatoService";
+import { formatMoney } from "@/lib/constants";
 
 interface Cheque {
   id: string;
@@ -154,7 +155,7 @@ export default function ChequesPage() {
              <div className="hidden md:block bg-amber-50 px-4 py-2 rounded-xl border border-amber-100">
                 <p className="text-[9px] font-bold text-amber-600 uppercase tracking-wider mb-0.5">Total en Cartera</p>
                 <p className="text-lg font-bold tabular-nums text-amber-700">
-                  ${totalCartera.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                  ${formatMoney(totalCartera)}
                 </p>
              </div>
              <button
@@ -224,7 +225,7 @@ export default function ChequesPage() {
 
                 <div className="md:col-span-3 text-right">
                    <p className="text-xl font-bold tabular-nums text-gray-900 mb-2">
-                      ${c.importe.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                      ${formatMoney(c.importe)}
                    </p>
                    <StatusBadge status={c.estado} />
                 </div>

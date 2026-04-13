@@ -6,6 +6,7 @@ import { useEffect, useState, Suspense } from "react";
 import { ArrowLeft, Plus, Trash2, Save, User, Wrench, CreditCard, ChevronRight, FileText, Receipt, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { formatoService } from "@/services/formatoService";
+import { formatMoney } from "@/lib/constants";
 
 interface Cliente {
   id: string;
@@ -315,7 +316,7 @@ function NuevoPresupuestoForm() {
                          placeholder="0.00"
                          className="col-span-2 px-4 py-3 bg-white border border-gray-100 rounded-xl text-sm font-bold text-right outline-none focus:border-red-600 transition-all font-mono" />
                   <div className="col-span-2 text-right text-sm font-bold text-red-600 pr-2">
-                    ${(item.cantidad * item.precio).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                    ${formatMoney(item.cantidad * item.precio)}
                   </div>
                   <button onClick={() => eliminarItem(idx)} disabled={items.length === 1}
                           className="col-span-1 flex justify-center text-gray-300 hover:text-red-600 transition-colors disabled:opacity-0">
@@ -329,15 +330,15 @@ function NuevoPresupuestoForm() {
             <div className="mt-8 bg-gray-50 border border-gray-100 rounded-2xl p-6 max-w-sm ml-auto space-y-3">
               <div className="flex justify-between text-sm font-bold text-gray-500">
                 <span>Subtotal</span>
-                <span>${subtotal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</span>
+                <span>${formatMoney(subtotal)}</span>
               </div>
               <div className={`flex justify-between text-sm font-bold border-b border-gray-200 pb-3 ${incluyeIva ? "text-gray-700" : "text-gray-300"}`}>
                 <span>IVA {incluyeIva ? "(21%)" : "(no aplicado)"}</span>
-                <span>${iva.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</span>
+                <span>${formatMoney(iva)}</span>
               </div>
               <div className="flex justify-between items-center pt-1">
                 <span className="text-sm font-bold text-gray-900 uppercase">Total</span>
-                <span className="text-2xl font-bold text-gray-900">${total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</span>
+                <span className="text-2xl font-bold text-gray-900">${formatMoney(total)}</span>
               </div>
             </div>
           </div>

@@ -7,6 +7,8 @@ import Link from "next/link";
 import { ArrowLeft, User, Phone, Mail, MapPin, CreditCard, FileText, Receipt, History, Printer, ChevronRight } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatFecha } from "@/lib/dateUtils";
+import { formatMoney, formatNumeroPresupuesto } from "@/lib/constants";
+import { useToast } from "@/context/ToastContext";
 
 interface ClienteDetalle {
   id: string;
@@ -25,16 +27,13 @@ interface ClienteDetalle {
   saldoPendiente: number;
 }
 
-function formatNumero(numero: number, fecha: string) {
-  const year = new Date(fecha).getFullYear();
-  return `${year}-${numero.toString().padStart(5, "0")}`;
-}
 
 export default function ClienteDetallePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const { showToast } = useToast();
   const [cliente, setCliente] = useState<ClienteDetalle | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"ots" | "pptos" | "cobranzas" | "cuenta">("ots");
@@ -48,7 +47,7 @@ export default function ClienteDetallePage() {
       fetch(`/api/clientes/${id}`)
         .then((r) => r.json())
         .then((data) => { setCliente(data); setLoading(false); })
-        .catch(() => setLoading(false));
+        .catch(() => { showToast("Error al cargar el cliente", "error"); setLoading(false); });
     }
   }, [id]);
 
@@ -82,7 +81,7 @@ export default function ClienteDetallePage() {
              <div className="text-right border-r border-gray-200 pr-4 mr-2 hidden md:block">
                 <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Saldo Actual</p>
                 <p className={`text-xl font-bold ${cliente.saldoPendiente > 0 ? "text-red-600" : "text-emerald-600"}`}>
-                  ${cliente.saldoPendiente.toLocaleString("es-AR")}
+                  ${formatMoney(cliente.saldoPendiente, 0)}
                 </p>
              </div>
              <button onClick={() => window.print()} className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-black transition-all shadow-md flex items-center gap-2 uppercase tracking-wider">
@@ -148,14 +147,14 @@ export default function ClienteDetallePage() {
                       <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Total histórico</span>
                       <History size={14} className="text-gray-200" />
                    </div>
-                   <p className="text-xl font-bold text-gray-900">${cliente.totalPresupuestado.toLocaleString("es-AR")}</p>
+                   <p className="text-xl font-bold text-gray-900">${formatMoney(cliente.totalPresupuestado, 0)}</p>
                 </div>
                 <div className="p-6">
                    <div className="flex items-center justify-between mb-1">
                       <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">Abonado</span>
                       <CreditCard size={14} className="text-emerald-200" />
                    </div>
-                   <p className="text-xl font-bold text-emerald-600">${cliente.totalCobrado.toLocaleString("es-AR")}</p>
+                   <p className="text-xl font-bold text-emerald-600">${formatMoney(cliente.totalCobrado, 0)}</p>
                 </div>
              </div>
           </aside>
@@ -235,10 +234,10 @@ export default function ClienteDetallePage() {
                             <tbody>
                               {cliente.presupuestos.map((p) => (
                                 <tr key={p.id} onClick={() => router.push(`/presupuestos/${p.id}`)} className="bg-gray-50/50 hover:bg-white border border-transparent hover:border-red-200 transition-all cursor-pointer">
-                                  <td className="px-4 py-3 rounded-l-xl text-xs font-bold text-red-600 italic uppercase">#{formatNumero(p.numero, p.fecha)}</td>
-                                  <td className="px-4 py-3 text-right text-xs font-bold text-gray-900">${p.total.toLocaleString("es-AR")}</td>
+                                  <td className="px-4 py-3 rounded-l-xl text-xs font-bold text-red-600 italic uppercase">#{formatNumeroPresupuesto(p.numero, p.fecha)}</td>
+                                  <td className="px-4 py-3 text-right text-xs font-bold text-gray-900">${formatMoney(p.total, 0)}</td>
                                   <td className={`px-4 py-3 text-right text-xs font-bold ${p.saldo > 0 ? "text-red-600" : "text-emerald-600"}`}>
-                                     ${p.saldo.toLocaleString("es-AR")}
+                                     ${formatMoney(p.saldo, 0)}
                                   </td>
                                   <td className="px-4 py-3 rounded-r-xl text-center">
                                      <StatusBadge status={p.estado} />
@@ -271,7 +270,7 @@ export default function ClienteDetallePage() {
                                   <td className="px-4 py-3 text-xs font-bold text-gray-700 uppercase italic truncate max-w-[200px]">
                                      {c.descripcion || (c.presupuesto ? `PQ #${c.presupuesto.numero}` : "Cobro vario")}
                                   </td>
-                                  <td className="px-4 py-3 text-right text-xs font-bold text-emerald-600">${c.importe.toLocaleString("es-AR")}</td>
+                                  <td className="px-4 py-3 text-right text-xs font-bold text-emerald-600">${formatMoney(c.importe, 0)}</td>
                                   <td className="px-4 py-3 rounded-r-xl text-right text-[10px] font-bold text-gray-400 uppercase italic">{c.caja?.nombre || "-"}</td>
                                 </tr>
                               ))}
@@ -291,7 +290,7 @@ export default function ClienteDetallePage() {
                           <div className="space-y-2">
                              <p className="text-red-600 text-[10px] font-bold uppercase tracking-widest">Estado Consolidado</p>
                              <p className="text-5xl font-bold text-white tracking-tight">
-                                ${cliente.saldoPendiente.toLocaleString("es-AR")}
+                                ${formatMoney(cliente.saldoPendiente, 0)}
                              </p>
                              <span className={`inline-block px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider border ${cliente.saldoPendiente > 0 ? "border-red-600/50 text-red-600" : "border-emerald-600/50 text-emerald-600"}`}>
                                 {cliente.saldoPendiente > 0 ? "Saldo deudor pendiente" : "Cuentas al día"}
@@ -300,11 +299,11 @@ export default function ClienteDetallePage() {
                           <div className="grid grid-cols-2 gap-8 max-w-md mx-auto pt-8 border-t border-gray-800">
                              <div>
                                 <span className="text-[9px] font-bold text-gray-500 uppercase block mb-1">Total Facturación</span>
-                                <p className="text-lg font-bold text-white italic">${cliente.totalPresupuestado.toLocaleString("es-AR")}</p>
+                                <p className="text-lg font-bold text-white italic">${formatMoney(cliente.totalPresupuestado, 0)}</p>
                              </div>
                              <div>
                                 <span className="text-[9px] font-bold text-emerald-600 uppercase block mb-1">Total Cobros</span>
-                                <p className="text-lg font-bold text-emerald-600 italic">${cliente.totalCobrado.toLocaleString("es-AR")}</p>
+                                <p className="text-lg font-bold text-emerald-600 italic">${formatMoney(cliente.totalCobrado, 0)}</p>
                              </div>
                           </div>
                           <div className="pt-6">

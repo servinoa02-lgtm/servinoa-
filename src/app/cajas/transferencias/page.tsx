@@ -11,6 +11,8 @@ import {
 import { Drawer } from "@/components/ui/Drawer";
 import { formatFecha } from "@/lib/dateUtils";
 import { formatoService } from "@/services/formatoService";
+import { formatMoney } from "@/lib/constants";
+import { useToast } from "@/context/ToastContext";
 
 interface Transferencia {
   id: string;
@@ -31,6 +33,7 @@ function TransferenciasContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { showToast } = useToast();
   const [transferencias, setTransferencias] = useState<Transferencia[]>([]);
   const [loading, setLoading] = useState(true);
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -51,7 +54,7 @@ function TransferenciasContent() {
     fetch("/api/cajas/transferencias")
       .then((r) => r.json())
       .then((d) => { setTransferencias(d); setLoading(false); })
-      .catch(() => setLoading(false));
+      .catch(() => { showToast("Error al cargar transferencias", "error"); setLoading(false); });
   };
 
   useEffect(() => { cargar(); }, []);
@@ -161,7 +164,7 @@ function TransferenciasContent() {
                     
                     <div className="text-right">
                        <p className="text-xl font-bold tabular-nums text-gray-900">
-                          ${t.monto.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                          ${formatMoney(t.monto)}
                        </p>
                        <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">Confirmado</span>
                     </div>

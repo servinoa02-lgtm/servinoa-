@@ -14,7 +14,7 @@ import { Drawer } from "@/components/ui/Drawer";
 import { ProveedorQuickAdd } from "@/components/ui/ProveedorQuickAdd";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { formatFecha } from "@/lib/dateUtils";
-import { FORMAS_PAGO } from "@/lib/constants";
+import { FORMAS_PAGO, formatMoney } from "@/lib/constants";
 import { formatoService } from "@/services/formatoService";
 import { useToast } from "@/context/ToastContext";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -202,7 +202,7 @@ export default function GastosPage() {
               <div className="hidden md:block bg-red-50 px-4 py-2 rounded-xl border border-red-100">
                 <p className="text-[9px] font-bold text-red-600 uppercase tracking-wider mb-0.5">Total del Mes</p>
                 <p className="text-lg font-bold tabular-nums text-red-700">
-                   ${totalMonth.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                   ${formatMoney(totalMonth)}
                 </p>
               </div>
              <button
@@ -262,7 +262,7 @@ export default function GastosPage() {
                   
                   <div className="text-right">
                      <p className="text-xl font-bold tabular-nums text-red-600">
-                        ${g.importe.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                        ${formatMoney(g.importe)}
                      </p>
                      <div className="text-[9px] font-bold text-gray-400 uppercase mt-1">
                         {g.usuario?.nombre}

@@ -10,6 +10,7 @@ import { SortHeader } from "@/components/ui/SortHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatFecha } from "@/lib/dateUtils";
+import { formatMoney, formatNumeroPresupuesto } from "@/lib/constants";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { useToast } from "@/context/ToastContext";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -45,10 +46,6 @@ const cobroLabel: Record<string, string> = {
   PARCIAL: "Pago parcial",
 };
 
-function formatNumero(numero: number, fecha: string) {
-  const year = new Date(fecha).getFullYear();
-  return `${year}-${numero.toString().padStart(5, "0")}`;
-}
 
 export default function PresupuestosPage() {
   const { data: session, status } = useSession();
@@ -176,11 +173,11 @@ export default function PresupuestosPage() {
            {/* Estadísticas Rápidas del Filtro */}
            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 text-center">Total Cotizado</p>
-              <p className="text-lg font-bold text-gray-900 text-center">${globalTotal.toLocaleString("es-AR")}</p>
+              <p className="text-lg font-bold text-gray-900 text-center">${formatMoney(globalTotal, 0)}</p>
            </div>
            <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm border-l-4 border-l-red-600">
               <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest mb-1 text-center">Saldo en Calle</p>
-              <p className="text-xl font-bold text-red-700 text-center">${globalSaldo.toLocaleString("es-AR")}</p>
+              <p className="text-xl font-bold text-red-700 text-center">${formatMoney(globalSaldo, 0)}</p>
            </div>
         </div>
 
@@ -226,7 +223,7 @@ export default function PresupuestosPage() {
                   >
                     <td className="px-6 py-5">
                       <p className="font-bold text-red-600 text-lg tracking-tight italic">
-                        {formatNumero(p.numero, p.fecha)}
+                        {formatNumeroPresupuesto(p.numero, p.fecha)}
                       </p>
                       <p className="text-[10px] text-gray-400 font-bold">{formatFecha(p.fecha)}</p>
                     </td>
@@ -244,10 +241,10 @@ export default function PresupuestosPage() {
                       </span>
                     </td>
                     <td className="px-6 py-5 text-right font-bold text-base text-gray-900 tabular-nums">
-                        ${p.total?.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                        ${formatMoney(p.total)}
                     </td>
                     <td className={`px-6 py-5 text-right font-bold text-base tabular-nums ${p.saldo > 0 ? "text-red-700 bg-red-50/30" : "text-emerald-700 bg-emerald-50/30"}`}>
-                        ${p.saldo?.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                        ${formatMoney(p.saldo)}
                     </td>
                     <td className="px-6 py-5 text-center">
                         <div className="flex flex-col items-center gap-1">
@@ -304,7 +301,7 @@ export default function PresupuestosPage() {
       <ConfirmDialog
         isOpen={!!confirmDelete}
         title="Eliminar Presupuesto"
-        message={`¿Estás seguro de eliminar el presupuesto ${confirmDelete ? formatNumero(confirmDelete.numero, confirmDelete.fecha) : ""}? Esta acción no se puede deshacer.`}
+        message={`¿Estás seguro de eliminar el presupuesto ${confirmDelete ? formatNumeroPresupuesto(confirmDelete.numero, confirmDelete.fecha) : ""}? Esta acción no se puede deshacer.`}
         confirmLabel={eliminando ? "Eliminando..." : "Sí, eliminar"}
         onCancel={() => setConfirmDelete(null)}
         onConfirm={() => confirmDelete && eliminarPresupuesto(confirmDelete.id)}

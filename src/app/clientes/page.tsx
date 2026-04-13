@@ -14,6 +14,7 @@ import { useToast } from "@/context/ToastContext";
 import { useDebounce } from "@/hooks/useDebounce";
 import Link from "next/link";
 import { formatoService } from "@/services/formatoService";
+import { formatMoney } from "@/lib/constants";
 
 interface Cliente {
   id: string;
@@ -186,7 +187,7 @@ export default function ClientesPage() {
            <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm border-l-4 border-l-red-600 flex items-center justify-between">
               <div>
                 <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest mb-1">Deuda Total Clientes</p>
-                <p className="text-xl font-bold text-red-700">${globalSaldo.toLocaleString("es-AR")}</p>
+                <p className="text-xl font-bold text-red-700">${formatMoney(globalSaldo, 0)}</p>
               </div>
               <div className="text-right">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{total} Clientes</p>
@@ -230,7 +231,7 @@ export default function ClientesPage() {
                     </td>
                     <td className="px-6 py-5 text-right">
                        <span className={`px-4 py-1.5 rounded-xl border font-bold text-sm shadow-sm inline-block tabular-nums ${(c.saldo ?? 0) > 0 ? "text-red-600 bg-red-50 border-red-100" : "text-emerald-700 bg-emerald-50 border-emerald-100"}`}>
-                        ${(c.saldo ?? 0).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                        ${formatMoney(c.saldo ?? 0)}
                        </span>
                     </td>
                     <td className="px-6 py-5">

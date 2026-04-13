@@ -8,6 +8,8 @@ import { ArrowLeft, FileText, Receipt, User, Wrench, CreditCard, Printer, Save, 
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatFecha, anoActualAR } from "@/lib/dateUtils";
 import { formatoService } from "@/services/formatoService";
+import { useToast } from "@/context/ToastContext";
+import { formatMoney, formatNumeroPresupuesto, IVA_RATE } from "@/lib/constants";
 
 interface Presupuesto {
   id: string;
@@ -31,10 +33,6 @@ interface Presupuesto {
   cobranzas: { id: string; fecha: string; importe: number; formaPago: string; caja: { nombre: string } }[];
 }
 
-function formatNumero(numero: number, fecha: string) {
-  const year = new Date(fecha).getFullYear();
-  return `${year}-${numero.toString().padStart(5, "0")}`;
-}
 
 export default function PresupuestoDetallePage() {
   const { data: session, status } = useSession();
@@ -42,6 +40,7 @@ export default function PresupuestoDetallePage() {
   const params = useParams();
   const id = params.id as string;
 
+  const { showToast } = useToast();
   const [ppto, setPpto] = useState<Presupuesto | null>(null);
   const [loading, setLoading] = useState(true);
   const [actualizando, setActualizando] = useState(false);
@@ -61,13 +60,13 @@ export default function PresupuestoDetallePage() {
           setEditItems(data.items.map((i: any) => ({ ...i, precio: i.precio, cantidad: i.cantidad })));
           setLoading(false);
         })
-        .catch(() => setLoading(false));
+        .catch(() => { showToast("Error al cargar el presupuesto", "error"); setLoading(false); });
     }
   }, [id]);
 
   const guardarEdicionItems = async () => {
     if (editItems.length === 0 || editItems.some(i => !i.descripcion.trim())) {
-      alert("Se requiere al menos un ítem con descripción.");
+      showToast("Se requiere al menos un ítem con descripción.", "error");
       return;
     }
     setActualizando(true);
@@ -83,7 +82,7 @@ export default function PresupuestoDetallePage() {
       setPpto(data);
       setEditItems(data.items.map((i: any) => ({ ...i, precio: i.precio, cantidad: i.cantidad })));
     } else {
-      alert("Error al actualizar la cotización.");
+      showToast("Error al actualizar la cotización.", "error");
     }
     setActualizando(false);
   };
@@ -129,13 +128,13 @@ export default function PresupuestoDetallePage() {
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Presupuesto</p>
                 <StatusBadge status={ppto.estado} />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">#{formatNumero(ppto.numero, ppto.fecha)}</h1>
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">#{formatNumeroPresupuesto(ppto.numero, ppto.fecha)}</h1>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right border-r border-gray-200 pr-4 mr-2 hidden md:block">
                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Total</p>
-               <p className="text-xl font-bold text-red-600">${ppto.total.toLocaleString("es-AR")}</p>
+               <p className="text-xl font-bold text-red-600">${formatMoney(ppto.total, 0)}</p>
             </div>
             <button onClick={() => window.print()} className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-black transition-all shadow-md flex items-center gap-2 uppercase tracking-wider">
               <Printer size={18} /> Imprimir
@@ -218,16 +217,16 @@ export default function PresupuestoDetallePage() {
                 <div className="space-y-3">
                    <div className="flex justify-between text-xs border-b border-gray-800 pb-2">
                       <span className="text-gray-500 uppercase">Importe</span>
-                      <span className="font-bold">${ppto.total.toLocaleString("es-AR")}</span>
+                      <span className="font-bold">${formatMoney(ppto.total, 0)}</span>
                    </div>
                    <div className="flex justify-between text-xs border-b border-gray-800 pb-2">
                       <span className="text-emerald-500 uppercase">Cobrado</span>
-                      <span className="font-bold text-emerald-500">${ppto.cobrado.toLocaleString("es-AR")}</span>
+                      <span className="font-bold text-emerald-500">${formatMoney(ppto.cobrado, 0)}</span>
                    </div>
                    <div className="flex justify-between items-center pt-1">
                       <span className="text-[10px] font-bold text-gray-500 uppercase">Saldo</span>
                       <span className={`text-2xl font-bold ${ppto.saldo > 0 ? "text-red-600" : "text-emerald-500"}`}>
-                         ${ppto.saldo.toLocaleString("es-AR")}
+                         ${formatMoney(ppto.saldo, 0)}
                       </span>
                    </div>
                 </div>
@@ -268,8 +267,8 @@ export default function PresupuestoDetallePage() {
                               <tr key={item.id} className="bg-gray-50/50">
                                 <td className="px-4 py-3 rounded-l-xl text-xs font-bold text-gray-900">{item.cantidad}</td>
                                 <td className="px-4 py-3 text-xs font-bold text-gray-700 uppercase italic">{item.descripcion}</td>
-                                <td className="px-4 py-3 text-right text-[10px] font-bold text-gray-400">${item.precio.toLocaleString("es-AR")}</td>
-                                <td className="px-4 py-3 rounded-r-xl text-right text-xs font-bold text-red-600">${item.total.toLocaleString("es-AR")}</td>
+                                <td className="px-4 py-3 text-right text-[10px] font-bold text-gray-400">${formatMoney(item.precio, 0)}</td>
+                                <td className="px-4 py-3 rounded-r-xl text-right text-xs font-bold text-red-600">${formatMoney(item.total, 0)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -280,12 +279,12 @@ export default function PresupuestoDetallePage() {
                           {ppto.incluyeIva && (
                              <div className="flex justify-between text-[10px] font-bold text-gray-400 border-b border-gray-200 pb-2">
                                 <span className="uppercase">Subtotal neto ({ppto.moneda})</span>
-                                <span>${(ppto.total / 1.21).toLocaleString("es-AR")}</span>
+                                <span>${formatMoney(ppto.total / IVA_RATE, 0)}</span>
                              </div>
                           )}
                           <div className="flex justify-between items-center pt-2">
                              <span className="text-[10px] font-bold text-gray-900 uppercase">Total {ppto.incluyeIva ? "(IVA inc.)" : ""}</span>
-                             <span className="text-3xl font-bold text-gray-900 tracking-tight">${ppto.total.toLocaleString("es-AR")}</span>
+                             <span className="text-3xl font-bold text-gray-900 tracking-tight">${formatMoney(ppto.total, 0)}</span>
                           </div>
                        </div>
                      </div>
@@ -332,7 +331,7 @@ export default function PresupuestoDetallePage() {
                           {ppto.cobranzas.map((c) => (
                             <div key={c.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
                               <span className="text-[10px] font-bold text-gray-400">{formatFecha(c.fecha)} — {c.formaPago}</span>
-                              <span className="text-xs font-bold text-emerald-600">${c.importe.toLocaleString("es-AR")}</span>
+                              <span className="text-xs font-bold text-emerald-600">${formatMoney(c.importe, 0)}</span>
                             </div>
                           ))}
                         </div>

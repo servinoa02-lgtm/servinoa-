@@ -9,6 +9,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { formatFecha, hoyISO } from "@/lib/dateUtils";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { formatoService } from "@/services/formatoService";
+import { formatMoney } from "@/lib/constants";
 
 interface Cobranza {
   id: string; tipo: string; fecha: string; descripcion?: string | null;
@@ -246,7 +247,7 @@ function CobranzasContent() {
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Presupuesto</label>
                     {pptoIdParam && pptoInfo ? (
                       <div className="px-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold text-gray-700 uppercase">
-                        Ppto #{pptoInfo.numero} — Saldo: ${pptoInfo.saldo.toLocaleString("es-AR")}
+                        Ppto #{pptoInfo.numero} — Saldo: ${formatMoney(pptoInfo.saldo, 0)}
                       </div>
                     ) : (
                       <select value={presupuestoId}
@@ -258,7 +259,7 @@ function CobranzasContent() {
                               }}
                               className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-red-600 transition-all">
                         <option value="">Seleccionar presupuesto...</option>
-                        {presupuestos.map(p => <option key={p.id} value={p.id}>Ppto #{p.numero} — Saldo: ${p.saldo.toLocaleString("es-AR")}</option>)}
+                        {presupuestos.map(p => <option key={p.id} value={p.id}>Ppto #{p.numero} — Saldo: ${formatMoney(p.saldo, 0)}</option>)}
                       </select>
                     )}
                   </div>
@@ -276,15 +277,15 @@ function CobranzasContent() {
                   <div className="md:col-span-2 grid grid-cols-3 gap-4 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl">
                     <div>
                       <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Total ppto</p>
-                      <p className="text-sm font-bold text-gray-900">${pptoInfo.total.toLocaleString("es-AR")}</p>
+                      <p className="text-sm font-bold text-gray-900">${formatMoney(pptoInfo.total, 0)}</p>
                     </div>
                     <div>
                       <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Ya cobrado</p>
-                      <p className="text-sm font-bold text-emerald-600">${pptoInfo.cobrado.toLocaleString("es-AR")}</p>
+                      <p className="text-sm font-bold text-emerald-600">${formatMoney(pptoInfo.cobrado, 0)}</p>
                     </div>
                     <div>
                       <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Saldo pendiente</p>
-                      <p className="text-sm font-bold text-red-600">${pptoInfo.saldo.toLocaleString("es-AR")}</p>
+                      <p className="text-sm font-bold text-red-600">${formatMoney(pptoInfo.saldo, 0)}</p>
                     </div>
                   </div>
                 )}
@@ -401,7 +402,7 @@ function CobranzasContent() {
                     </div>
                   </div>
                   <p className="text-base font-bold text-emerald-600 tabular-nums shrink-0">
-                    +${c.importe.toLocaleString("es-AR")}
+                    +${formatMoney(c.importe, 0)}
                   </p>
                   <button onClick={() => setConfirmDelete(c.id)}
                           className="p-2 text-gray-200 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100">

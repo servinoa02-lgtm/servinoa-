@@ -6,6 +6,9 @@ export async function GET(req: NextRequest) {
   const sesion = await requireAuth();
   if (sesion instanceof NextResponse) return sesion;
 
+  const rol = (sesion.user as any).rol;
+  const userId = (sesion.user as any).id;
+
   try {
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get("page") || "1");
@@ -14,15 +17,33 @@ export async function GET(req: NextRequest) {
     const skip = (page - 1) * limit;
 
     const where: any = {};
+
+    // Si es técnico, solo ve lo suyo
+    if (rol === "TECNICO") {
+      where.tecnicoId = userId;
+    }
+
     if (search) {
-      where.OR = [
-        { cliente: { nombre: { contains: search, mode: "insensitive" } } },
-        { cliente: { empresa: { nombre: { contains: search, mode: "insensitive" } } } },
-        { maquina: { nombre: { contains: search, mode: "insensitive" } } },
-        { falla: { contains: search, mode: "insensitive" } },
-        // Si el search es un número, buscar por número de orden
-        ...(isNaN(parseInt(search)) ? [] : [{ numero: parseInt(search) }])
-      ];
+      const searchFilter = {
+        OR: [
+          { cliente: { nombre: { contains: search, mode: "insensitive" } } },
+          { cliente: { empresa: { nombre: { contains: search, mode: "insensitive" } } } },
+          { maquina: { nombre: { contains: search, mode: "insensitive" } } },
+          { falla: { contains: search, mode: "insensitive" } },
+          ...(isNaN(parseInt(search)) ? [] : [{ numero: parseInt(search) }])
+        ]
+      };
+
+      // Combinamos el filtro de técnico con la búsqueda si aplica
+      if (where.tecnicoId) {
+        where.AND = [
+          { tecnicoId: userId },
+          searchFilter
+        ];
+        delete where.tecnicoId; // Se movió al AND
+      } else {
+        Object.assign(where, searchFilter);
+      }
     }
 
     const [ordenes, total] = await Promise.all([

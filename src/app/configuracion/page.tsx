@@ -11,6 +11,7 @@ import {
   AlertCircle, HardHat, Wallet
 } from "lucide-react";
 import { formatoService } from "@/services/formatoService";
+import { useToast } from "@/context/ToastContext";
 
 interface Usuario {
   id: string;
@@ -41,6 +42,7 @@ export default function ConfiguracionPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<ActiveTab>("accesorios");
 
   // Accesorios
@@ -138,7 +140,7 @@ export default function ConfiguracionPage() {
       setCajas((prev) => [...prev, data]);
       setNuevaCaja("");
     } else {
-      alert("Error al crear caja (¿quizás el nombre ya existe o no tenés permisos?).");
+      showToast("Error al crear caja (¿quizás el nombre ya existe o no tenés permisos?).", "error");
     }
   };
 

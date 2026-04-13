@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
+import { calcularTotalConIVA } from "@/lib/constants";
 
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -47,7 +48,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     // Calcular totales (aplica IVA si corresponde)
     const presupuestosConTotal = cliente.presupuestos.map((p) => {
       const subtotal = p.items.reduce((sum, item) => sum + item.total, 0);
-      const total = p.incluyeIva ? subtotal * 1.21 : subtotal;
+      const total = calcularTotalConIVA(subtotal, p.incluyeIva);
       const cobrado = p.cobranzas.reduce((sum, c) => sum + c.importe, 0);
       return { ...p, subtotal, total, cobrado, saldo: total - cobrado };
     });

@@ -1,15 +1,16 @@
 "use client";
 
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   Legend
 } from "recharts";
+import { formatMoney } from "@/lib/constants";
 
 interface DayData {
   fecha: string; // "DD/MM"
@@ -28,15 +29,15 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         <p className="text-[10px] font-black text-slate-400 mb-2 uppercase tracking-[0.1em]">{label}</p>
         <div className="space-y-1">
           <p className="text-sm font-black text-emerald-600">
-            Ingresos: ${payload[0].value.toLocaleString("es-AR")}
+            Ingresos: ${formatMoney(payload[0].value, 0)}
           </p>
           <p className="text-sm font-black text-rose-600">
-            Egresos: ${payload[1].value.toLocaleString("es-AR")}
+            Egresos: ${formatMoney(payload[1].value, 0)}
           </p>
           <div className="pt-2 mt-2 border-t border-slate-100 flex justify-between gap-4">
             <span className="text-[10px] font-bold text-slate-500 uppercase">Balance:</span>
             <span className={`text-[10px] font-black ${payload[0].value - payload[1].value >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-              ${(payload[0].value - payload[1].value).toLocaleString("es-AR")}
+              ${formatMoney(payload[0].value - payload[1].value, 0)}
             </span>
           </div>
         </div>

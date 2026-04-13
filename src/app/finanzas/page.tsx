@@ -1,7 +1,5 @@
 "use client";
 
-import { obtenerSaldosCajas } from "@/lib/financeUtils";
-
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
@@ -16,7 +14,7 @@ import { RoleGuard } from "@/components/auth/RoleGuard";
 import { Drawer } from "@/components/ui/Drawer";
 import { ProveedorQuickAdd } from "@/components/ui/ProveedorQuickAdd";
 import { formatFecha, hoyISO } from "@/lib/dateUtils";
-import { FORMAS_PAGO } from "@/lib/constants";
+import { FORMAS_PAGO, formatMoney } from "@/lib/constants";
 import { formatoService } from "@/services/formatoService";
 
 
@@ -387,7 +385,7 @@ export default function FinanzasPage() {
               </div>
             </div>
             <p className={`text-2xl font-bold tabular-nums ${totalCajas >= 0 ? "text-gray-900" : "text-red-600"}`}>
-              ${totalCajas.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+              ${formatMoney(totalCajas)}
             </p>
             <p className="text-[10px] text-gray-400 mt-1">{cajas.length} cajas activas</p>
           </div>
@@ -400,7 +398,7 @@ export default function FinanzasPage() {
               </div>
             </div>
             <p className="text-2xl font-bold tabular-nums text-emerald-600">
-              ${totalCobrosMes.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+              ${formatMoney(totalCobrosMes)}
             </p>
             <p className="text-[10px] text-gray-400 mt-1">Total recaudado este mes</p>
           </div>
@@ -413,7 +411,7 @@ export default function FinanzasPage() {
               </div>
             </div>
             <p className="text-2xl font-bold tabular-nums text-red-600">
-              ${totalGastosMes.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+              ${formatMoney(totalGastosMes)}
             </p>
             <p className="text-[10px] text-gray-400 mt-1">Total egresos este mes</p>
           </div>
@@ -426,7 +424,7 @@ export default function FinanzasPage() {
               </div>
             </div>
             <p className="text-2xl font-bold tabular-nums text-white">
-              {resultadoMes >= 0 ? "+" : ""}${resultadoMes.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+              {resultadoMes >= 0 ? "+" : ""}${formatMoney(resultadoMes)}
             </p>
             <p className="text-[10px] text-white/60 mt-1">{resultadoMes >= 0 ? "Superávit" : "Déficit"} operativo</p>
           </div>
@@ -457,7 +455,7 @@ export default function FinanzasPage() {
                   >
                     <p className="text-[10px] font-bold text-gray-400 uppercase truncate mb-1">{c.nombre}</p>
                     <p className={`text-base font-bold tabular-nums ${c.saldo >= 0 ? "text-gray-900" : "text-red-600"}`}>
-                      ${c.saldo.toLocaleString("es-AR", { minimumFractionDigits: 0 })}
+                      ${formatMoney(c.saldo, 0)}
                     </p>
                   </button>
                 ))}
@@ -499,7 +497,7 @@ export default function FinanzasPage() {
                       </p>
                     </div>
                     <p className={`text-sm font-bold tabular-nums shrink-0 ${m.origen === "INGRESO" ? "text-emerald-600" : "text-red-600"}`}>
-                      {m.origen === "INGRESO" ? "+" : "-"}${m.importe.toLocaleString("es-AR")}
+                      {m.origen === "INGRESO" ? "+" : "-"}${formatMoney(m.importe, 0)}
                     </p>
                   </div>
                 ))}
@@ -529,7 +527,7 @@ export default function FinanzasPage() {
                         {p.cliente?.empresa?.nombre || p.cliente?.nombre}
                       </p>
                       <p className="text-[10px] text-gray-400 mt-0.5">
-                        Ppto #{p.numero} · Saldo: ${p.saldo.toLocaleString("es-AR")}
+                        Ppto #{p.numero} · Saldo: ${formatMoney(p.saldo, 0)}
                       </p>
                     </div>
                     <button
@@ -567,7 +565,7 @@ export default function FinanzasPage() {
                       <p className="text-[10px] text-gray-400 mt-0.5">{c.banco || "Sin banco"}</p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-sm font-bold text-gray-900 tabular-nums">${c.importe.toLocaleString("es-AR")}</p>
+                      <p className="text-sm font-bold text-gray-900 tabular-nums">${formatMoney(c.importe, 0)}</p>
                       <p className={`text-[10px] font-bold ${(c.diasVencimiento ?? 0) < 0 ? "text-red-600" : (c.diasVencimiento ?? 0) <= 7 ? "text-amber-600" : "text-gray-400"}`}>
                         {c.vencimientoTexto || (c.fechaCobro ? formatFecha(c.fechaCobro) : "")}
                       </p>
@@ -635,7 +633,7 @@ export default function FinanzasPage() {
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Presupuesto</label>
               {cobroPptoInfo && !cobroClienteId ? (
                 <div className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 uppercase">
-                  Ppto #{cobroPptoInfo.numero} — Saldo: ${cobroPptoInfo.saldo.toLocaleString("es-AR")}
+                  Ppto #{cobroPptoInfo.numero} — Saldo: ${formatMoney(cobroPptoInfo.saldo, 0)}
                 </div>
               ) : (
                 <select
@@ -650,7 +648,7 @@ export default function FinanzasPage() {
                 >
                   <option value="">Seleccionar presupuesto...</option>
                   {pptosDeCiente.map(p => (
-                    <option key={p.id} value={p.id}>Ppto #{p.numero} — Saldo: ${p.saldo.toLocaleString("es-AR")}</option>
+                    <option key={p.id} value={p.id}>Ppto #{p.numero} — Saldo: ${formatMoney(p.saldo, 0)}</option>
                   ))}
                 </select>
               )}
@@ -673,15 +671,15 @@ export default function FinanzasPage() {
             <div className="grid grid-cols-3 gap-3 p-4 bg-emerald-50 border border-emerald-100 rounded-xl">
               <div>
                 <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Total</p>
-                <p className="text-xs font-bold text-gray-900 tabular-nums">${cobroPptoInfo.total.toLocaleString("es-AR")}</p>
+                <p className="text-xs font-bold text-gray-900 tabular-nums">${formatMoney(cobroPptoInfo.total, 0)}</p>
               </div>
               <div>
                 <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Cobrado</p>
-                <p className="text-xs font-bold text-emerald-600 tabular-nums">${cobroPptoInfo.cobrado.toLocaleString("es-AR")}</p>
+                <p className="text-xs font-bold text-emerald-600 tabular-nums">${formatMoney(cobroPptoInfo.cobrado, 0)}</p>
               </div>
               <div>
                 <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Saldo</p>
-                <p className="text-xs font-bold text-red-600 tabular-nums">${cobroPptoInfo.saldo.toLocaleString("es-AR")}</p>
+                <p className="text-xs font-bold text-red-600 tabular-nums">${formatMoney(cobroPptoInfo.saldo, 0)}</p>
               </div>
             </div>
           )}

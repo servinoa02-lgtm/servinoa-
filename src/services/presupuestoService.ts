@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { cuentaCorrienteService } from "./cuentaCorrienteService";
 import { Prisma, Presupuesto, EstadoPresupuesto } from "@prisma/client";
+import { calcularTotalConIVA } from "@/lib/constants";
 
 export interface ItemPresupuestoInput {
   cantidad: number;
@@ -29,7 +30,7 @@ export const presupuestoService = {
    */
   calcularTotal(items: { total: number }[], incluyeIva: boolean): { subtotal: number; total: number } {
     const subtotal = items.reduce((acc, item) => acc + item.total, 0);
-    const total = incluyeIva ? subtotal * 1.21 : subtotal;
+    const total = calcularTotalConIVA(subtotal, incluyeIva);
     return { subtotal, total };
   },
 
@@ -164,7 +165,7 @@ export const presupuestoService = {
 
         // Recalcular con los nuevos items
         const subtotal = items.reduce((acc, item) => acc + item.cantidad * item.precio, 0);
-        const total = presupuesto.incluyeIva ? subtotal * 1.21 : subtotal;
+        const total = calcularTotalConIVA(subtotal, presupuesto.incluyeIva);
 
         await cuentaCorrienteService.registrarMovimiento(tx, {
           clienteId: presupuesto.clienteId,

@@ -31,6 +31,7 @@ const menuItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { data: session, status } = useSession();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -51,7 +52,6 @@ export function Sidebar() {
 
   if (pathname === "/login") return null;
 
-  const { data: session, status } = useSession();
   const userRole = (session?.user as any)?.rol;
 
   // Filtrar items según rol (mientras carga no mostramos nada para evitar saltos)

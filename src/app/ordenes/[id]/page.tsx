@@ -11,6 +11,7 @@ import { Wrench, Phone, FileText, Send, AlertTriangle, ArrowLeft, Printer, User,
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { CierreOTModal } from "@/components/ot/CierreOTModal";
 import { formatoService } from "@/services/formatoService";
+import { useToast } from "@/context/ToastContext";
 
 export default function OrdenDetallePage() {
   const { data: session, status } = useSession();
@@ -18,6 +19,7 @@ export default function OrdenDetallePage() {
   const params = useParams();
   const id = params.id as string;
 
+  const { showToast } = useToast();
   const [orden, setOrden] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [actualizando, setActualizando] = useState(false);
@@ -41,7 +43,7 @@ export default function OrdenDetallePage() {
         setRevisionTexto(data.revisionTecnica || "");
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => { showToast("Error al cargar la orden", "error"); setLoading(false); });
   };
 
   useEffect(() => {
@@ -52,7 +54,7 @@ export default function OrdenDetallePage() {
   const cambiarEstado = async (nuevoEstado: string) => {
     if (!orden) return;
     if (nuevoEstado === "PARA_PRESUPUESTAR" && !orden.revisionTecnica?.trim() && !mostrarTodosEstados) {
-      alert("Se requiere una Revisión Técnica guardada antes de presupuestar.");
+      showToast("Se requiere una Revisión Técnica guardada antes de presupuestar.", "error");
       setActiveTab("revision");
       return;
     }
