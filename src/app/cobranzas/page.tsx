@@ -103,21 +103,32 @@ function CobranzasContent() {
   // Pre-cargar presupuesto si viene por URL
   useEffect(() => {
     if (pptoIdParam && status === "authenticated") {
-      fetch(`/api/presupuestos/${pptoIdParam}`).then(r => r.json()).then(d => {
-        setPptoInfo(d);
-        setPresupuestoId(pptoIdParam);
-        setClienteId(d.cliente?.id || "");
-        setImporte(d.saldo?.toString() || "");
-        setMostrarForm(true);
-      });
+      fetch(`/api/presupuestos/${pptoIdParam}`)
+        .then(r => {
+          if (!r.ok) throw new Error("Error al cargar presupuesto");
+          return r.json();
+        })
+        .then(d => {
+          if (d.error) throw new Error(d.error);
+          setPptoInfo(d);
+          setPresupuestoId(pptoIdParam);
+          setClienteId(d.cliente?.id || "");
+          setImporte(d.saldo?.toString() || "");
+          setMostrarForm(true);
+        })
+        .catch(e => {
+          console.error(e);
+          setErrorForm("No se pudo cargar la información del presupuesto (" + pptoIdParam + ")");
+        });
     }
   }, [pptoIdParam, status]);
 
   // Cargar presupuestos del cliente seleccionado
   useEffect(() => {
     if (clienteId && tipo === "PRESUPUESTO") {
-      fetch("/api/presupuestos").then(r => r.json()).then((d: Presupuesto[]) => {
-        setPresupuestos(d.filter(p => p.clienteId === clienteId && p.estado === "APROBADO" && p.saldo > 0));
+      fetch("/api/presupuestos").then(r => r.json()).then((d: any) => {
+        const list = Array.isArray(d) ? d : (d.data || []);
+        setPresupuestos(list.filter((p: any) => p.clienteId === clienteId && p.estado === "APROBADO" && p.saldo > 0));
       });
     }
   }, [clienteId, tipo]);
@@ -379,7 +390,7 @@ function CobranzasContent() {
             <input type="text" placeholder="Buscar por cliente, empresa o n° de presupuesto..."
                    value={busqueda} onChange={e => setBusqueda(e.target.value)}
                    className="flex-1 text-sm font-medium outline-none bg-transparent" />
-            <span className="text-[10px] font-bold text-gray-400 uppercase">{filtradas.length} registros</span>
+            <span className="text-[10px] font-bold text-gray-400 uppercase">{totalCount} registros</span>
           </div>
         )}
 
@@ -387,13 +398,13 @@ function CobranzasContent() {
         {!mostrarForm && (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="divide-y divide-gray-50">
-              {filtradas.length === 0 && (
+              {cobranzas.length === 0 && (
                 <div className="py-20 text-center">
                   <Receipt size={40} className="text-gray-200 mx-auto mb-3" />
                   <p className="text-sm text-gray-400 font-medium">No hay cobros registrados</p>
                 </div>
               )}
-              {filtradas.map(c => (
+              {cobranzas.map(c => (
                 <div key={c.id} className="px-6 py-4 flex items-center gap-4 hover:bg-gray-50 transition-colors group">
                   <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
                     <Receipt size={16} className="text-emerald-600" />
@@ -421,6 +432,23 @@ function CobranzasContent() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Paginación */}
+        {!mostrarForm && totalPages > 1 && (
+          <div className="flex items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+              className="px-4 py-2 text-sm font-bold rounded-xl border border-gray-200 hover:border-red-600 hover:text-red-600 transition-all disabled:opacity-30 disabled:hover:border-gray-200 disabled:hover:text-gray-400">
+              Anterior
+            </button>
+            <div className="text-sm text-gray-500 font-medium">
+              Página <span className="font-bold text-gray-900">{page}</span> de <span className="font-bold text-gray-900">{totalPages}</span>
+            </div>
+            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+              className="px-4 py-2 text-sm font-bold rounded-xl border border-gray-200 hover:border-red-600 hover:text-red-600 transition-all disabled:opacity-30 disabled:hover:border-gray-200 disabled:hover:text-gray-400">
+              Siguiente
+            </button>
           </div>
         )}
       </main>
