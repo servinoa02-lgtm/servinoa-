@@ -15,6 +15,8 @@ export function useAutoRefresh(callback: () => void, intervalMs = 30_000) {
   callbackRef.current = callback;
 
   useEffect(() => {
+    // DESACTIVADO POR EL MOMENTO - Evita problemas al actualizar OTs
+    /*
     const refresh = () => callbackRef.current();
 
     // Refresco periódico
@@ -35,5 +37,6 @@ export function useAutoRefresh(callback: () => void, intervalMs = 30_000) {
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisible);
     };
+    */
   }, [intervalMs]);
 }

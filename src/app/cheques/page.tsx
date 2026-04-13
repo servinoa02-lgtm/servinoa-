@@ -4,8 +4,8 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { 
-  ArrowLeft, Search, Plus, CreditCard, Landmark, 
+import {
+  ArrowLeft, Search, Plus, CreditCard, Landmark,
   History, AlertCircle, Calendar,
   User, Building2, Timer
 } from "lucide-react";
@@ -16,6 +16,7 @@ import { Toast } from "@/components/ui/Toast";
 import { formatFecha } from "@/lib/dateUtils";
 import { formatoService } from "@/services/formatoService";
 import { formatMoney } from "@/lib/constants";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface Cheque {
   id: string;
@@ -44,6 +45,11 @@ export default function ChequesPage() {
   const [mostrarForm, setMostrarForm] = useState(false);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [busqueda, setBusqueda] = useState("");
+  const [debouncedBusqueda] = useDebounce(busqueda, 500);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalCartera, setTotalCartera] = useState(0);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const [clienteId, setClienteId] = useState("");
@@ -63,32 +69,29 @@ export default function ChequesPage() {
   }, [status, router]);
 
   const cargar = () => {
-    fetch("/api/cheques")
+    fetch(`/api/cheques?page=${page}&limit=20&search=${encodeURIComponent(debouncedBusqueda)}`)
       .then((r) => {
         if (!r.ok) throw new Error("Error al cargar cheques");
         return r.json();
       })
-      .then((d) => { setCheques(d); setLoading(false); })
+      .then((res) => {
+        setCheques(res.data);
+        setTotalPages(res.totalPages);
+        setTotalCount(res.total);
+        setTotalCartera(res.totalCartera);
+        setLoading(false);
+      })
       .catch((e) => {
         setLoading(false);
         setToast({ message: e.message, type: "error" });
       });
   };
 
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => { cargar(); }, [page, debouncedBusqueda]);
+  useEffect(() => { setPage(1); }, [debouncedBusqueda]);
   useEffect(() => {
-    fetch("/api/clientes").then((r) => r.json()).then(setClientes);
+    fetch("/api/clientes?limit=1000").then((r) => r.json()).then((res) => setClientes(res.data || res));
   }, []);
-
-  const filtrados = cheques.filter((c: Cheque) => {
-    const texto = busqueda.toLowerCase();
-    return (
-      (c.numeroCheque || "").includes(texto) ||
-      (c.librador || "").toLowerCase().includes(texto) ||
-      (c.banco || "").toLowerCase().includes(texto) ||
-      (c.cliente?.nombre || "").toLowerCase().includes(texto)
-    );
-  });
 
   const guardar = async () => {
     if (!importe) return;
@@ -131,10 +134,6 @@ export default function ChequesPage() {
       <div className="text-gray-400 font-medium text-sm animate-pulse">Cargando cheques...</div>
     </div>
   );
-
-  const totalCartera = cheques
-    .filter((c: Cheque) => c.estado === "EN_CARTERA")
-    .reduce((sum: number, c: Cheque) => sum + c.importe, 0);
 
   return (
     <RoleGuard allowedRoles={["ADMIN", "JEFE", "ADMINISTRACION"]}>
@@ -181,12 +180,12 @@ export default function ChequesPage() {
               />
            </div>
            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50 px-3 py-2 rounded-lg border border-gray-100 italic">
-              {filtrados.length} valores encontrados
+              {totalCount} valores encontrados
            </div>
         </div>
 
         <div className="space-y-4">
-          {filtrados.map((c: Cheque) => (
+          {cheques.map((c: Cheque) => (
             <div 
               key={c.id} 
               className="group bg-white p-6 rounded-2xl border border-gray-200 hover:shadow-md transition-all relative overflow-hidden"
@@ -232,13 +231,29 @@ export default function ChequesPage() {
               </div>
             </div>
           ))}
-          {filtrados.length === 0 && (
+          {cheques.length === 0 && (
             <div className="py-20 text-center bg-white rounded-3xl border-2 border-dashed border-gray-100">
                <Landmark size={48} className="text-gray-100 mx-auto mb-4" />
                <p className="text-gray-400 font-medium">No se encontraron cheques</p>
             </div>
           )}
         </div>
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+              className="px-4 py-2 text-sm font-bold rounded-xl border border-gray-200 hover:border-red-600 hover:text-red-600 transition-all disabled:opacity-30 disabled:hover:border-gray-200 disabled:hover:text-gray-400">
+              Anterior
+            </button>
+            <div className="text-sm text-gray-500 font-medium">
+              Página <span className="font-bold text-gray-900">{page}</span> de <span className="font-bold text-gray-900">{totalPages}</span>
+            </div>
+            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+              className="px-4 py-2 text-sm font-bold rounded-xl border border-gray-200 hover:border-red-600 hover:text-red-600 transition-all disabled:opacity-30 disabled:hover:border-gray-200 disabled:hover:text-gray-400">
+              Siguiente
+            </button>
+          </div>
+        )}
       </main>
 
       <Drawer 

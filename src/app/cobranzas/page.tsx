@@ -10,6 +10,7 @@ import { formatFecha, hoyISO } from "@/lib/dateUtils";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { formatoService } from "@/services/formatoService";
 import { formatMoney } from "@/lib/constants";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface Cobranza {
   id: string; tipo: string; fecha: string; descripcion?: string | null;
@@ -34,6 +35,10 @@ function CobranzasContent() {
   const [loading, setLoading] = useState(true);
   const [mostrarForm, setMostrarForm] = useState(!!pptoIdParam);
   const [busqueda, setBusqueda] = useState("");
+  const [debouncedBusqueda] = useDebounce(busqueda, 500);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Form
   const [tipo, setTipo] = useState<"PRESUPUESTO" | "COBRANZA_VARIA">("PRESUPUESTO");
@@ -63,25 +68,37 @@ function CobranzasContent() {
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
 
-  const cargar = useCallback(async () => {
+  const cargarCobranzas = useCallback(async () => {
     try {
-      const [c, cl, ca] = await Promise.all([
-        fetch("/api/cobranzas").then(r => r.json()),
-        fetch("/api/clientes").then(r => r.json()),
-        fetch("/api/cajas").then(r => r.json()),
-      ]);
-      setCobranzas(c);
-      setClientes(cl);
-      setCajas(ca);
-      if (ca.length > 0) setCajaId(ca[0].id);
+      const res = await fetch(`/api/cobranzas?page=${page}&limit=20&search=${encodeURIComponent(debouncedBusqueda)}`);
+      const data = await res.json();
+      setCobranzas(data.data);
+      setTotalPages(data.totalPages);
+      setTotalCount(data.total);
     } finally {
       setLoading(false);
     }
+  }, [page, debouncedBusqueda]);
+
+  const cargarAuxiliares = useCallback(async () => {
+    const [cl, ca] = await Promise.all([
+      fetch("/api/clientes?limit=1000").then(r => r.json()),
+      fetch("/api/cajas").then(r => r.json()),
+    ]);
+    setClientes(cl.data || cl);
+    setCajas(ca);
+    if (ca.length > 0) setCajaId(ca[0].id);
   }, []);
 
   useEffect(() => {
-    if (status === "authenticated") cargar();
-  }, [status, cargar]);
+    if (status === "authenticated") cargarCobranzas();
+  }, [status, cargarCobranzas]);
+
+  useEffect(() => {
+    if (status === "authenticated") cargarAuxiliares();
+  }, [status, cargarAuxiliares]);
+
+  useEffect(() => { setPage(1); }, [debouncedBusqueda]);
 
   // Pre-cargar presupuesto si viene por URL
   useEffect(() => {
@@ -142,7 +159,7 @@ function CobranzasContent() {
     if (res.ok) {
       setMostrarForm(false);
       resetForm();
-      await cargar();
+      await cargarCobranzas();
       if (pptoIdParam) router.push("/cobranzas");
     } else {
       setErrorForm("Error al registrar el cobro");
@@ -155,7 +172,7 @@ function CobranzasContent() {
     await fetch(`/api/cobranzas/${id}`, { method: "DELETE" });
     setEliminando(false);
     setConfirmDelete(null);
-    cargar();
+    cargarCobranzas();
   };
 
   if (status === "loading" || loading) {
@@ -165,13 +182,6 @@ function CobranzasContent() {
       </div>
     );
   }
-
-  const filtradas = cobranzas.filter(c =>
-    (c.cliente?.nombre?.toLowerCase().includes(busqueda.toLowerCase())) ||
-    (c.cliente?.empresa?.nombre?.toLowerCase().includes(busqueda.toLowerCase())) ||
-    (c.descripcion?.toLowerCase().includes(busqueda.toLowerCase())) ||
-    (c.presupuesto?.numero.toString().includes(busqueda))
-  );
 
   return (
     <RoleGuard allowedRoles={["ADMIN", "JEFE", "ADMINISTRACION"]}>
