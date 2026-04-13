@@ -42,7 +42,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const sesion = await requireAuth(["ADMIN", "TECNICO", "VENTAS"]);
+  const sesion = await requireAuth(["ADMIN", "JEFE", "ADMINISTRACION", "TECNICO", "VENTAS"]);
   if (sesion instanceof NextResponse) return sesion;
 
   const { id } = await params;

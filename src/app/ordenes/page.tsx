@@ -124,6 +124,40 @@ export default function OrdenesPage() {
             </div>
          </div>
 
+        {/* ─── Mobile: Cards ─── */}
+        <div className="md:hidden space-y-3">
+          {ordenadas.map((o) => (
+            <div
+              key={o.id}
+              className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 cursor-pointer hover:border-red-200 transition-all"
+              onClick={() => router.push(`/ordenes/${o.id}`)}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-bold text-red-600 text-lg tracking-tight">#{o.numero}</span>
+                <StatusBadge status={o.estado} />
+              </div>
+              <p className="font-bold text-gray-900 uppercase text-sm leading-none mb-1">{o.cliente?.nombre}</p>
+              {o.cliente?.empresa?.nombre && (
+                <p className="text-[10px] text-gray-400 font-bold uppercase mb-2">{o.cliente.empresa.nombre}</p>
+              )}
+              <div className="flex items-center justify-between mt-3">
+                <div className="text-gray-600 font-medium uppercase text-[10px] bg-gray-100/50 px-2 py-1 rounded-lg border border-gray-100 inline-block">
+                  {[o.maquina?.nombre, o.marca?.nombre, o.modelo?.nombre].filter(Boolean).join(" — ") || "Sin equipo"}
+                </div>
+                <div className="flex items-center gap-1 text-gray-400 font-mono text-[10px] font-bold">
+                  <Calendar size={12} />
+                  {formatFecha(o.fechaRecepcion)}
+                </div>
+              </div>
+            </div>
+          ))}
+          {ordenadas.length === 0 && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center text-gray-400 font-medium italic">
+              No se encontraron órdenes con esos criterios
+            </div>
+          )}
+        </div>
+
         {/* ─── Desktop: Tabla ─── */}
         <div className="hidden md:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
