@@ -15,28 +15,6 @@ export function useAutoRefresh(callback: () => void, intervalMs = 30_000) {
   callbackRef.current = callback;
 
   useEffect(() => {
-    // DESACTIVADO POR EL MOMENTO - Evita problemas al actualizar OTs
-    /*
-    const refresh = () => callbackRef.current();
-
-    // Refresco periódico
-    const timer = setInterval(refresh, intervalMs);
-
-    // Refresco al volver al foco de ventana
-    const onFocus = () => refresh();
-    window.addEventListener("focus", onFocus);
-
-    // Refresco al volver a la pestaña (visibilitychange)
-    const onVisible = () => {
-      if (document.visibilityState === "visible") refresh();
-    };
-    document.addEventListener("visibilitychange", onVisible);
-
-    return () => {
-      clearInterval(timer);
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-    */
-  }, [intervalMs]);
+    // DESACTIVADO TOTALMENTE - Evita cualquier refresco automático
+  }, []);
 }

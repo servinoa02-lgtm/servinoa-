@@ -30,6 +30,7 @@ export default function OrdenDetallePage() {
   const [esSeguimiento, setEsSeguimiento] = useState(false);
   const [mostrarTodosEstados, setMostrarTodosEstados] = useState(false);
   const [cierrePendiente, setCierrePendiente] = useState<"ENTREGADO_REALIZADO" | "ENTREGADO_SIN_REALIZAR" | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -40,16 +41,23 @@ export default function OrdenDetallePage() {
       .then((r) => r.json())
       .then((data) => {
         setOrden(data);
-        setRevisionTexto(data.revisionTecnica || "");
+        // Solo sobrescribir si el usuario NO ha modificado el texto localmente
+        if (!isDirty) {
+          setRevisionTexto(data.revisionTecnica || "");
+        }
         setLoading(false);
       })
-      .catch(() => { showToast("Error al cargar la orden", "error"); setLoading(false); });
+      .catch(() => {
+        showToast("Error al cargar la orden", "error");
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
     if (id) cargarOT();
   }, [id]);
-  useAutoRefresh(cargarOT);
+
+  // Se eliminó useAutoRefresh para evitar pérdida de datos al escribir diagnósticos.
 
   const cambiarEstado = async (nuevoEstado: string) => {
     if (!orden) return;
@@ -101,6 +109,7 @@ export default function OrdenDetallePage() {
       body: JSON.stringify({ revisionTecnica: formatoService.capitalizarPrimeraLetra(revisionTexto) }),
     });
     cargarOT();
+    setIsDirty(false); // Resetear el estado de edición tras guardar
     setActualizando(false);
   };
 
@@ -380,7 +389,11 @@ export default function OrdenDetallePage() {
                        {orden.revisionTecnica && <CheckCircle2 size={16} className="text-emerald-500" />}
                     </div>
                     <textarea 
-                       value={revisionTexto} onChange={e => setRevisionTexto(formatoService.capitalizarPrimeraLetra(e.target.value))}
+                       value={revisionTexto} 
+                       onChange={e => {
+                         setRevisionTexto(formatoService.capitalizarPrimeraLetra(e.target.value));
+                         setIsDirty(true);
+                       }}
                        className="w-full flex-1 min-h-[250px] p-6 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:border-red-600 focus:bg-white text-sm font-bold italic transition-all leading-relaxed"
                        placeholder="Describa el diagnóstico aquí..."
                     />
