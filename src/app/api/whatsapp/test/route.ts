@@ -5,17 +5,16 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const token = process.env.WHATSAPP_TOKEN;
   const phoneId = process.env.WHATSAPP_PHONE_ID;
-  const nextauthUrl = process.env.NEXTAUTH_URL;
-  const dbUrl = process.env.DATABASE_URL;
+
+  // Listar todas las keys que contengan "WHATSAPP" para detectar nombres incorrectos
+  const waKeys = Object.keys(process.env).filter(k => k.includes("WHATSAPP") || k.includes("whatsapp"));
 
   if (!token || !phoneId) {
     return NextResponse.json({
       ok: false,
-      error: "Variables no configuradas",
       token: token ? "presente" : "FALTA",
       phoneId: phoneId ? "presente" : "FALTA",
-      nextauthUrl: nextauthUrl ? "presente" : "FALTA",
-      dbUrl: dbUrl ? "presente" : "FALTA",
+      keysEncontradas: waKeys,
     });
   }
 
