@@ -27,6 +27,7 @@ import { SortableAlertas } from "./SortableAlertas";
 import { UnifiedDashboardPanel } from "@/components/dashboard/UnifiedDashboardPanel";
 import { formatFecha, formatHora, inicioMesAR, finMesAR, anoActualAR } from "@/lib/dateUtils";
 import { adjustDateForBusinessCycle } from "@/lib/businessCycle";
+import { formatMoney } from "@/lib/constants";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -75,12 +76,16 @@ export default async function DashboardPage() {
   const inicioMesStd = inicioMesAR();
   const finMesStd = finMesAR();
   
+  // Excluir caja Retenciones de los totales del mes
+  const cajaRetenciones = await prisma.caja.findFirst({ where: { nombre: "Retenciones" } });
+
   const movsParaResumen = await prisma.movimientoCaja.findMany({
     where: {
       fecha: {
         gte: new Date(inicioMesStd.getTime() - 10 * 24 * 60 * 60 * 1000),
         lte: new Date(finMesStd.getTime() + 10 * 24 * 60 * 60 * 1000)
-      }
+      },
+      ...(cajaRetenciones ? { cajaId: { not: cajaRetenciones.id } } : {})
     },
     select: { fecha: true, ingreso: true, egreso: true }
   });
@@ -202,34 +207,34 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           <StatCard
             label="Total del Sistema"
-            value={`$${totalPatrimonio.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`}
+            value={`$${formatMoney(totalPatrimonio)}`}
             icon={<Activity size={20} />}
             color="primary"
             trend={{ value: "Efectivo + Deuda", positive: totalPatrimonio >= 0 }}
           />
           <StatCard
             label="Capital en Cajas"
-            value={`$${capitalTotal.toLocaleString("es-AR")}`}
+            value={`$${formatMoney(capitalTotal, 0)}`}
             icon={<DollarSign size={20} />}
             color="emerald"
             trend={{ value: "Dinero Líquido", positive: capitalTotal >= 0 }}
           />
           <StatCard
             label="Deuda en Calle"
-            value={`$${saldoEnCalle.toLocaleString("es-AR")}`}
+            value={`$${formatMoney(saldoEnCalle, 0)}`}
             icon={<Target size={20} />}
             color="rose"
             trend={{ value: "Saldo Pendiente", positive: false }}
           />
           <StatCard
             label="Ingresos Mes"
-            value={`$${mesIngresos.toLocaleString("es-AR")}`}
+            value={`$${formatMoney(mesIngresos, 0)}`}
             icon={<TrendingUp size={20} />}
             color="emerald"
           />
           <StatCard
             label="Egresos Mes"
-            value={`$${mesEgresos.toLocaleString("es-AR")}`}
+            value={`$${formatMoney(mesEgresos, 0)}`}
             icon={<TrendingDown size={20} />}
             color="rose"
           />
@@ -271,7 +276,7 @@ export default async function DashboardPage() {
                 <div key={c.nombre} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
                   <span className="text-xs font-bold text-gray-600 uppercase tracking-tight">{c.nombre}</span>
                   <span className={`text-sm font-bold tabular-nums ${c.saldo >= 0 ? "text-emerald-700" : "text-red-600"}`}>
-                    ${c.saldo.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                    ${formatMoney(c.saldo)}
                   </span>
                 </div>
               ))}

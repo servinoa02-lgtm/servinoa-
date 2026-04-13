@@ -40,7 +40,9 @@ export async function GET(req: NextRequest) {
     | "dia"
     | "mes"
     | "ano"
-    | "total";
+    | "total"
+    | "custom";
+  const diasCustom = Math.max(1, Math.min(3650, parseInt(req.nextUrl.searchParams.get("dias") || "90")));
 
   const today = getARParts();
 
@@ -200,6 +202,44 @@ export async function GET(req: NextRequest) {
 
     const topClientes = await fetchTopClientes(start);
     return NextResponse.json({ 
+      data: Array.from(buckets.values()),
+      workshop: { chartData: Array.from(buckets.values()).map(b => ({ label: b.fecha, valor: b.ots })), topClientes }
+    });
+  }
+
+  if (periodo === "custom") {
+    const start = new Date(Date.now() - diasCustom * 24 * 60 * 60 * 1000);
+    const [movs, ots] = await Promise.all([
+      prisma.movimientoCaja.findMany({ where: { fecha: { gte: start } }, select: { fecha: true, ingreso: true, egreso: true } }),
+      prisma.ordenTrabajo.findMany({ where: { fechaRecepcion: { gte: start } }, select: { fechaRecepcion: true } })
+    ]);
+
+    const buckets = new Map<string, { fecha: string; ingresos: number; egresos: number; ots: number }>();
+    for (let i = 0; i < diasCustom; i++) {
+      const d = new Date(start.getTime() + i * 86400000);
+      const p = getARPartsFromDate(d);
+      const key = `${p.year}-${p.month}-${p.day}`;
+      if (!buckets.has(key)) {
+        buckets.set(key, {
+          fecha: `${String(p.day).padStart(2, "0")}/${String(p.month + 1).padStart(2, "0")}`,
+          ingresos: 0, egresos: 0, ots: 0
+        });
+      }
+    }
+
+    movs.forEach(m => {
+      const p = getARPartsFromDate(new Date(m.fecha));
+      const b = buckets.get(`${p.year}-${p.month}-${p.day}`);
+      if (b) { b.ingresos += m.ingreso || 0; b.egresos += m.egreso || 0; }
+    });
+    ots.forEach(ot => {
+      const p = getARPartsFromDate(new Date(ot.fechaRecepcion));
+      const b = buckets.get(`${p.year}-${p.month}-${p.day}`);
+      if (b) b.ots++;
+    });
+
+    const topClientes = await fetchTopClientes(start);
+    return NextResponse.json({
       data: Array.from(buckets.values()),
       workshop: { chartData: Array.from(buckets.values()).map(b => ({ label: b.fecha, valor: b.ots })), topClientes }
     });

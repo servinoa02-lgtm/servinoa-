@@ -40,11 +40,14 @@ export async function obtenerSaldosCajas(cutoffDate?: Date) {
 }
 
 /**
- * Calcula el capital total en cajas (efectivo, bancos, cheques)
+ * Calcula el capital total en cajas (efectivo, bancos, cheques).
+ * Excluye la caja "Retenciones" ya que no representa capital disponible.
  */
 export async function calcularCapitalCajas() {
   const saldos = await obtenerSaldosCajas();
-  return saldos.reduce((acc, current) => acc + current.saldo, 0);
+  return saldos
+    .filter((c) => c.nombre.toUpperCase() !== "RETENCIONES")
+    .reduce((acc, current) => acc + current.saldo, 0);
 }
 
 /**
