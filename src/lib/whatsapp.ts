@@ -9,10 +9,10 @@
 const META_API_URL = "https://graph.facebook.com/v19.0";
 
 // Argentina: 10 dígitos locales → formato internacional sin "+"
-// Ej: 3872239277 → 543872239277 (Meta resuelve el 9 internamente)
+// Ej: 3875840154 → 5493875840154 (549 = Argentina móvil)
 function formatearNumero(telefono: string): string {
   const limpio = telefono.replace(/\D/g, "");
-  return `54${limpio}`;
+  return `549${limpio}`;
 }
 
 async function enviar(telefono: string, mensaje: string): Promise<boolean> {
