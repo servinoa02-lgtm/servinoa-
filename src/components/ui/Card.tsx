@@ -31,13 +31,15 @@ export function Card({ children, className = "", title, subtitle, icon, action }
   );
 }
 
-export function StatCard({ label, value, trend, icon, color = "primary" }: { 
-  label: string; 
-  value: string | number; 
+export function StatCard({ label, value, trend, icon, color = "primary" }: {
+  label: string;
+  value: string | number;
   trend?: { value: string; positive: boolean };
   icon: ReactNode;
   color?: "primary" | "emerald" | "rose" | "amber";
 }) {
+  const isNegative = typeof value === "number" ? value < 0 : String(value).includes("-");
+
   const colorMap = {
     primary: "text-red-600 bg-red-50 border-red-100",
     emerald: "text-emerald-600 bg-emerald-50 border-emerald-100",
@@ -66,7 +68,7 @@ export function StatCard({ label, value, trend, icon, color = "primary" }: {
       </div>
       <div>
         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{label}</p>
-        <h4 className={`text-2xl font-bold tabular-nums ${textColorMap[color]}`}>{value}</h4>
+        <h4 className={`text-2xl font-bold tabular-nums ${isNegative ? "text-red-600" : textColorMap[color]}`}>{value}</h4>
       </div>
     </div>
   );

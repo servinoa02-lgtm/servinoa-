@@ -27,7 +27,7 @@ import { SortableAlertas } from "./SortableAlertas";
 import { UnifiedDashboardPanel } from "@/components/dashboard/UnifiedDashboardPanel";
 import { formatFecha, formatHora, inicioMesAR, finMesAR, anoActualAR } from "@/lib/dateUtils";
 import { adjustDateForBusinessCycle } from "@/lib/businessCycle";
-import { formatMoney } from "@/lib/constants";
+import { formatMoney, formatMoneyDisplay } from "@/lib/constants";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -207,34 +207,34 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           <StatCard
             label="Total del Sistema"
-            value={`$${formatMoney(totalPatrimonio)}`}
+            value={formatMoneyDisplay(totalPatrimonio)}
             icon={<Activity size={20} />}
             color="primary"
             trend={{ value: "Efectivo + Deuda", positive: totalPatrimonio >= 0 }}
           />
           <StatCard
             label="Capital en Cajas"
-            value={`$${formatMoney(capitalTotal, 0)}`}
+            value={formatMoneyDisplay(capitalTotal)}
             icon={<DollarSign size={20} />}
             color="emerald"
             trend={{ value: "Dinero Líquido", positive: capitalTotal >= 0 }}
           />
           <StatCard
             label="Deuda en Calle"
-            value={`$${formatMoney(saldoEnCalle, 0)}`}
+            value={formatMoneyDisplay(saldoEnCalle)}
             icon={<Target size={20} />}
             color="rose"
             trend={{ value: "Saldo Pendiente", positive: false }}
           />
           <StatCard
             label="Ingresos Mes"
-            value={`$${formatMoney(mesIngresos, 0)}`}
+            value={formatMoneyDisplay(mesIngresos)}
             icon={<TrendingUp size={20} />}
             color="emerald"
           />
           <StatCard
             label="Egresos Mes"
-            value={`$${formatMoney(mesEgresos, 0)}`}
+            value={formatMoneyDisplay(mesEgresos)}
             icon={<TrendingDown size={20} />}
             color="rose"
           />
