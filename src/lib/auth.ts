@@ -38,11 +38,15 @@ export const authOptions: NextAuthOptions = {
         token.rol = (user as any).rol;
         token.id = user.id;
       }
+      // Migrar tokens viejos que usaban 'role' en lugar de 'rol'
+      if (!token.rol && (token as any).role) {
+        token.rol = (token as any).role;
+      }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).rol = token.rol;
+        (session.user as any).rol = token.rol || (token as any).role;
         (session.user as any).id = token.id;
       }
       return session;
