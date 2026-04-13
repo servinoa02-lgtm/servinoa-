@@ -87,28 +87,34 @@ export default function CajasPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {cajas.map((caja) => (
-            <button
-              key={caja.id}
-              onClick={() => router.push(`/cajas/${caja.id}`)}
-              className="group relative bg-white border-2 border-transparent hover:border-red-600 rounded-2xl p-6 text-left shadow-sm hover:shadow-xl transition-all bg-gradient-to-br from-white to-gray-50"
-            >
-              <div className="flex justify-between items-start mb-6">
-                <div className="p-3 bg-gray-100 rounded-xl text-gray-400 group-hover:text-red-600 group-hover:bg-red-50 transition-colors shadow-inner">
-                  <Wallet size={24} />
+          {cajas.map((caja) => {
+            const esRetencion = caja.nombre.toUpperCase() === "RETENCIONES";
+            return (
+              <button
+                key={caja.id}
+                onClick={() => router.push(`/cajas/${caja.id}`)}
+                className="group relative bg-white border-2 border-transparent hover:border-red-600 rounded-2xl p-6 text-left shadow-sm hover:shadow-xl transition-all bg-gradient-to-br from-white to-gray-50"
+              >
+                <div className="flex justify-between items-start mb-6">
+                  <div className="p-3 bg-gray-100 rounded-xl text-gray-400 group-hover:text-red-600 group-hover:bg-red-50 transition-colors shadow-inner">
+                    <Wallet size={24} />
+                  </div>
+                  {esRetencion
+                    ? <span className="text-[8px] font-black text-gray-400 border border-gray-300 px-1.5 py-0.5 rounded uppercase tracking-wider">excluida</span>
+                    : <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-lg shadow-emerald-500/20" />
+                  }
                 </div>
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-lg shadow-emerald-500/20" />
-              </div>
-              <p className="text-sm font-black text-gray-500 mb-2 uppercase tracking-widest group-hover:text-gray-900 transition-colors">CAJA :: {caja.nombre}</p>
-              <p className={`text-2xl lg:text-3xl font-black tabular-nums tracking-tighter group-hover:scale-105 transition-transform origin-left ${caja.saldo >= 0 ? "text-gray-900" : "text-red-700"}`}>
-                ${formatMoney(caja.saldo)}
-              </p>
-              <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between text-[10px] font-black text-gray-400 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                <span>GESTIONAR FONDOS</span>
-                <Repeat size={14} />
-              </div>
-            </button>
-          ))}
+                <p className="text-sm font-black text-gray-500 mb-2 uppercase tracking-widest group-hover:text-gray-900 transition-colors">CAJA :: {caja.nombre}</p>
+                <p className={`text-2xl lg:text-3xl font-black tabular-nums tracking-tighter group-hover:scale-105 transition-transform origin-left ${esRetencion ? "text-gray-400" : caja.saldo >= 0 ? "text-gray-900" : "text-red-700"}`}>
+                  ${formatMoney(caja.saldo)}
+                </p>
+                <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between text-[10px] font-black text-gray-400 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span>{esRetencion ? "VER RETENCIONES" : "GESTIONAR FONDOS"}</span>
+                  <Repeat size={14} />
+                </div>
+              </button>
+            );
+          })}
 
         </div>
       </main>

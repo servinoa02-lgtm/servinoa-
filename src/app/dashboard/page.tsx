@@ -272,14 +272,20 @@ export default async function DashboardPage() {
         {canSeeFinances && (
           <Card title="Disponibilidad por Caja" icon={<DollarSign size={20} className="text-red-600" />}>
             <div className="space-y-3">
-              {cajasConSaldo.map(c => (
-                <div key={c.nombre} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                  <span className="text-xs font-bold text-gray-600 uppercase tracking-tight">{c.nombre}</span>
-                  <span className={`text-sm font-bold tabular-nums ${c.saldo >= 0 ? "text-emerald-700" : "text-red-600"}`}>
-                    ${formatMoney(c.saldo)}
-                  </span>
-                </div>
-              ))}
+              {cajasConSaldo.map(c => {
+                const esRetencion = c.nombre.toUpperCase() === "RETENCIONES";
+                return (
+                  <div key={c.nombre} className={`flex items-center justify-between p-3 rounded-xl border ${esRetencion ? "bg-gray-100 border-gray-200" : "bg-gray-50 border-gray-100"}`}>
+                    <span className="text-xs font-bold text-gray-600 uppercase tracking-tight flex items-center gap-2">
+                      {c.nombre}
+                      {esRetencion && <span className="text-[8px] font-black text-gray-400 border border-gray-300 px-1.5 py-0.5 rounded uppercase tracking-wider">excluida</span>}
+                    </span>
+                    <span className={`text-sm font-bold tabular-nums ${esRetencion ? "text-gray-400" : c.saldo >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+                      ${formatMoney(c.saldo)}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </Card>
         )}
