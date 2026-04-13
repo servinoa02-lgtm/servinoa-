@@ -37,12 +37,10 @@ export async function GET(req: NextRequest) {
   }
 
   const periodo = (req.nextUrl.searchParams.get("periodo") || "dia") as
-    | "dia"
-    | "mes"
-    | "ano"
-    | "total"
-    | "custom";
+    | "dia" | "mes" | "ano" | "total" | "custom" | "rango";
   const diasCustom = Math.max(1, Math.min(3650, parseInt(req.nextUrl.searchParams.get("dias") || "90")));
+  const desdeParam = req.nextUrl.searchParams.get("desde");
+  const hastaParam = req.nextUrl.searchParams.get("hasta");
 
   const today = getARParts();
 
@@ -242,6 +240,66 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       data: Array.from(buckets.values()),
       workshop: { chartData: Array.from(buckets.values()).map(b => ({ label: b.fecha, valor: b.ots })), topClientes }
+    });
+  }
+
+  if (periodo === "rango") {
+    if (!desdeParam || !hastaParam) {
+      return NextResponse.json({ error: "Se requieren los parámetros desde y hasta" }, { status: 400 });
+    }
+    // desde = inicio del día, hasta = fin del día en AR (UTC+3 offset aprox)
+    const start = new Date(`${desdeParam}T00:00:00-03:00`);
+    const end   = new Date(`${hastaParam}T23:59:59-03:00`);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
+      return NextResponse.json({ error: "Rango de fechas inválido" }, { status: 400 });
+    }
+
+    const [movs, ots] = await Promise.all([
+      prisma.movimientoCaja.findMany({
+        where: { fecha: { gte: start, lte: end } },
+        select: { fecha: true, ingreso: true, egreso: true },
+        orderBy: { fecha: "asc" },
+      }),
+      prisma.ordenTrabajo.findMany({
+        where: { fechaRecepcion: { gte: start, lte: end } },
+        select: { fechaRecepcion: true },
+      }),
+    ]);
+
+    // Agrupar por día dentro del rango
+    const buckets = new Map<string, { fecha: string; ingresos: number; egresos: number; ots: number }>();
+    const cursor = new Date(start);
+    while (cursor <= end) {
+      const p = getARPartsFromDate(new Date(cursor));
+      const key = `${p.year}-${p.month}-${p.day}`;
+      if (!buckets.has(key)) {
+        buckets.set(key, {
+          fecha: `${String(p.day).padStart(2, "0")}/${String(p.month + 1).padStart(2, "0")}`,
+          ingresos: 0, egresos: 0, ots: 0,
+        });
+      }
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    movs.forEach((m) => {
+      const p = getARPartsFromDate(new Date(m.fecha));
+      const b = buckets.get(`${p.year}-${p.month}-${p.day}`);
+      if (b) { b.ingresos += m.ingreso || 0; b.egresos += m.egreso || 0; }
+    });
+    ots.forEach((ot) => {
+      const p = getARPartsFromDate(new Date(ot.fechaRecepcion));
+      const b = buckets.get(`${p.year}-${p.month}-${p.day}`);
+      if (b) b.ots++;
+    });
+
+    const topClientes = await fetchTopClientes(start);
+    return NextResponse.json({
+      data: Array.from(buckets.values()),
+      workshop: {
+        chartData: Array.from(buckets.values()).map((b) => ({ label: b.fecha, valor: b.ots })),
+        topClientes,
+      },
     });
   }
 
