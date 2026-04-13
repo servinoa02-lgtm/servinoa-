@@ -5,6 +5,8 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const token = process.env.WHATSAPP_TOKEN;
   const phoneId = process.env.WHATSAPP_PHONE_ID;
+  const nextauthUrl = process.env.NEXTAUTH_URL;
+  const dbUrl = process.env.DATABASE_URL;
 
   if (!token || !phoneId) {
     return NextResponse.json({
@@ -12,6 +14,8 @@ export async function GET() {
       error: "Variables no configuradas",
       token: token ? "presente" : "FALTA",
       phoneId: phoneId ? "presente" : "FALTA",
+      nextauthUrl: nextauthUrl ? "presente" : "FALTA",
+      dbUrl: dbUrl ? "presente" : "FALTA",
     });
   }
 
