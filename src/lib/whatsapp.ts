@@ -12,7 +12,7 @@ const META_API_URL = "https://graph.facebook.com/v19.0";
 // Ej: 3875840154 → 5493875840154 (549 = Argentina móvil)
 function formatearNumero(telefono: string): string {
   const limpio = telefono.replace(/\D/g, "");
-  return `549${limpio}`;
+  return `54${limpio}`;
 }
 
 async function enviar(telefono: string, mensaje: string): Promise<boolean> {
