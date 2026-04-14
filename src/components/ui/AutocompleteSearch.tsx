@@ -89,7 +89,7 @@ export function AutocompleteSearch({
       </div>
 
       {isOpen && options.length > 0 && (
-        <div className="absolute z-10 mt-1 w-full bg-white shadow-xl max-h-60 rounded-xl overflow-auto border border-slate-100 ring-1 ring-black ring-opacity-5">
+        <div className="absolute z-50 mt-1 w-full bg-white shadow-xl max-h-60 rounded-xl overflow-auto border border-slate-100 ring-1 ring-black ring-opacity-5">
           <ul className="py-1">
             {options.map((option) => (
               <li
@@ -118,7 +118,7 @@ export function AutocompleteSearch({
       )}
       
       {isOpen && !isLoading && query.length >= 2 && options.length === 0 && (
-        <div className="absolute z-10 mt-1 w-full bg-white shadow-xl rounded-xl border border-slate-100 py-4 px-4 text-center text-sm text-slate-500">
+        <div className="absolute z-50 mt-1 w-full bg-white shadow-xl rounded-xl border border-slate-100 py-4 px-4 text-center text-sm text-slate-500">
           No se encontraron resultados para "{query}"
         </div>
       )}

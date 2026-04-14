@@ -79,6 +79,7 @@ export default function ClientesPage() {
       });
   };
 
+  useEffect(() => { setPage(1); }, [debouncedSearch]);
   useEffect(() => { cargar(); }, [page, debouncedSearch]);
   useAutoRefresh(cargar);
 
@@ -194,6 +195,45 @@ export default function ClientesPage() {
                 <p className="text-[10px] font-bold text-gray-400 italic">Cargados en total</p>
               </div>
            </div>
+        </div>
+
+        {/* ─── Mobile: Cards ─── */}
+        <div className="md:hidden space-y-3">
+          {ordenados.map((c) => (
+            <div
+              key={c.id}
+              className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 cursor-pointer hover:border-red-200 transition-all"
+              onClick={() => router.push(`/clientes/${c.id}`)}
+            >
+              <div className="flex items-start justify-between mb-2">
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-gray-900 uppercase text-sm leading-tight">{c.nombre}</p>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase flex items-center gap-1 mt-0.5">
+                    <Building2 size={10} className="opacity-50" />
+                    {c.empresa?.nombre || "Particular"}
+                  </p>
+                </div>
+                <span className={`px-3 py-1 rounded-lg border font-bold text-xs tabular-nums shrink-0 ${(c.saldo ?? 0) > 0 ? "text-red-600 bg-red-50 border-red-100" : "text-emerald-700 bg-emerald-50 border-emerald-100"}`}>
+                  ${formatMoney(c.saldo ?? 0)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
+                <div className="flex items-center gap-3 text-[10px] font-bold text-gray-400">
+                  {c.telefono && (
+                    <span className="flex items-center gap-1">
+                      <Phone size={10} className="text-red-600/50" /> {c.telefono}
+                    </span>
+                  )}
+                </div>
+                <ChevronRight size={16} className="text-gray-300" />
+              </div>
+            </div>
+          ))}
+          {ordenados.length === 0 && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center text-gray-400 font-medium italic">
+              No se encontraron clientes
+            </div>
+          )}
         </div>
 
         {/* ─── Desktop: Tabla ─── */}

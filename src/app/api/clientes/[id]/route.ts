@@ -102,6 +102,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(body.dni !== undefined && { dni: body.dni || null }),
         ...(body.email !== undefined && { email: body.email || null }),
         ...(body.domicilio !== undefined && { domicilio: body.domicilio || null }),
+        ...(body.cuit !== undefined && { cuit: body.cuit || null }),
         ...(body.iva !== undefined && { iva: body.iva }),
         ...(empresaId !== undefined && { empresaId }),
       },

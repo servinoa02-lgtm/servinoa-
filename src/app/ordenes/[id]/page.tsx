@@ -76,11 +76,15 @@ export default function OrdenDetallePage() {
       return;
     }
     setActualizando(true);
-    await fetch(`/api/ordenes/${id}`, {
+    const res = await fetch(`/api/ordenes/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ estado: nuevoEstado }),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      showToast(data.error || "Error al cambiar estado", "error");
+    }
     cargarOT();
     setActualizando(false);
     setMostrarTodosEstados(false);
@@ -103,24 +107,34 @@ export default function OrdenDetallePage() {
 
   const guardarRevision = async () => {
     setActualizando(true);
-    await fetch(`/api/ordenes/${id}`, {
+    const res = await fetch(`/api/ordenes/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ revisionTecnica: formatoService.capitalizarPrimeraLetra(revisionTexto) }),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      showToast(data.error || "Error al guardar diagnóstico", "error");
+    } else {
+      showToast("Diagnóstico guardado", "success");
+    }
     cargarOT();
-    setIsDirty(false); // Resetear el estado de edición tras guardar
+    setIsDirty(false);
     setActualizando(false);
   };
 
   const enviarNota = async () => {
     if (!nuevaNota.trim()) return;
     setActualizando(true);
-    await fetch(`/api/ordenes/${id}/notas`, {
+    const res = await fetch(`/api/ordenes/${id}/notas`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ texto: formatoService.capitalizarPrimeraLetra(nuevaNota), esSeguimiento }),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      showToast(data.error || "Error al enviar nota", "error");
+    }
     setNuevaNota("");
     setEsSeguimiento(false);
     cargarOT();

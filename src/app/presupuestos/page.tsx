@@ -91,6 +91,7 @@ export default function PresupuestosPage() {
       });
   };
 
+  useEffect(() => { setPage(1); }, [debouncedSearch]);
   useEffect(() => { cargar(); }, [page, debouncedSearch]);
   useAutoRefresh(cargar);
 
@@ -197,6 +198,44 @@ export default function PresupuestosPage() {
                 {total} presupuestos cargados
               </div>
            </div>
+        </div>
+
+        {/* ─── Mobile: Cards ─── */}
+        <div className="md:hidden space-y-3">
+          {ordenados.map((p) => (
+            <div
+              key={p.id}
+              className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 cursor-pointer hover:border-red-200 transition-all"
+              onClick={() => router.push(`/presupuestos/${p.id}`)}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-bold text-red-600 text-lg tracking-tight italic">
+                  {formatNumeroPresupuesto(p.numero, p.fecha)}
+                </span>
+                <StatusBadge status={p.estado} />
+              </div>
+              <p className="font-bold text-gray-900 uppercase text-sm leading-tight">
+                {p.cliente?.empresa?.nombre || p.cliente?.nombre || "Particular"}
+              </p>
+              {p.orden && (
+                <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">OT #{p.orden.numero}</p>
+              )}
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
+                <div className="text-[10px] font-bold text-gray-400">{formatFecha(p.fecha)}</div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold text-gray-900 tabular-nums">${formatMoney(p.total)}</span>
+                  {p.saldo > 0 && (
+                    <span className="text-xs font-bold text-red-600 tabular-nums">Debe: ${formatMoney(p.saldo)}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+          {ordenados.length === 0 && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center text-gray-400 font-medium italic">
+              No se encontraron presupuestos
+            </div>
+          )}
         </div>
 
         {/* ─── Desktop: Tabla ─── */}

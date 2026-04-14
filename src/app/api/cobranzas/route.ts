@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
           cliente: { include: { empresa: true } },
           presupuesto: {
             include: {
+              cliente: { include: { empresa: true } },
               items: true,
               cobranzas: { select: { importe: true } },
               orden: { select: { numero: true } },
@@ -136,6 +137,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ─── Validaciones críticas de presupuesto ───
+    let clienteIdFinal = clienteId || null;
     if (presupuestoId) {
       const ppto = await prisma.presupuesto.findUnique({
         where: { id: presupuestoId },
@@ -169,6 +171,11 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
+
+      // Derivar clienteId del presupuesto si no vino en el body
+      if (!clienteIdFinal && ppto.clienteId) {
+        clienteIdFinal = ppto.clienteId;
+      }
     }
 
     // ─── Todo dentro de una sola transacción ───
@@ -182,7 +189,7 @@ export async function POST(req: NextRequest) {
             fechaEmision: chequeFechaEmision ? new Date(chequeFechaEmision) : null,
             fechaCobro: chequeFechaCobro ? new Date(chequeFechaCobro) : null,
             importe: importeNum,
-            clienteId: clienteId || null,
+            clienteId: clienteIdFinal,
             estado: "EN_CARTERA",
             descripcion:
               descripcion || (tipo === "PRESUPUESTO" ? "Cobro Presupuesto" : "Cobranza varia"),
@@ -194,7 +201,7 @@ export async function POST(req: NextRequest) {
       const nuevaCobranza = await tx.cobranza.create({
         data: {
           tipo: tipo || "PRESUPUESTO",
-          clienteId: clienteId || null,
+          clienteId: clienteIdFinal,
           presupuestoId: presupuestoId || null,
           descripcion: descripcion || null,
           importe: importeNum,

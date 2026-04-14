@@ -16,7 +16,7 @@ interface Cobranza {
   id: string; tipo: string; fecha: string; descripcion?: string | null;
   importe: number; formaPago: string;
   cliente?: { nombre: string; empresa?: { nombre: string } | null } | null;
-  presupuesto?: { numero: number } | null;
+  presupuesto?: { numero: number; cliente?: { nombre: string; empresa?: { nombre: string } | null } | null } | null;
   caja?: { nombre: string } | null;
 }
 interface Cliente { id: string; nombre: string; empresa?: { nombre: string } | null; }
@@ -411,7 +411,7 @@ function CobranzasContent() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-gray-900 uppercase truncate">
-                      {c.cliente?.empresa?.nombre || c.cliente?.nombre || "Cobro vario"}
+                      {c.cliente?.empresa?.nombre || c.cliente?.nombre || c.presupuesto?.cliente?.empresa?.nombre || c.presupuesto?.cliente?.nombre || "Cobro vario"}
                     </p>
                     <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                       <span className="text-[10px] text-gray-400 font-bold">{formatFecha(c.fecha)}</span>

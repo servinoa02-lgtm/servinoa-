@@ -154,7 +154,7 @@ export default function FinanzasPage() {
       }
 
       setCajas(finalCajas);
-      setClientes(rClientes.data);
+      setClientes(rClientes.data || rClientes);
       setProveedores(rProveedores.data || rProveedores);
       setUsuarios(rUsuarios.data || rUsuarios);
 
@@ -174,7 +174,8 @@ export default function FinanzasPage() {
 
       const hoy = new Date();
       const en30 = new Date(hoy); en30.setDate(hoy.getDate() + 30);
-      setCheques((rCheques as Cheque[]).filter((c: any) => {
+      const chequesData = rCheques.data || rCheques;
+      setCheques((chequesData as Cheque[]).filter((c: any) => {
         if (c.estado !== "EN_CARTERA" || !c.fechaCobro) return false;
         return new Date(c.fechaCobro) <= en30;
       }));
@@ -390,7 +391,7 @@ export default function FinanzasPage() {
             <p className="text-[10px] text-gray-400 mt-1">{cajas.length} cajas activas</p>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 md:p-6">
             <div className="flex items-center justify-between mb-3">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cobros del mes</p>
               <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
@@ -403,7 +404,7 @@ export default function FinanzasPage() {
             <p className="text-[10px] text-gray-400 mt-1">Total recaudado este mes</p>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 md:p-6">
             <div className="flex items-center justify-between mb-3">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Gastos del mes</p>
               <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center">
@@ -416,7 +417,7 @@ export default function FinanzasPage() {
             <p className="text-[10px] text-gray-400 mt-1">Total egresos este mes</p>
           </div>
 
-          <div className={`rounded-2xl shadow-sm p-6 ${resultadoMes >= 0 ? "bg-emerald-600" : "bg-red-600"}`}>
+          <div className={`rounded-2xl shadow-sm p-4 md:p-6 ${resultadoMes >= 0 ? "bg-emerald-600" : "bg-red-600"}`}>
             <div className="flex items-center justify-between mb-3">
               <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider">Resultado del mes</p>
               <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">

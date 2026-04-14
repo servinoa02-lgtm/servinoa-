@@ -99,11 +99,18 @@ export default function CajaDetallePage() {
       ? `[${categoriaSeleccionada}] ${descripcion.toUpperCase()}`
       : descripcion.toUpperCase();
 
-    await fetch(`/api/cajas/${id}`, {
+    const res = await fetch(`/api/cajas/${id}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tipo: tipoMovimiento, descripcion: descFinal, importe, formaPago }),
     });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      showToast(data.error || "Error al guardar movimiento", "error");
+      setGuardando(false);
+      return;
+    }
 
     setMostrarForm(false);
     setDescripcion(""); setImporte("");

@@ -63,8 +63,8 @@ function NuevoPresupuestoForm() {
   }, [status, router]);
 
   useEffect(() => {
-    fetch("/api/clientes").then((r) => r.json()).then(setClientes);
-    fetch("/api/ordenes").then((r) => r.json()).then(setOrdenes);
+    fetch("/api/clientes?limit=500").then((r) => r.json()).then((d) => setClientes(d.data || [])).catch(() => {});
+    fetch("/api/ordenes?limit=500").then((r) => r.json()).then((d) => setOrdenes(d.data || [])).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -80,7 +80,7 @@ function NuevoPresupuestoForm() {
   }, [otIdParam]);
 
   const ordenesFiltradas = clienteId && !otIdParam
-    ? ordenes.filter(o => o.cliente.id === clienteId)
+    ? ordenes.filter(o => o.cliente?.id === clienteId)
     : [];
 
   const subtotal = items.reduce((sum, item) => sum + item.cantidad * item.precio, 0);

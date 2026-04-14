@@ -94,6 +94,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     await prisma.$transaction(async (tx) => {
       await tx.nota.deleteMany({ where: { ordenId: id } });
       await tx.foto.deleteMany({ where: { ordenId: id } });
+      await tx.retiro.deleteMany({ where: { ordenId: id } });
+      await tx.historialOT.deleteMany({ where: { ordenId: id } });
       await tx.ordenTrabajo.delete({ where: { id } });
     });
 

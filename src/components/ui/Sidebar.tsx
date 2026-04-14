@@ -159,7 +159,7 @@ export function Sidebar() {
 
       {/* ─── Mobile Drawer (overlay) ─── */}
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-50">
+        <div className="lg:hidden fixed inset-0 z-40">
           {/* Backdrop */}
           <div 
             className="absolute inset-0 bg-gray-900/40 backdrop-blur-[2px]" 

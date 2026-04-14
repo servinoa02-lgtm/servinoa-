@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const sesion = await requireAuth(["ADMIN", "TECNICO", "VENTAS"]);
+  const sesion = await requireAuth(["ADMIN", "JEFE", "ADMINISTRACION", "TECNICO", "VENTAS"]);
   if (sesion instanceof NextResponse) return sesion;
 
   try {

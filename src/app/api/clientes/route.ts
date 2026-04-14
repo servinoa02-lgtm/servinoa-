@@ -94,6 +94,7 @@ export async function POST(req: NextRequest) {
         nombre: body.nombre,
         telefono: body.telefono || null,
         dni: body.dni || null,
+        cuit: body.cuit || null,
         email: body.email || null,
         domicilio: body.domicilio || null,
         iva: body.iva || "NO incluyen IVA",

@@ -96,16 +96,16 @@ export default function NuevaOrdenPage() {
   }, [status, router]);
 
   useEffect(() => {
-    fetch("/api/clientes").then((r) => r.json()).then(setClientes);
-    fetch("/api/tecnicos").then((r) => r.json()).then(setTecnicos);
+    fetch("/api/clientes?limit=500").then((r) => r.json()).then((data) => setClientes(data.data || [])).catch(() => {});
+    fetch("/api/tecnicos").then((r) => r.json()).then((data) => setTecnicos(Array.isArray(data) ? data : [])).catch(() => {});
     fetch("/api/equipos").then((r) => r.json()).then((data) => {
-      setMaquinas(data.maquinas);
-      setMarcas(data.marcas);
-      setModelos(data.modelos);
-    });
+      setMaquinas(data.maquinas || []);
+      setMarcas(data.marcas || []);
+      setModelos(data.modelos || []);
+    }).catch(() => {});
     fetch("/api/sugerencias").then((r) => r.json()).then((data) => {
-      setFallasOpciones(data.fallas);
-    });
+      setFallasOpciones(data.fallas || []);
+    }).catch(() => {});
   }, []);
 
   const clientesFiltrados = buscarCliente && !clienteId
@@ -235,7 +235,7 @@ export default function NuevaOrdenPage() {
         )}
 
         {/* SECCIÓN 1: CLIENTE */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
           <div className="px-8 py-5 border-b border-gray-100 flex items-center justify-between">
             <h2 className="text-sm font-bold text-gray-900 uppercase flex items-center gap-3">
               <User size={16} className="text-red-600" /> Cliente
@@ -382,7 +382,7 @@ export default function NuevaOrdenPage() {
         </div>
 
         {/* SECCIÓN 2: EQUIPO */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
           <div className="px-8 py-5 border-b border-gray-100">
             <h2 className="text-sm font-bold text-gray-900 uppercase flex items-center gap-3">
               <Wrench size={16} className="text-red-600" /> Equipo
@@ -437,7 +437,7 @@ export default function NuevaOrdenPage() {
         </div>
 
         {/* SECCIÓN 3: FALLA E INVENTARIO */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
           <div className="px-8 py-5 border-b border-gray-100">
             <h2 className="text-sm font-bold text-gray-900 uppercase flex items-center gap-3">
               <Briefcase size={16} className="text-red-600" /> Falla e Inventario de Accesorios

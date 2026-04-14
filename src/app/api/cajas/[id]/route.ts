@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireAuth();
+  const session = await requireAuth(["ADMIN", "JEFE", "ADMINISTRACION"]);
   if (session instanceof NextResponse) return session;
 
   const { id } = await params;

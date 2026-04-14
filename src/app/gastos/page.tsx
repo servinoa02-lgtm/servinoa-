@@ -106,6 +106,7 @@ export default function GastosPage() {
       });
   };
 
+  useEffect(() => { setPage(1); }, [debouncedSearch]);
   useEffect(() => { cargar(); }, [page, debouncedSearch]);
 
   useEffect(() => {

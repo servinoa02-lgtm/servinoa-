@@ -79,18 +79,25 @@ function TransferenciasContent() {
     if (!cajaOrigenId || !cajaDestinoId || !monto || cajaOrigenId === cajaDestinoId) return;
     setGuardando(true);
 
-    await fetch("/api/cajas/transferencias", {
+    const res = await fetch("/api/cajas/transferencias", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        cajaOrigenId, 
-        cajaDestinoId, 
-        monto, 
-        descripcion: formatoService.capitalizarPrimeraLetra(descripcion || "Transferencia operativa"), 
-        formaPagoOrigen, 
-        formaPagoDestino 
+      body: JSON.stringify({
+        cajaOrigenId,
+        cajaDestinoId,
+        monto,
+        descripcion: formatoService.capitalizarPrimeraLetra(descripcion || "Transferencia operativa"),
+        formaPagoOrigen,
+        formaPagoDestino
       }),
     });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      showToast(data.error || "Error al guardar transferencia", "error");
+      setGuardando(false);
+      return;
+    }
 
     setMostrarForm(false);
     setMonto(""); setDescripcion("");

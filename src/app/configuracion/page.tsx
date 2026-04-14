@@ -225,24 +225,25 @@ export default function ConfiguracionPage() {
         </div>
       </header>
 
-      <div className="bg-white border-b border-gray-200 sticky top-20 z-30">
-        <div className="max-w-7xl mx-auto px-6 flex gap-8">
+      <div className="bg-white border-b border-gray-200 sticky top-14 md:top-20 z-30">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 flex gap-4 md:gap-8 overflow-x-auto scrollbar-none">
           {[
             { key: "accesorios" as ActiveTab, label: "Componentes", icon: <Wrench size={18} /> },
-            (["ADMIN", "JEFE"].includes((session?.user as any)?.rol)) && { key: "cajas" as ActiveTab, label: "Entidades / Cajas", icon: <Wallet size={18} /> },
-            { key: "usuarios" as ActiveTab, label: "Gestión de Personal", icon: <Users size={18} /> },
+            (["ADMIN", "JEFE"].includes((session?.user as any)?.rol)) && { key: "cajas" as ActiveTab, label: "Cajas", icon: <Wallet size={18} /> },
+            { key: "usuarios" as ActiveTab, label: "Personal", icon: <Users size={18} /> },
           ].filter(Boolean).map((tab: any) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-6 py-4 text-xs font-bold border-b-2 transition-all uppercase tracking-wider ${
+              className={`flex items-center gap-2 px-4 md:px-6 py-4 text-[10px] md:text-xs font-bold border-b-2 transition-all uppercase tracking-wider whitespace-nowrap shrink-0 ${
                 activeTab === tab.key
                   ? "border-red-600 text-red-600"
                   : "border-transparent text-gray-400 hover:text-gray-600"
               }`}
             >
               {tab.icon}
-              {tab.label}
+              <span className="hidden sm:inline">{tab.label}</span>
+              <span className="sm:hidden">{tab.label}</span>
             </button>
           ))}
         </div>
@@ -482,78 +483,135 @@ export default function ConfiguracionPage() {
               </div>
             )}
 
+
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
               {loadingUsers ? (
                 <div className="p-16 text-center text-gray-400 text-xs font-bold animate-pulse italic">Cargando base de datos...</div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-100 text-gray-400 uppercase text-[10px] font-bold tracking-widest bg-gray-50/50">
-                        <th className="text-left px-8 py-5">Nombre / Usuario</th>
-                        <th className="text-left px-8 py-5">Email</th>
-                        <th className="text-left px-8 py-5">Rol / Jerarquía</th>
-                        <th className="text-left px-8 py-5">Estado</th>
-                        <th className="text-right px-8 py-5">Sistema</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                      {usuariosFiltrados.map((u) => (
-                        <tr key={u.id} className={`hover:bg-gray-50/30 group transition-all ${!u.activo ? "opacity-40 grayscale" : ""}`}>
-                          <td className="px-8 py-6">
-                            <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 rounded-lg bg-gray-900 flex items-center justify-center text-white font-bold text-sm shadow-sm">
-                                {u.nombre.charAt(0).toUpperCase()}
-                              </div>
-                              <div>
-                                  <div className="font-bold text-gray-900 uppercase text-sm leading-tight flex items-center gap-2">
-                                    {u.nombre}
-                                    {u.id === (session?.user as { id?: string })?.id && (
-                                       <span className="text-[8px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold">USTED</span>
-                                    )}
-                                  </div>
-                                  <div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">ID: {u.id.substring(0,8)}</div>
-                              </div>
+                <>
+                  {/* Mobile: Cards */}
+                  <div className="md:hidden divide-y divide-gray-50">
+                    {usuariosFiltrados.map((u) => (
+                      <div key={u.id} className={`p-4 ${!u.activo ? "opacity-40 grayscale" : ""}`}>
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-10 h-10 rounded-lg bg-gray-900 flex items-center justify-center text-white font-bold text-sm shadow-sm shrink-0">
+                            {u.nombre.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-bold text-gray-900 uppercase text-sm leading-tight flex items-center gap-2">
+                              <span className="truncate">{u.nombre}</span>
+                              {u.id === (session?.user as { id?: string })?.id && (
+                                <span className="text-[8px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold shrink-0">USTED</span>
+                              )}
                             </div>
-                          </td>
-                          <td className="px-8 py-6 text-gray-500 font-medium text-xs">
-                             {u.email}
-                          </td>
-                          <td className="px-8 py-6">
-                             <span className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest border ${ROL_COLORS[u.rol] || "border-gray-100 text-gray-400"}`}>
-                               {ROL_LABELS[u.rol] || u.rol}
-                             </span>
-                          </td>
-                          <td className="px-8 py-6">
-                             <div className="flex items-center gap-2">
-                                <div className={`w-2 h-2 rounded-full ${u.activo ? "bg-emerald-500 animate-pulse" : "bg-red-500"}`} />
-                                <span className="text-[10px] font-bold uppercase text-gray-600">{u.activo ? "Activo" : "Bloqueado"}</span>
-                             </div>
-                          </td>
-                          <td className="px-8 py-6 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                onClick={() => abrirEditar(u)}
-                                className="p-2 text-gray-300 hover:text-red-600 hover:bg-gray-100 rounded-lg transition-all"
-                              >
-                                <Edit2 size={18} />
-                              </button>
-                              <button
-                                onClick={() => toggleActivo(u)}
-                                disabled={u.id === (session?.user as { id?: string })?.id}
-                                className={`p-2 rounded-lg transition-all disabled:opacity-20 ${
-                                  u.activo ? "text-gray-200 hover:text-red-700 hover:bg-red-50" : "text-gray-200 hover:text-emerald-700 hover:bg-emerald-50"
-                                }`}
-                              >
-                                {u.activo ? <X size={18} /> : <Check size={18} />}
-                              </button>
+                            <p className="text-[10px] text-gray-400 font-medium truncate">{u.email}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest border ${ROL_COLORS[u.rol] || "border-gray-100 text-gray-400"}`}>
+                              {ROL_LABELS[u.rol] || u.rol}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <div className={`w-2 h-2 rounded-full ${u.activo ? "bg-emerald-500" : "bg-red-500"}`} />
+                              <span className="text-[9px] font-bold uppercase text-gray-500">{u.activo ? "Activo" : "Bloq."}</span>
                             </div>
-                          </td>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => abrirEditar(u)}
+                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-gray-100 rounded-lg transition-all"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                            <button
+                              onClick={() => toggleActivo(u)}
+                              disabled={u.id === (session?.user as { id?: string })?.id}
+                              className={`p-2 rounded-lg transition-all disabled:opacity-20 ${
+                                u.activo ? "text-gray-300 hover:text-red-700 hover:bg-red-50" : "text-gray-300 hover:text-emerald-700 hover:bg-emerald-50"
+                              }`}
+                            >
+                              {u.activo ? <X size={16} /> : <Check size={16} />}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {usuariosFiltrados.length === 0 && (
+                      <div className="p-10 text-center text-gray-400 text-xs font-bold italic">No hay usuarios</div>
+                    )}
+                  </div>
+
+                  {/* Desktop: Table */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-100 text-gray-400 uppercase text-[10px] font-bold tracking-widest bg-gray-50/50">
+                          <th className="text-left px-8 py-5">Nombre / Usuario</th>
+                          <th className="text-left px-8 py-5">Email</th>
+                          <th className="text-left px-8 py-5">Rol / Jerarquía</th>
+                          <th className="text-left px-8 py-5">Estado</th>
+                          <th className="text-right px-8 py-5">Sistema</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {usuariosFiltrados.map((u) => (
+                          <tr key={u.id} className={`hover:bg-gray-50/30 group transition-all ${!u.activo ? "opacity-40 grayscale" : ""}`}>
+                            <td className="px-8 py-6">
+                              <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-lg bg-gray-900 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                                  {u.nombre.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <div className="font-bold text-gray-900 uppercase text-sm leading-tight flex items-center gap-2">
+                                      {u.nombre}
+                                      {u.id === (session?.user as { id?: string })?.id && (
+                                         <span className="text-[8px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold">USTED</span>
+                                      )}
+                                    </div>
+                                    <div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">ID: {u.id.substring(0,8)}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-8 py-6 text-gray-500 font-medium text-xs">
+                               {u.email}
+                            </td>
+                            <td className="px-8 py-6">
+                               <span className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest border ${ROL_COLORS[u.rol] || "border-gray-100 text-gray-400"}`}>
+                                 {ROL_LABELS[u.rol] || u.rol}
+                               </span>
+                            </td>
+                            <td className="px-8 py-6">
+                               <div className="flex items-center gap-2">
+                                  <div className={`w-2 h-2 rounded-full ${u.activo ? "bg-emerald-500 animate-pulse" : "bg-red-500"}`} />
+                                  <span className="text-[10px] font-bold uppercase text-gray-600">{u.activo ? "Activo" : "Bloqueado"}</span>
+                               </div>
+                            </td>
+                            <td className="px-8 py-6 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => abrirEditar(u)}
+                                  className="p-2 text-gray-300 hover:text-red-600 hover:bg-gray-100 rounded-lg transition-all"
+                                >
+                                  <Edit2 size={18} />
+                                </button>
+                                <button
+                                  onClick={() => toggleActivo(u)}
+                                  disabled={u.id === (session?.user as { id?: string })?.id}
+                                  className={`p-2 rounded-lg transition-all disabled:opacity-20 ${
+                                    u.activo ? "text-gray-200 hover:text-red-700 hover:bg-red-50" : "text-gray-200 hover:text-emerald-700 hover:bg-emerald-50"
+                                  }`}
+                                >
+                                  {u.activo ? <X size={18} /> : <Check size={18} />}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
           </div>

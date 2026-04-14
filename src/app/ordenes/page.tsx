@@ -61,10 +61,11 @@ export default function OrdenesPage() {
       });
   };
 
+  useEffect(() => { setPage(1); }, [debouncedSearch]);
   useEffect(() => { cargar(); }, [page, debouncedSearch]);
   useAutoRefresh(cargar);
 
-  // Filtramos solo por búsqueda si queremos mantener coherencia, 
+  // Filtramos solo por búsqueda si queremos mantener coherencia,
   // pero ya viene filtrado del servidor.
   const filtradas = ordenes;
 
