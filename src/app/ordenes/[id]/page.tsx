@@ -187,18 +187,24 @@ export default function OrdenDetallePage() {
             </div>
           </div>
           <div className="flex items-center gap-4 relative">
-            <button onClick={() => setShowPrintMenu(!showPrintMenu)} onBlur={() => setTimeout(() => setShowPrintMenu(false), 200)} className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-black transition-all shadow-md flex items-center gap-2 uppercase tracking-wider">
+            <button 
+              onClick={() => setShowPrintMenu(!showPrintMenu)} 
+              className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-black transition-all shadow-md flex items-center gap-2 uppercase tracking-wider"
+            >
               <Printer size={18} /> Imprimir
             </button>
             {showPrintMenu && (
-              <div className="absolute right-0 top-10 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden animate-in slide-in-from-top-2">
-                <Link href={`/ordenes/${id}/imprimir?tipo=recepcion`} className="block px-4 py-3 text-xs font-bold text-gray-700 hover:bg-gray-50 hover:text-red-600 uppercase border-b border-gray-100 transition-colors">
-                  Plantilla OT (Recepción)
-                </Link>
-                <Link href={`/ordenes/${id}/imprimir?tipo=retiro`} className="block px-4 py-3 text-xs font-bold text-gray-700 hover:bg-gray-50 hover:text-red-600 uppercase transition-colors">
-                  Constancia de Retiro
-                </Link>
-              </div>
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowPrintMenu(false)}></div>
+                <div className="absolute right-0 top-12 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden animate-in slide-in-from-top-2">
+                  <button onClick={() => { setShowPrintMenu(false); router.push(`/ordenes/${id}/imprimir?tipo=recepcion`); }} className="w-full text-left block px-4 py-3 text-xs font-bold text-gray-700 hover:bg-gray-50 hover:text-red-600 uppercase border-b border-gray-100 transition-colors">
+                    Plantilla OT (Recepción)
+                  </button>
+                  <button onClick={() => { setShowPrintMenu(false); router.push(`/ordenes/${id}/imprimir?tipo=retiro`); }} className="w-full text-left block px-4 py-3 text-xs font-bold text-gray-700 hover:bg-gray-50 hover:text-red-600 uppercase transition-colors">
+                    Constancia de Retiro
+                  </button>
+                </div>
+              </>
             )}
           </div>
         </div>
