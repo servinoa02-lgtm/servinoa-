@@ -64,17 +64,18 @@ export default function PresupuestoImprimirPage() {
         
         <div>
           {/* Header */}
-          <div className="flex justify-between items-end border-b-2 border-black pb-4 mb-8">
+          <div className="flex justify-between items-start border-b-2 border-red-600 pb-4 mb-4">
             <div>
-              <h1 className="text-4xl font-black uppercase tracking-widest leading-none text-black">Presupuesto</h1>
-              <p className="text-lg font-bold uppercase tracking-widest text-gray-600 mt-2">N° {formatNumeroPresupuesto(ppto.numero, ppto.fecha)}</p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="ServiNOA" className="h-10 object-contain mb-2" onError={(e) => e.currentTarget.style.display = 'none'} />
+              <h1 className="text-3xl font-black uppercase tracking-widest leading-none text-gray-900">Presupuesto</h1>
+              <p className="text-lg font-bold uppercase tracking-widest text-red-600 mt-2">N° {formatNumeroPresupuesto(ppto.numero, ppto.fecha)}</p>
             </div>
-            <div className="text-right text-xs">
+            <div className="text-right text-[10px] text-gray-700">
               <p className="font-black uppercase text-xl mb-1 text-black">Baugal SRL</p>
-              <p>CUIT: 30-71885628-7</p>
-              <p>Resp. Inscripto</p>
+              <p>CUIT: 30-71885628-7 - Resp. Inscripto</p>
               <p>Buenos Aires 1287 - Salta</p>
-              <p>Cel: +54 9 387-2239277</p>
+              <p>Tel: +54 9 387-2239277</p>
             </div>
           </div>
 
@@ -158,14 +159,14 @@ export default function PresupuestoImprimirPage() {
         <div className="mt-20 pt-10 grid grid-cols-2 gap-20">
            <div className="text-center">
               <div className="border-t border-black pt-2">
-                 <p className="font-bold text-xs uppercase">Autorizado por ServiNOA</p>
-                 <p className="text-xs">{ppto.usuario?.nombre}</p>
+                 <p className="font-bold text-xs uppercase">Autorizado por</p>
+                 <p className="text-xs font-black uppercase mt-1 text-gray-700">Baugal SRL</p>
               </div>
            </div>
            <div className="text-center">
               <div className="border-t border-black pt-2">
                  <p className="font-bold text-xs uppercase">Conformidad del Cliente</p>
-                 <p className="text-xs text-gray-500 italic mt-1">Firma y Aclaración</p>
+                 <p className="text-[10px] text-gray-500 italic mt-1">Firma y Aclaración</p>
               </div>
            </div>
         </div>

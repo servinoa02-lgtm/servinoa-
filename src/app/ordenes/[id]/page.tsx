@@ -10,6 +10,7 @@ import { formatFecha, formatFechaHora } from "@/lib/dateUtils";
 import { Wrench, Phone, FileText, Send, AlertTriangle, ArrowLeft, Printer, User, Calendar, ChevronRight, CheckCircle2, MoreHorizontal, ShieldCheck } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { CierreOTModal } from "@/components/ot/CierreOTModal";
+import { FirmaRecepcionModal } from "@/components/ot/FirmaRecepcionModal";
 import { formatoService } from "@/services/formatoService";
 import { useToast } from "@/context/ToastContext";
 
@@ -32,6 +33,7 @@ export default function OrdenDetallePage() {
   const [cierrePendiente, setCierrePendiente] = useState<"ENTREGADO_REALIZADO" | "ENTREGADO_SIN_REALIZAR" | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [showPrintMenu, setShowPrintMenu] = useState(false);
+  const [firmaRecepcionAbierta, setFirmaRecepcionAbierta] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -105,6 +107,26 @@ export default function OrdenDetallePage() {
     setCierrePendiente(null);
     cargarOT();
   };
+
+  const confirmarFirmaRecepcion = async (data: { firma: string }) => {
+    if (!orden) return;
+    setActualizando(true);
+    const res = await fetch(`/api/ordenes/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ firmaCliente: data.firma }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      showToast(err.error || "No se pudo guardar la firma de recepción", "error");
+      throw new Error(err.error || "Error al guardar firma");
+    }
+    setFirmaRecepcionAbierta(false);
+    showToast("Firma de recepción guardada correctamente", "success");
+    cargarOT();
+    setActualizando(false);
+  };
+
 
   const guardarRevision = async () => {
     setActualizando(true);
@@ -188,7 +210,14 @@ export default function OrdenDetallePage() {
           </div>
           <div className="flex items-center gap-4 relative">
             <button 
+              onClick={() => setFirmaRecepcionAbierta(true)} 
+              className="bg-red-50 text-red-700 px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-red-100 border border-red-200 transition-all shadow-sm flex items-center gap-2 uppercase tracking-wider"
+            >
+              <PenLine size={18} /> Firmar Recepción
+            </button>
+            <button 
               onClick={() => setShowPrintMenu(!showPrintMenu)} 
+
               className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-black transition-all shadow-md flex items-center gap-2 uppercase tracking-wider"
             >
               <Printer size={18} /> Imprimir
@@ -476,6 +505,13 @@ export default function OrdenDetallePage() {
         ordenNumero={orden.numero}
         onCancel={() => setCierrePendiente(null)}
         onConfirm={confirmarCierreOT}
+      />
+
+      <FirmaRecepcionModal
+        isOpen={firmaRecepcionAbierta}
+        ordenNumero={orden.numero}
+        onCancel={() => setFirmaRecepcionAbierta(false)}
+        onConfirm={confirmarFirmaRecepcion}
       />
     </div>
   );

@@ -115,6 +115,7 @@ model OrdenTrabajo {
   creadorId            String
   fechaEstimadaEntrega DateTime?
   revisionTecnica      String?
+  firmaCliente         String?
   fotos                Foto[]
   historial            HistorialOT[]
   notas                Nota[]

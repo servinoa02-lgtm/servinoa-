@@ -57,6 +57,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(body.revisionTecnica !== undefined && { revisionTecnica: body.revisionTecnica }),
         ...(body.fechaEntrega && { fechaEntrega: new Date(body.fechaEntrega) }),
         ...(body.fechaEstimadaEntrega && { fechaEstimadaEntrega: new Date(body.fechaEstimadaEntrega) }),
+        ...(body.firmaCliente !== undefined && { firmaCliente: body.firmaCliente }),
       },
       include: {
         cliente: { include: { empresa: true } },
