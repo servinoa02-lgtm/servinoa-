@@ -142,3 +142,23 @@ select.appearance-none {
   background: #d1d5db;
   border-radius: 10px;
 }
+
+/* ─── Print Styles ─── */
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+  
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    background: transparent !important;
+  }
+  
+  .print-break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+

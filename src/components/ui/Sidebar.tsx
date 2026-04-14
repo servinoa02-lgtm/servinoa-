@@ -120,7 +120,7 @@ export function Sidebar() {
       {/* ─── Botón hamburguesa (solo mobile) ─── */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="lg:hidden fixed top-5 left-4 z-50 p-2 bg-white border border-gray-200 rounded-xl shadow-md text-gray-600 hover:text-red-600 transition-all"
+        className="lg:hidden fixed top-5 left-4 z-50 p-2 bg-white border border-gray-200 rounded-xl shadow-md text-gray-600 hover:text-red-600 transition-all print:hidden"
         aria-label="Abrir menú"
       >
         <Menu size={22} />
@@ -128,7 +128,7 @@ export function Sidebar() {
 
       {/* ─── Sidebar Desktop ─── */}
       <aside 
-        className={`hidden lg:flex bg-white border-r border-gray-200 h-screen sticky top-0 transition-all duration-300 flex-col z-40 ${collapsed ? 'w-20' : 'w-64'}`}
+        className={`hidden lg:flex bg-white border-r border-gray-200 h-screen sticky top-0 transition-all duration-300 flex-col z-40 print:hidden ${collapsed ? 'w-20' : 'w-64'}`}
       >
         {/* Header / Logo */}
         <div className={`h-20 flex items-center border-b border-gray-100 px-4 relative ${collapsed ? 'justify-center' : 'justify-between px-6'}`}>

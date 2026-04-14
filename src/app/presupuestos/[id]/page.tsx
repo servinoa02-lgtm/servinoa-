@@ -136,7 +136,7 @@ export default function PresupuestoDetallePage() {
                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Total</p>
                <p className="text-xl font-bold text-red-600">${formatMoney(ppto.total, 0)}</p>
             </div>
-            <button onClick={() => window.print()} className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-black transition-all shadow-md flex items-center gap-2 uppercase tracking-wider">
+            <button onClick={() => router.push(`/presupuestos/${id}/imprimir`)} className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-black transition-all shadow-md flex items-center gap-2 uppercase tracking-wider">
               <Printer size={18} /> Imprimir
             </button>
           </div>
