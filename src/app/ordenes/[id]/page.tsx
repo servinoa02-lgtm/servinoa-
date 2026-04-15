@@ -7,7 +7,7 @@ import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import Link from "next/link";
 import { formatEstado, estadoColors, TODOS_ESTADOS, FLUJO_ESTADOS } from "@/lib/estados";
 import { formatFecha, formatFechaHora } from "@/lib/dateUtils";
-import { Wrench, Phone, FileText, Send, AlertTriangle, ArrowLeft, Printer, User, Calendar, ChevronRight, CheckCircle2, MoreHorizontal, ShieldCheck } from "lucide-react";
+import { Wrench, Phone, FileText, Send, AlertTriangle, ArrowLeft, Printer, User, Calendar, ChevronRight, CheckCircle2, MoreHorizontal, ShieldCheck, PenLine } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { CierreOTModal } from "@/components/ot/CierreOTModal";
 import { FirmaRecepcionModal } from "@/components/ot/FirmaRecepcionModal";
