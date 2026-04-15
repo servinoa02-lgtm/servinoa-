@@ -50,7 +50,7 @@ export default function PresupuestoImprimirPage() {
     : null;
 
   return (
-    <div className="min-h-screen bg-gray-200 py-10 print:bg-white print:py-0 font-sans">
+    <div className="min-h-screen bg-gray-200 py-10 print:bg-white print:py-0">
       <div className="max-w-4xl mx-auto px-4 print:px-0 flex justify-between items-center mb-6 print:hidden">
         <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-500 hover:text-gray-900 bg-white px-4 py-2 rounded-xl shadow-sm font-bold">
           <ArrowLeft size={16} /> Volver
@@ -60,17 +60,14 @@ export default function PresupuestoImprimirPage() {
         </button>
       </div>
       
-      <div className="max-w-[210mm] mx-auto bg-white shadow-xl shadow-black/5 print:shadow-none p-12 print:p-0 min-h-[297mm] flex flex-col justify-between">
+      <div className="max-w-[210mm] mx-auto bg-white shadow-xl shadow-black/5 print:shadow-none p-12 print:p-0 min-h-[297mm] flex flex-col justify-between tracking-normal" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
         
         <div>
-          {/* Header */}
+          {/* HEADER PRINCIPAL */}
           <div className="flex justify-between items-start border-b-2 border-black pb-4 mb-6">
-            <div className="flex flex-col">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.png" alt="ServiNOA" className="h-12 w-auto object-contain mb-3" onError={(e) => e.currentTarget.style.display = 'none'} />
-              <h1 className="text-2xl font-bold uppercase tracking-widest text-black">Presupuesto</h1>
-              <p className="text-xl font-black mt-1">N° {formatNumeroPresupuesto(ppto.numero, ppto.fecha)}</p>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="ServiNOA" className="h-24 w-auto object-contain origin-top-left" onError={(e) => e.currentTarget.style.display = 'none'} />
+            
             <div className="text-right text-[11px] leading-tight mt-2">
               <p className="font-black text-lg mb-1 uppercase">BAUGAL SRL</p>
               <p>CUIT: 30-71885628-7</p>
@@ -79,6 +76,11 @@ export default function PresupuestoImprimirPage() {
               <p>Buenos Aires 1287 - Salta</p>
               <p>Cel: 387-2239277</p>
             </div>
+          </div>
+
+          <div className="mb-6 flex flex-col justify-between items-start">
+            <h1 className="text-3xl font-bold uppercase tracking-widest text-black mb-1">Presupuesto</h1>
+            <p className="text-xl font-black text-gray-800">N° {formatNumeroPresupuesto(ppto.numero, ppto.fecha)}</p>
           </div>
 
           {/* Info Principal */}

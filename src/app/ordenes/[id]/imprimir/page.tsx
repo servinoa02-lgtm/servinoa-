@@ -54,15 +54,12 @@ export default function OTImprimirPage() {
   const ultimoRetiro = orden.retiros?.[0]; // Para constancia de retiro
 
   const renderRecepcion = () => (
-    <div className="text-[11px] text-black w-[210mm] min-h-[297mm] mx-auto bg-white p-10 print:p-0 font-sans tracking-normal">
+    <div className="text-[11px] text-black w-[210mm] min-h-[297mm] mx-auto bg-white p-10 print:p-0 tracking-normal" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
       {/* HEADER PRINCIPAL */}
       <div className="flex justify-between items-start border-b-2 border-black pb-4 mb-4">
-        <div className="flex flex-col">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="ServiNOA" className="h-12 w-auto object-contain mb-3" onError={(e) => e.currentTarget.style.display = 'none'} />
-          <h1 className="text-xl font-bold uppercase tracking-widest text-black">Constancia de Recepción</h1>
-          <h2 className="text-2xl font-black mt-1">OT N° {orden.numero}</h2>
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="ServiNOA" className="h-24 w-auto object-contain origin-top-left" onError={(e) => e.currentTarget.style.display = 'none'} />
+        
         <div className="text-right text-[10px] leading-tight">
           <p className="font-black text-lg mb-1">BAUGAL SRL</p>
           <p>CUIT: 30-71885628-7</p>
@@ -71,6 +68,11 @@ export default function OTImprimirPage() {
           <p>Domicilio: Buenos Aires 1287 - Salta</p>
           <p>Cel: 387-2239277</p>
         </div>
+      </div>
+
+      <div className="mb-4 flex flex-col justify-between items-start">
+        <h1 className="text-2xl font-black uppercase tracking-widest text-black">Constancia de Recepción</h1>
+        <h2 className="text-xl font-bold mt-1 text-gray-800">OT N° {orden.numero}</h2>
       </div>
 
       <div className="flex justify-end mb-4">
@@ -175,19 +177,21 @@ export default function OTImprimirPage() {
   );
 
   const renderRetiro = () => (
-    <div className="text-[12px] text-black w-[210mm] min-h-[297mm] mx-auto bg-white p-10 print:p-0 font-sans tracking-normal">
-      <div className="flex justify-between items-start border-b-2 border-black pb-6 mb-8">
-        <div className="flex flex-col">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="ServiNOA" className="h-14 w-auto object-contain mb-4" onError={(e) => e.currentTarget.style.display = 'none'} />
-          <h1 className="text-2xl font-black uppercase tracking-widest text-black">Constancia de Retiro</h1>
-          <h2 className="text-xl font-bold mt-1">OT N° {orden.numero}</h2>
-        </div>
+    <div className="text-[12px] text-black w-[210mm] min-h-[297mm] mx-auto bg-white p-10 print:p-0 tracking-normal" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
+      <div className="flex justify-between items-start border-b-2 border-black pb-4 mb-6">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="ServiNOA" className="h-24 w-auto object-contain origin-top-left" onError={(e) => e.currentTarget.style.display = 'none'} />
+        
         <div className="text-right text-[11px] leading-tight">
           <p className="font-black text-xl mb-1">BAUGAL SRL</p>
           <p>Buenos Aires 1287 - Salta</p>
           <p>Cel: 387-2239277</p>
         </div>
+      </div>
+
+      <div className="mb-8">
+        <h1 className="text-3xl font-black uppercase tracking-widest text-black mb-1">Constancia de Retiro</h1>
+        <h2 className="text-xl font-bold text-gray-800">OT N° {orden.numero}</h2>
       </div>
 
       <div className="py-6 space-y-4 text-sm print:break-inside-avoid">
@@ -258,7 +262,7 @@ export default function OTImprimirPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-200 py-10 print:bg-white print:py-0 font-sans">
+    <div className="min-h-screen bg-gray-200 py-10 print:bg-white print:py-0">
       <div className="max-w-4xl mx-auto px-4 print:px-0 flex justify-between items-center mb-6 print:hidden">
         <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-500 hover:text-gray-900 bg-white px-4 py-2 rounded-xl shadow-sm font-bold">
           <ArrowLeft size={16} /> Volver
