@@ -178,9 +178,10 @@ export async function POST() {
     const clienteMap = Object.fromEntries(clientesDb.map(c => [c.codigoExcel!, c.id]));
 
     // ── Catálogo de equipos ───────────────────────────────────────────────
-    for (const m of Object.values(maquinaMap)) {
-      if (m) await prisma.maquina.upsert({ where: { nombre: m }, update: {}, create: { nombre: m } });
-    }
+    const maquinasUnicas = Array.from(new Set(Object.values(maquinaMap))).filter(Boolean) as string[];
+    await Promise.all(maquinasUnicas.map(m => 
+      prisma.maquina.upsert({ where: { nombre: m }, update: {}, create: { nombre: m } })
+    ));
     const maquinasDb = await prisma.maquina.findMany();
     const maquinaIdByName = Object.fromEntries(maquinasDb.map(m => [m.nombre, m.id]));
 
@@ -189,8 +190,7 @@ export async function POST() {
       if (row.Marca && maqId) {
         await prisma.marca.upsert({
           where: { nombre_maquinaId: { nombre: row.Marca, maquinaId: maqId } },
-          update: {},
-          create: { nombre: row.Marca, maquinaId: maqId }
+          update: {}, create: { nombre: row.Marca, maquinaId: maqId }
         });
       }
     }
@@ -202,20 +202,18 @@ export async function POST() {
       if (row.Modelo && marcaId) {
         await prisma.modelo.upsert({
           where: { nombre_marcaId: { nombre: row.Modelo, marcaId: marcaId } },
-          update: {},
-          create: { nombre: row.Modelo, marcaId: marcaId }
+          update: {}, create: { nombre: row.Modelo, marcaId: marcaId }
         });
       }
     }
     const modelosDb = await prisma.modelo.findMany();
     const modeloIdByNameMarca = Object.fromEntries(modelosDb.map(m => [`${m.nombre}-${m.marcaId}`, m.id]));
 
-    // ── Órdenes de Trabajo (OT) ───────────────────────────────────────────
-    const otNumeroMap: Record<string, string> = {};
-    for (const row of otRows) {
+    // ── Órdenes de Trabajo (OT) - Inserción Masiva ────────────────────────
+    const otData = otRows.map(row => {
       const numStr = row.OTN || '';
       const numero = parseInt(numStr.replace('OT-', ''));
-      if (isNaN(numero)) continue;
+      if (isNaN(numero)) return null;
 
       const maqName = maquinaMap[row.Maquina];
       const marName = marcaMap[row.Marca];
@@ -224,45 +222,46 @@ export async function POST() {
       const marcaId = maquinaId ? (marcaIdByNameMaq[`${marName}-${maquinaId}`] || null) : null;
       const modeloId = marcaId ? (modeloIdByNameMarca[`${modName}-${marcaId}`] || null) : null;
 
-      const ot = await prisma.ordenTrabajo.create({
-        data: {
-          numero,
-          fechaRecepcion: parseDate(row['Fecha de recep']) || parseDate(row['Fecha de recepcion']) || new Date(),
-          estado:         mapEstadoOT(row.Estado),
-          falla:          fallaMap[row.Falla] || row.Falla || null,
-          observaciones:  row.Observaciones || null,
-          nroSerie:       row['N° de Serie'] || null,
-          accesorios:     row.Check || null,
-          clienteId:      clienteMap[row.Cliente] || '',
-          creadorId:      adminUser.id,
-          maquinaId, marcaId, modeloId,
-        }
-      });
-      otNumeroMap[numStr] = ot.id;
-    }
+      return {
+        numero,
+        fechaRecepcion: parseDate(row['Fecha de recep']) || parseDate(row['Fecha de recepcion']) || new Date(),
+        estado:         mapEstadoOT(row.Estado),
+        falla:          fallaMap[row.Falla] || row.Falla || null,
+        observaciones:  row.Observaciones || null,
+        nroSerie:       row['N° de Serie'] || null,
+        accesorios:     row.Check || null,
+        clienteId:      clienteMap[row.Cliente] || '',
+        creadorId:      adminUser.id,
+        maquinaId, marcaId, modeloId,
+      };
+    }).filter(Boolean) as any[];
+
+    await prisma.ordenTrabajo.createMany({ data: otData });
+    const otsDb = await prisma.ordenTrabajo.findMany({ select: { id: true, numero: true } });
+    const otNumeroMap = Object.fromEntries(otsDb.map(o => [`OT-${o.numero}`, o.id]));
 
     // ── Cheques ───────────────────────────────────────────────────────────
-    const chequeMap: Record<string, string> = {};
-    for (const row of chequesRows) {
-      if (!row.IdCheques) continue;
-      const desc = row["Descripción"] || row["Descripcion"] || null;
-      const ch = await prisma.cheque.create({
-        data: {
-          estado:       mapEstadoCheque(row.EstadoCheque),
-          numeroCheque: row.NumeroDeCheque || null,
-          banco:        row.Banco    || null,
-          librador:     row.Librador || null,
-          importe:      parseFloat(row.Importe) || 0,
-          fechaIngreso: parseDate(row.FechaDeIngreso) || new Date(),
-          fechaEmision: parseDate(row.FechaDeEmision),
-          fechaCobro:   parseDate(row.FechaDeCobro),
-          endosadoA:    row.EndosadoA || null,
-          descripcion:  desc,
-          clienteId:    clienteMap[row.Cliente] || null,
-        },
-      });
-      chequeMap[row.IdCheques] = ch.id;
-    }
+    await prisma.cheque.createMany({
+      data: chequesRows.filter(r => r.IdCheques).map(row => ({
+        estado:       mapEstadoCheque(row.EstadoCheque),
+        numeroCheque: row.NumeroDeCheque || null,
+        banco:        row.Banco    || null,
+        librador:     row.Librador || null,
+        importe:      parseFloat(row.Importe) || 0,
+        fechaIngreso: parseDate(row.FechaDeIngreso) || new Date(),
+        fechaEmision: parseDate(row.FechaDeEmision),
+        fechaCobro:   parseDate(row.FechaDeCobro),
+        endosadoA:    row.EndosadoA || null,
+        descripcion:  row["Descripción"] || row["Descripcion"] || null,
+        clienteId:    clienteMap[row.Cliente] || null,
+      }))
+    });
+    const chequesDb = await prisma.cheque.findMany({ select: { id: true, importe: true, numeroCheque: true } });
+    const chequeMap: Record<string, string> = {}; 
+    chequesRows.forEach(row => {
+      const match = chequesDb.find(c => c.importe === parseFloat(row.Importe) && c.numeroCheque === row.NumeroDeCheque);
+      if (match) chequeMap[row.IdCheques] = match.id;
+    });
 
     // ── Presupuestos ──────────────────────────────────────────────────────
     type PptoData = {
