@@ -53,6 +53,7 @@ model Cliente {
   updatedAt       DateTime          @updatedAt
   empresaId       String?
   cuit            String?
+  codigoExcel     String?           @unique
   cheques         Cheque[]
   empresa         Empresa?          @relation(fields: [empresaId], references: [id])
   cobranzas       Cobranza[]

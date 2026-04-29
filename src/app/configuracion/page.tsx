@@ -8,7 +8,8 @@ import { RoleGuard } from "@/components/auth/RoleGuard";
 import {
   Settings, Trash2, Plus, Users, Shield, Wrench,
   ArrowLeft, Eye, EyeOff, Check, X, Edit2,
-  AlertCircle, HardHat, Wallet
+  AlertCircle, HardHat, Wallet, RefreshCw, CheckCircle2,
+  CloudDownload
 } from "lucide-react";
 import { formatoService } from "@/services/formatoService";
 import { useToast } from "@/context/ToastContext";
@@ -36,7 +37,7 @@ const ROL_COLORS: Record<string, string> = {
   TECNICO: "border-gray-900 text-gray-900 bg-gray-50",
 };
 
-type ActiveTab = "accesorios" | "usuarios" | "cajas";
+type ActiveTab = "accesorios" | "usuarios" | "cajas" | "sistema";
 
 export default function ConfiguracionPage() {
   const { data: session, status } = useSession();
@@ -44,6 +45,12 @@ export default function ConfiguracionPage() {
   
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<ActiveTab>("accesorios");
+
+  // Sync
+  const [sincronizando, setSincronizando] = useState(false);
+  const [syncResultado, setSyncResultado] = useState<{
+    ok: boolean; duracion?: string; totales?: Record<string, number>; error?: string;
+  } | null>(null);
 
   // Accesorios
   const [accesorios, setAccesorios] = useState<{ id: string; nombre: string }[]>([]);
@@ -198,6 +205,20 @@ export default function ConfiguracionPage() {
 
   const usuariosFiltrados = usuarios.filter((u) => showInactivos || u.activo);
 
+  const sincronizar = async () => {
+    setSincronizando(true);
+    setSyncResultado(null);
+    try {
+      const res = await fetch("/api/sync", { method: "POST" });
+      const data = await res.json();
+      setSyncResultado(data);
+    } catch {
+      setSyncResultado({ ok: false, error: "Error de red al conectar con el servidor" });
+    } finally {
+      setSincronizando(false);
+    }
+  };
+
   if (status === "loading") return (
     <div className="flex flex-col items-center justify-center p-40">
       <div className="w-12 h-1 bg-red-600 rounded-full animate-pulse mb-4" />
@@ -231,6 +252,7 @@ export default function ConfiguracionPage() {
             { key: "accesorios" as ActiveTab, label: "Componentes", icon: <Wrench size={18} /> },
             (["ADMIN", "JEFE"].includes((session?.user as any)?.rol)) && { key: "cajas" as ActiveTab, label: "Cajas", icon: <Wallet size={18} /> },
             { key: "usuarios" as ActiveTab, label: "Personal", icon: <Users size={18} /> },
+            ((session?.user as any)?.rol === "ADMIN") && { key: "sistema" as ActiveTab, label: "Sistema", icon: <Settings size={18} /> },
           ].filter(Boolean).map((tab: any) => (
             <button
               key={tab.key}
@@ -616,6 +638,80 @@ export default function ConfiguracionPage() {
             </div>
           </div>
         )}
+        {activeTab === "sistema" && (session?.user as any)?.rol === "ADMIN" && (
+          <section className="space-y-8">
+            {/* Sincronización */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="p-8 border-b border-gray-100 bg-gray-50/20">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-blue-50 rounded-xl text-blue-600 shrink-0">
+                    <CloudDownload size={24} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900 uppercase">Sincronización con Google Sheets</h2>
+                    <p className="text-xs text-gray-500 font-medium mt-1 max-w-xl">
+                      Actualiza la base de datos del sistema nuevo con los datos más recientes del sistema viejo (Google Sheets / AppSheet).
+                      Tarda aproximadamente 1 minuto. <span className="font-bold text-gray-700">No se modifican usuarios ni cajas.</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-8 space-y-6">
+                <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 flex gap-3">
+                  <AlertCircle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-xs font-medium text-amber-800">
+                    Esta operación <strong>reemplaza todos los datos migrados</strong> (clientes, presupuestos, cobranzas, gastos, movimientos de caja y cheques) con los datos actuales del Google Sheet. No se puede deshacer.
+                  </p>
+                </div>
+
+                <button
+                  onClick={sincronizar}
+                  disabled={sincronizando}
+                  className="flex items-center gap-3 bg-blue-600 text-white px-8 py-4 rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <RefreshCw size={20} className={sincronizando ? "animate-spin" : ""} />
+                  {sincronizando ? "Sincronizando... (puede tardar ~1 min)" : "Sincronizar desde Google Sheets"}
+                </button>
+
+                {syncResultado && (
+                  <div className={`rounded-xl border-2 p-6 ${syncResultado.ok ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200"}`}>
+                    {syncResultado.ok ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle2 size={22} className="text-emerald-600 shrink-0" />
+                          <div>
+                            <p className="font-bold text-emerald-800 text-sm uppercase">Sincronización completada</p>
+                            <p className="text-xs text-emerald-600 font-medium">Duración: {syncResultado.duracion}</p>
+                          </div>
+                        </div>
+                        {syncResultado.totales && (
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-emerald-200">
+                            {Object.entries(syncResultado.totales).map(([key, val]) => (
+                              <div key={key} className="bg-white rounded-lg px-4 py-3 border border-emerald-100">
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{key}</p>
+                                <p className="text-xl font-bold text-gray-900">{val.toLocaleString("es-AR")}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <AlertCircle size={22} className="text-red-600 shrink-0" />
+                        <div>
+                          <p className="font-bold text-red-800 text-sm uppercase">Error en la sincronización</p>
+                          <p className="text-xs text-red-600 font-medium mt-1">{syncResultado.error}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
       </main>
     </div>
     </RoleGuard>
