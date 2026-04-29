@@ -85,11 +85,14 @@ export async function POST() {
       clienteRows, presupuestosRows, descripcionRows, cobranzasRows,
       gastosRows, cajaRows, chequesRows, transferenciasRows,
       usuarioCajaRows, formaPagoRows,
+      otRows, maquinaRows, marcaRows, modeloRows, tecnicoRows, fallaRows,
     ] = await Promise.all([
       fetchSheet("Cliente"), fetchSheet("Presupuestos"), fetchSheet("Descripcion"),
       fetchSheet("Cobranzas"), fetchSheet("Gastos"), fetchSheet("Caja"),
       fetchSheet("Cheques"), fetchSheet("TransferenciaDeCaja"),
       fetchSheet("UsuarioCaja"), fetchSheet("FormaDePago"),
+      fetchSheet("OT"), fetchSheet("XMaquina"), fetchSheet("XMarca"),
+      fetchSheet("XModelo"), fetchSheet("Tecnico"), fetchSheet("Falla"),
     ]);
 
     // ── Mapas de lookup ───────────────────────────────────────────────────
@@ -124,6 +127,25 @@ export async function POST() {
     });
     if (!adminUser) throw new Error("No se encontró un usuario ADMIN en la base de datos.");
 
+    // Mapas para OTs
+    const maquinaMap = Object.fromEntries(maquinaRows.map(r => [r['ID Maquina'], r.Maquina]));
+    const marcaMap   = Object.fromEntries(marcaRows.map(r => [r.IDMarca, r.Marca]));
+    const modeloMap  = Object.fromEntries(modeloRows.map(r => [r.IDModelo, r.Modelo]));
+    const tecnicoMap = Object.fromEntries(tecnicoRows.map(r => [r.IDTecnico, r.Nombre]));
+    const fallaMap   = Object.fromEntries(fallaRows.map(r => [r.ID, r.Falla]));
+
+    function mapEstadoOT(str: string) {
+      const s = (str || '').toLowerCase().trim();
+      if (s.includes('entregada realizada'))     return 'ENTREGADO_REALIZADO' as const;
+      if (s.includes('entregada sin realizar'))  return 'ENTREGADO_SIN_REALIZAR' as const;
+      if (s.includes('rechazada'))               return 'RECHAZADO' as const;
+      if (s.includes('sin reparación'))          return 'RECHAZADO' as const;
+      if (s.includes('reparada'))                return 'REPARADO' as const;
+      if (s.includes('pertenece a servinoa'))    return 'ENTREGADO_REALIZADO' as const;
+      if (s.includes('eliminada'))               return 'RECHAZADO' as const;
+      return 'ENTREGADO_REALIZADO' as const;
+    }
+
     // ── Limpieza ──────────────────────────────────────────────────────────
     await prisma.cuentaCorriente.deleteMany();
     await prisma.movimientoCaja.deleteMany();
@@ -154,6 +176,70 @@ export async function POST() {
     });
     const clientesDb = await prisma.cliente.findMany({ select: { id: true, codigoExcel: true } });
     const clienteMap = Object.fromEntries(clientesDb.map(c => [c.codigoExcel!, c.id]));
+
+    // ── Catálogo de equipos ───────────────────────────────────────────────
+    for (const m of Object.values(maquinaMap)) {
+      if (m) await prisma.maquina.upsert({ where: { nombre: m }, update: {}, create: { nombre: m } });
+    }
+    const maquinasDb = await prisma.maquina.findMany();
+    const maquinaIdByName = Object.fromEntries(maquinasDb.map(m => [m.nombre, m.id]));
+
+    for (const row of marcaRows) {
+      const maqId = maquinaIdByName[maquinaMap[row.IDMaquina]];
+      if (row.Marca && maqId) {
+        await prisma.marca.upsert({
+          where: { nombre_maquinaId: { nombre: row.Marca, maquinaId: maqId } },
+          update: {},
+          create: { nombre: row.Marca, maquinaId: maqId }
+        });
+      }
+    }
+    const marcasDb = await prisma.marca.findMany();
+    const marcaIdByNameMaq = Object.fromEntries(marcasDb.map(m => [`${m.nombre}-${m.maquinaId}`, m.id]));
+
+    for (const row of modeloRows) {
+      const marcaId = marcasDb.find(m => m.nombre === marcaMap[row.IDMarca])?.id;
+      if (row.Modelo && marcaId) {
+        await prisma.modelo.upsert({
+          where: { nombre_marcaId: { nombre: row.Modelo, marcaId: marcaId } },
+          update: {},
+          create: { nombre: row.Modelo, marcaId: marcaId }
+        });
+      }
+    }
+    const modelosDb = await prisma.modelo.findMany();
+    const modeloIdByNameMarca = Object.fromEntries(modelosDb.map(m => [`${m.nombre}-${m.marcaId}`, m.id]));
+
+    // ── Órdenes de Trabajo (OT) ───────────────────────────────────────────
+    const otNumeroMap: Record<string, string> = {};
+    for (const row of otRows) {
+      const numStr = row.OTN || '';
+      const numero = parseInt(numStr.replace('OT-', ''));
+      if (isNaN(numero)) continue;
+
+      const maqName = maquinaMap[row.Maquina];
+      const marName = marcaMap[row.Marca];
+      const modName = modeloMap[row.Modelo];
+      const maquinaId = maquinaIdByName[maqName] || null;
+      const marcaId = maquinaId ? (marcaIdByNameMaq[`${marName}-${maquinaId}`] || null) : null;
+      const modeloId = marcaId ? (modeloIdByNameMarca[`${modName}-${marcaId}`] || null) : null;
+
+      const ot = await prisma.ordenTrabajo.create({
+        data: {
+          numero,
+          fechaRecepcion: parseDate(row['Fecha de recep']) || parseDate(row['Fecha de recepcion']) || new Date(),
+          estado:         mapEstadoOT(row.Estado),
+          falla:          fallaMap[row.Falla] || row.Falla || null,
+          observaciones:  row.Observaciones || null,
+          nroSerie:       row['N° de Serie'] || null,
+          accesorios:     row.Check || null,
+          clienteId:      clienteMap[row.Cliente] || '',
+          creadorId:      adminUser.id,
+          maquinaId, marcaId, modeloId,
+        }
+      });
+      otNumeroMap[numStr] = ot.id;
+    }
 
     // ── Cheques ───────────────────────────────────────────────────────────
     const chequeMap: Record<string, string> = {};
@@ -189,10 +275,12 @@ export async function POST() {
 
     const presupuestosData: PptoData[] = presupuestosRows
       .flatMap(row => {
-        const numero    = mapNumero(row.Num_Presupuesto);
+        const numero = parseInt(row.Numero) || mapNumero(row.Num_Presupuesto);
         const clienteId = clienteMap[row.Cliente];
         if (!numero || !clienteId) return [];
         const incluyeIva = (row.INCLUYE_IVA || "").trim() === "Incluyen IVA";
+        const ordenId = otNumeroMap[row.Num_OT] || null;
+
         return [{
           _key: row.Num_Presupuesto,
           numero, incluyeIva,
@@ -205,6 +293,7 @@ export async function POST() {
           validezDias:   parseInt(row.VALIDEZ_OFERTA) || 7,
           moneda:        "ARS",
           clienteId,
+          ordenId,
           usuarioId:     adminUser.id,
         }];
       });
@@ -361,6 +450,7 @@ export async function POST() {
       duracion: `${elapsed}s`,
       totales: {
         clientes:      clientesDb.length,
+        ordenes:       Object.keys(otNumeroMap).length,
         presupuestos:  presupuestosData.length,
         items:         itemsData.length,
         cobranzas:     cobranzasData.length,
