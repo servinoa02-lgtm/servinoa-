@@ -436,11 +436,17 @@ export async function POST() {
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await prisma.transferenciaCaja.createMany({ data: transferenciasData });
 
-    // Resetear secuencia de autoincrement
+    // Resetear secuencias de autoincrement
     await prisma.$executeRawUnsafe(`
       SELECT setval(
         pg_get_serial_sequence('"Presupuesto"', 'numero'),
         COALESCE((SELECT MAX(numero) FROM "Presupuesto"), 0) + 1
+      )
+    `);
+    await prisma.$executeRawUnsafe(`
+      SELECT setval(
+        pg_get_serial_sequence('"OrdenTrabajo"', 'numero'),
+        COALESCE((SELECT MAX(numero) FROM "OrdenTrabajo"), 0) + 1
       )
     `);
 
