@@ -410,17 +410,29 @@ function CobranzasContent() {
                     <Receipt size={16} className="text-emerald-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-gray-900 uppercase truncate">
-                      {c.cliente?.empresa?.nombre || c.cliente?.nombre || c.presupuesto?.cliente?.empresa?.nombre || c.presupuesto?.cliente?.nombre || "Cobro vario"}
-                    </p>
-                    <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                      <span className="text-[10px] text-gray-400 font-bold">{formatFecha(c.fecha)}</span>
-                      <span className="text-[10px] text-gray-500 font-bold">
-                        {c.presupuesto ? `Ppto #${c.presupuesto.numero}` : c.descripcion}
-                      </span>
-                      {c.caja && <span className="text-[10px] font-bold text-emerald-600">Caja: {c.caja.nombre}</span>}
-                      <span className="text-[10px] text-gray-400">{c.formaPago}</span>
-                    </div>
+                    {(() => {
+                      const cl = c.cliente || c.presupuesto?.cliente;
+                      const empresaNombre = cl?.empresa?.nombre;
+                      const clienteNombre = cl?.nombre;
+                      const mainTitle = empresaNombre || clienteNombre || c.descripcion || "Cobro vario";
+                      const infoText = c.presupuesto
+                        ? `Ppto #${c.presupuesto.numero}`
+                        : (cl ? c.descripcion : null);
+                      return (
+                        <>
+                          <p className="text-sm font-bold text-gray-900 uppercase truncate">{mainTitle}</p>
+                          {empresaNombre && clienteNombre && (
+                            <p className="text-[10px] text-gray-500 font-bold uppercase">{clienteNombre}</p>
+                          )}
+                          <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                            <span className="text-[10px] text-gray-400 font-bold">{formatFecha(c.fecha)}</span>
+                            {infoText && <span className="text-[10px] text-gray-500 font-bold">{infoText}</span>}
+                            {c.caja && <span className="text-[10px] font-bold text-emerald-600">Caja: {c.caja.nombre}</span>}
+                            <span className="text-[10px] text-gray-400">{c.formaPago}</span>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                   <p className="text-base font-bold text-emerald-600 tabular-nums shrink-0">
                     +${formatMoney(c.importe, 0)}

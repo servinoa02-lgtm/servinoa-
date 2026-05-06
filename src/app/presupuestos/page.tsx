@@ -215,7 +215,7 @@ export default function PresupuestosPage() {
                 <StatusBadge status={p.estado} />
               </div>
               <p className="font-bold text-gray-900 uppercase text-sm leading-tight">
-                {p.cliente?.empresa?.nombre || p.cliente?.nombre || "Particular"}
+                {[p.cliente?.empresa?.nombre, p.cliente?.nombre].filter(Boolean).join(' — ') || "Particular"}
               </p>
               {p.orden && (
                 <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">OT #{p.orden.numero}</p>
@@ -268,10 +268,10 @@ export default function PresupuestosPage() {
                     </td>
                     <td className="px-6 py-5">
                       <p className="font-bold text-gray-900 uppercase text-sm leading-tight">
-                        {p.cliente?.empresa?.nombre || "Particular"}
+                        {p.cliente?.empresa?.nombre || p.cliente?.nombre || "Particular"}
                       </p>
-                      {p.cliente?.nombre && (
-                        <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">Ref: {p.cliente.nombre}</p>
+                      {p.cliente?.empresa?.nombre && p.cliente?.nombre && (
+                        <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">{p.cliente.nombre}</p>
                       )}
                     </td>
                     <td className="px-6 py-5">
