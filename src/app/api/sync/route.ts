@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
-const SHEET_ID = "1D_C1zsOHmOUOkeXvEp7YIVwaAMuYDtUAM7F_bVmfJYA";
+const SHEET_ID = "1qmGn4kUoyKg8Hzr6Px65CPAWKRQ2ebWKoQUnThxb8xw";
 const SHEET_BASE = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=`;
 
 async function fetchSheet(name: string): Promise<Record<string, string>[]> {
@@ -160,6 +160,9 @@ export async function POST() {
     await prisma.foto.deleteMany();
     await prisma.retiro.deleteMany();
     await prisma.ordenTrabajo.deleteMany();
+    await prisma.modelo.deleteMany();
+    await prisma.marca.deleteMany();
+    await prisma.maquina.deleteMany();
     await prisma.cliente.deleteMany();
 
     // ── Clientes ──────────────────────────────────────────────────────────
@@ -186,7 +189,7 @@ export async function POST() {
     const maquinaIdByName = Object.fromEntries(maquinasDb.map(m => [m.nombre, m.id]));
 
     for (const row of marcaRows) {
-      const maqId = maquinaIdByName[maquinaMap[row.IDMaquina]];
+      const maqId = maquinaIdByName[maquinaMap[row.Maquina]];
       if (row.Marca && maqId) {
         await prisma.marca.upsert({
           where: { nombre_maquinaId: { nombre: row.Marca, maquinaId: maqId } },
@@ -198,7 +201,7 @@ export async function POST() {
     const marcaIdByNameMaq = Object.fromEntries(marcasDb.map(m => [`${m.nombre}-${m.maquinaId}`, m.id]));
 
     for (const row of modeloRows) {
-      const marcaId = marcasDb.find(m => m.nombre === marcaMap[row.IDMarca])?.id;
+      const marcaId = marcasDb.find(m => m.nombre === marcaMap[row.Marca])?.id;
       if (row.Modelo && marcaId) {
         await prisma.modelo.upsert({
           where: { nombre_marcaId: { nombre: row.Modelo, marcaId: marcaId } },
