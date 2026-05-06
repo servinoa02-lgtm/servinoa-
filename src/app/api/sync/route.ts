@@ -182,33 +182,32 @@ export async function POST() {
 
     // ── Catálogo de equipos ───────────────────────────────────────────────
     const maquinasUnicas = Array.from(new Set(Object.values(maquinaMap))).filter(Boolean) as string[];
-    await Promise.all(maquinasUnicas.map(m => 
-      prisma.maquina.upsert({ where: { nombre: m }, update: {}, create: { nombre: m } })
-    ));
+    await prisma.maquina.createMany({
+      data: maquinasUnicas.map(m => ({ nombre: m })),
+      skipDuplicates: true,
+    });
     const maquinasDb = await prisma.maquina.findMany();
     const maquinaIdByName = Object.fromEntries(maquinasDb.map(m => [m.nombre, m.id]));
 
-    for (const row of marcaRows) {
-      const maqId = maquinaIdByName[maquinaMap[row.Maquina]];
-      if (row.Marca && maqId) {
-        await prisma.marca.upsert({
-          where: { nombre_maquinaId: { nombre: row.Marca, maquinaId: maqId } },
-          update: {}, create: { nombre: row.Marca, maquinaId: maqId }
-        });
-      }
-    }
+    const marcasToCreate = marcaRows
+      .map(row => {
+        const maqId = maquinaIdByName[maquinaMap[row.Maquina]];
+        if (row.Marca && maqId) return { nombre: row.Marca, maquinaId: maqId };
+        return null;
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+    await prisma.marca.createMany({ data: marcasToCreate, skipDuplicates: true });
     const marcasDb = await prisma.marca.findMany();
     const marcaIdByNameMaq = Object.fromEntries(marcasDb.map(m => [`${m.nombre}-${m.maquinaId}`, m.id]));
 
-    for (const row of modeloRows) {
-      const marcaId = marcasDb.find(m => m.nombre === marcaMap[row.Marca])?.id;
-      if (row.Modelo && marcaId) {
-        await prisma.modelo.upsert({
-          where: { nombre_marcaId: { nombre: row.Modelo, marcaId: marcaId } },
-          update: {}, create: { nombre: row.Modelo, marcaId: marcaId }
-        });
-      }
-    }
+    const modelosToCreate = modeloRows
+      .map(row => {
+        const marcaId = marcasDb.find(m => m.nombre === marcaMap[row.Marca])?.id;
+        if (row.Modelo && marcaId) return { nombre: row.Modelo, marcaId };
+        return null;
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+    await prisma.modelo.createMany({ data: modelosToCreate, skipDuplicates: true });
     const modelosDb = await prisma.modelo.findMany();
     const modeloIdByNameMarca = Object.fromEntries(modelosDb.map(m => [`${m.nombre}-${m.marcaId}`, m.id]));
 
