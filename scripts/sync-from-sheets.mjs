@@ -17,7 +17,7 @@ config({ path: join(__dirname, '..', '.env.local') })
 
 const prisma = new PrismaClient()
 
-const SHEET_ID = '1D_C1zsOHmOUOkeXvEp7YIVwaAMuYDtUAM7F_bVmfJYA'
+const SHEET_ID = '1qmGn4kUoyKg8Hzr6Px65CPAWKRQ2ebWKoQUnThxb8xw'
 const SHEET_BASE = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=`
 
 // ─── CSV / fetch ──────────────────────────────────────────────────────────────
@@ -183,6 +183,11 @@ async function main() {
     if (s.includes('reparada'))                return 'REPARADO'
     if (s.includes('pertenece a servinoa'))    return 'ENTREGADO_REALIZADO'
     if (s.includes('eliminada'))               return 'RECHAZADO'
+    if (s.includes('revisada'))                return 'REVISADO'
+    if (s.includes('confirmada'))              return 'APROBADO'
+    if (s.includes('presupuestada'))           return 'PRESUPUESTADO'
+    if (s.includes('para revisar'))            return 'PARA_REVISAR'
+    if (s.includes('para presupuestar'))       return 'PARA_PRESUPUESTAR'
     return 'ENTREGADO_REALIZADO' // Default para datos viejos
   }
 
@@ -240,35 +245,33 @@ async function main() {
   // ── 4.1 Máquinas, Marcas, Modelos ─────────────────────────────────────────
   // Las insertamos para tener IDs reales si no existen
   console.log('🏗️  Sincronizando catálogo de equipos...')
-  for (const m of Object.values(maquinaMap)) {
-    if (m) await prisma.maquina.upsert({ where: { nombre: m }, update: {}, create: { nombre: m } })
-  }
+  const maquinasUnicas = Array.from(new Set(Object.values(maquinaMap))).filter(Boolean)
+  await prisma.maquina.createMany({
+    data: maquinasUnicas.map(m => ({ nombre: m })),
+    skipDuplicates: true,
+  })
   const maquinasDb = await prisma.maquina.findMany()
   const maquinaIdByName = Object.fromEntries(maquinasDb.map(m => [m.nombre, m.id]))
 
-  for (const row of marcaRows) {
-    const maqId = maquinaIdByName[maquinaMap[row.IDMaquina]]
-    if (row.Marca && maqId) {
-      await prisma.marca.upsert({
-        where: { nombre_maquinaId: { nombre: row.Marca, maquinaId: maqId } },
-        update: {},
-        create: { nombre: row.Marca, maquinaId: maqId }
-      })
-    }
-  }
+  const marcasToCreate = marcaRows
+    .map(row => {
+      const maqId = maquinaIdByName[maquinaMap[row.IDMaquina]]
+      if (row.Marca && maqId) return { nombre: row.Marca, maquinaId: maqId }
+      return null
+    })
+    .filter(Boolean)
+  await prisma.marca.createMany({ data: marcasToCreate, skipDuplicates: true })
   const marcasDb = await prisma.marca.findMany()
   const marcaIdByNameMaq = Object.fromEntries(marcasDb.map(m => [`${m.nombre}-${m.maquinaId}`, m.id]))
 
-  for (const row of modeloRows) {
-    const marcaId = marcasDb.find(m => m.nombre === marcaMap[row.IDMarca])?.id
-    if (row.Modelo && marcaId) {
-      await prisma.modelo.upsert({
-        where: { nombre_marcaId: { nombre: row.Modelo, marcaId: marcaId } },
-        update: {},
-        create: { nombre: row.Modelo, marcaId: marcaId }
-      })
-    }
-  }
+  const modelosToCreate = modeloRows
+    .map(row => {
+      const marcaId = marcasDb.find(m => m.nombre === marcaMap[row.IDMarca])?.id
+      if (row.Modelo && marcaId) return { nombre: row.Modelo, marcaId }
+      return null
+    })
+    .filter(Boolean)
+  await prisma.modelo.createMany({ data: modelosToCreate, skipDuplicates: true })
   const modelosDb = await prisma.modelo.findMany()
   const modeloIdByNameMarca = Object.fromEntries(modelosDb.map(m => [`${m.nombre}-${m.marcaId}`, m.id]))
 
@@ -540,11 +543,17 @@ async function main() {
   await prisma.transferenciaCaja.createMany({ data: transferenciasData })
   console.log(`   ✓ ${transferenciasData.length} transferencias\n`)
 
-  // ── 13. Resetear secuencia autoincrement ──────────────────────────────────
+  // ── 13. Resetear secuencias autoincrement ─────────────────────────────────
   await prisma.$executeRawUnsafe(`
     SELECT setval(
       pg_get_serial_sequence('"Presupuesto"', 'numero'),
       COALESCE((SELECT MAX(numero) FROM "Presupuesto"), 0) + 1
+    )
+  `)
+  await prisma.$executeRawUnsafe(`
+    SELECT setval(
+      pg_get_serial_sequence('"OrdenTrabajo"', 'numero'),
+      COALESCE((SELECT MAX(numero) FROM "OrdenTrabajo"), 0) + 1
     )
   `)
 

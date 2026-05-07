@@ -143,6 +143,11 @@ export async function POST() {
       if (s.includes('reparada'))                return 'REPARADO' as const;
       if (s.includes('pertenece a servinoa'))    return 'ENTREGADO_REALIZADO' as const;
       if (s.includes('eliminada'))               return 'RECHAZADO' as const;
+      if (s.includes('revisada'))                return 'REVISADO' as const;
+      if (s.includes('confirmada'))              return 'APROBADO' as const;
+      if (s.includes('presupuestada'))           return 'PRESUPUESTADO' as const;
+      if (s.includes('para revisar'))            return 'PARA_REVISAR' as const;
+      if (s.includes('para presupuestar'))       return 'PARA_PRESUPUESTAR' as const;
       return 'ENTREGADO_REALIZADO' as const;
     }
 
