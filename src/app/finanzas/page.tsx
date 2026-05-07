@@ -272,7 +272,7 @@ export default function FinanzasPage() {
         cajaId: cobroCajaId,
         usuarioId: (session?.user as any)?.id,
         fecha: cobroFecha,
-        ...(cobroFormaPago === "Cheque" && {
+        ...(cobroFormaPago === "Cheques" && {
           chequeNumero: formatoService.capitalizarPalabras(chqNumero), chequeBanco: formatoService.capitalizarPalabras(chqBanco),
           chequeFechaEmision: chqEmision, chequeFechaCobro: chqCobro,
         }),
@@ -723,7 +723,7 @@ export default function FinanzasPage() {
           </div>
 
           {/* Datos cheque */}
-          {cobroFormaPago === "Cheque" && (
+          {cobroFormaPago === "Cheques" && (
             <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-4">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Datos del cheque</p>
               <div className="grid grid-cols-2 gap-3">

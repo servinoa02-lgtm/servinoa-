@@ -63,7 +63,7 @@ export const presupuestoService = {
           moneda: data.moneda || "ARS",
           formaPago: data.formaPago || "Contado",
           validezDias: data.validezDias || 7,
-          incluyeIva: data.incluyeIva ?? false,
+          incluyeIva: data.incluyeIva ?? true,
           observaciones: data.observaciones || null,
           estado: data.estado || "PRESUPUESTADO",
           estadoCobro: "APROBACION_PENDIENTE",

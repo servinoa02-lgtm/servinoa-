@@ -23,7 +23,7 @@ interface Cliente { id: string; nombre: string; empresa?: { nombre: string } | n
 interface Presupuesto { id: string; numero: number; total: number; cobrado: number; saldo: number; clienteId?: string; estado?: string; }
 interface Caja { id: string; nombre: string; }
 
-const FORMAS_PAGO = ["Efectivo", "Transferencia", "Cheque", "Mercado Pago", "Otro"];
+const FORMAS_PAGO = ["Efectivo", "Transferencia", "Cheques", "Débito", "Mercado Pago", "Otro"];
 
 function CobranzasContent() {
   const { data: session, status } = useSession();
@@ -161,7 +161,7 @@ function CobranzasContent() {
         cajaId,
         usuarioId: (session?.user as any)?.id,
         fecha,
-        ...(formaPago === "Cheque" && {
+        ...(formaPago === "Cheques" && {
           chequeNumero: formatoService.capitalizarPalabras(chequeNumero), chequeBanco: formatoService.capitalizarPalabras(chequeBanco), chequeFechaEmision, chequeFechaCobro,
         }),
       }),
@@ -348,7 +348,7 @@ function CobranzasContent() {
                 </div>
 
                 {/* Datos cheque */}
-                {formaPago === "Cheque" && (
+                {formaPago === "Cheques" && (
                   <div className="md:col-span-2 grid grid-cols-2 gap-4 p-5 bg-gray-50 border border-gray-200 rounded-2xl">
                     <p className="col-span-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Datos del cheque</p>
                     <input type="text" placeholder="N° de cheque" value={chequeNumero} onChange={e => setChequeNumero(formatoService.capitalizarPalabras(e.target.value))}

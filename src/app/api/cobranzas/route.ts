@@ -181,7 +181,7 @@ export async function POST(req: NextRequest) {
     // ─── Todo dentro de una sola transacción ───
     const cobranza = await prisma.$transaction(async (tx) => {
       let chequeId: string | null = null;
-      if (formaPago === "Cheque") {
+      if (formaPago === "Cheques") {
         const nuevoCheque = await tx.cheque.create({
           data: {
             numeroCheque: chequeNumero || null,
@@ -234,9 +234,9 @@ export async function POST(req: NextRequest) {
       });
 
       // Registrar HABER en CuentaCorriente (mismo tx)
-      if (clienteId) {
+      if (clienteIdFinal) {
         await cuentaCorrienteService.registrarMovimiento(tx, {
-          clienteId,
+          clienteId: clienteIdFinal,
           tipo: "HABER",
           origen: "COBRANZA",
           monto: importeNum,

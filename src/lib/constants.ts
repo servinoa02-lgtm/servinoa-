@@ -7,8 +7,9 @@
 export const FORMAS_PAGO = [
   "Efectivo",
   "Transferencia",
-  "Cheque",
+  "Cheques",
   "Tarjeta",
+  "Débito",
   "Mercado Pago",
   "Otro",
 ] as const;
