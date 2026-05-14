@@ -59,6 +59,8 @@ export default function OrdenesServicioPage() {
   const [filtroEstado, setFiltroEstado] = useState("TODOS");
   const [busqueda, setBusqueda] = useState("");
   const [creandoPresupuesto, setCreandoPresupuesto] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const [clientes, setClientes] = useState<{ id: string; nombre: string; empresa: { nombre: string } | null }[]>([]);
   const [tecnicos, setTecnicos] = useState<{ id: string; nombre: string }[]>([]);
@@ -105,19 +107,30 @@ export default function OrdenesServicioPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch("/api/ordenes-servicio", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...form,
-        ...params,
-        creadorId: (session?.user as { id?: string })?.id,
-      }),
-    });
-    if (res.ok) {
-      setShowForm(false);
-      setForm({ clienteId: "", tecnicoId: "", descripcion: "", ubicacion: "", observaciones: "", fechaProgramada: "", horasCampo: 0, kilometros: 0, imprevistos: 0 });
-      fetchOrdenes();
+    setSubmitError("");
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/ordenes-servicio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          ...params,
+          creadorId: (session?.user as { id?: string })?.id,
+        }),
+      });
+      if (res.ok) {
+        setShowForm(false);
+        setForm({ clienteId: "", tecnicoId: "", descripcion: "", ubicacion: "", observaciones: "", fechaProgramada: "", horasCampo: 0, kilometros: 0, imprevistos: 0 });
+        fetchOrdenes();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setSubmitError(data.error || "Error al crear la orden de servicio");
+      }
+    } catch {
+      setSubmitError("Error de conexión. Intente nuevamente.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -198,13 +211,13 @@ export default function OrdenesServicioPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+      <header className="sticky top-0 z-[60] bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button onClick={() => router.push("/dashboard")} className="text-gray-500 hover:text-gray-700">← Menú</button>
           <h1 className="text-xl font-bold text-gray-900">Órdenes de Servicio</h1>
         </div>
         <button
-          onClick={() => setShowForm(true)}
+          onClick={() => { setShowDetalle(null); setShowForm(true); }}
           className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
         >
           + Nueva OS
@@ -546,8 +559,11 @@ export default function OrdenesServicioPage() {
                   rows={2}
                 />
               </div>
-              <button type="submit" className="w-full py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700">
-                Crear Orden de Servicio
+              {submitError && (
+                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{submitError}</p>
+              )}
+              <button type="submit" disabled={submitting} className="w-full py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-60">
+                {submitting ? "Creando..." : "Crear Orden de Servicio"}
               </button>
             </form>
           </div>
