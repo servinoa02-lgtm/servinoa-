@@ -238,6 +238,20 @@ export async function POST() {
       });
     }
 
+    // Crear stubs para IDs referenciados por clientes que no estaban en las filas de datos
+    // (pueden estar en el header row de la hoja con formato legacy)
+    const unmatchedIds = Array.from(empresaIdsReferenciados).filter(id => !empresaSheetMap[id]);
+    if (unmatchedIds.length > 0) {
+      await prisma.empresa.createMany({
+        data: unmatchedIds.map(id => ({ nombre: `Empresa (${id})` })),
+        skipDuplicates: true,
+      });
+      // Agregar al mapa para que los clientes los encuentren
+      for (const id of unmatchedIds) {
+        empresaSheetMap[id] = { nombre: `Empresa (${id})`, cuit: null, domicilio: null, telefono: null };
+      }
+    }
+
     // Construir mapa IDEmpresa → DB empresa.id
     const empresasEnDb = await prisma.empresa.findMany({ select: { id: true, nombre: true } });
     const empresaDbIdByNombre = Object.fromEntries(empresasEnDb.map(e => [e.nombre, e.id]));
