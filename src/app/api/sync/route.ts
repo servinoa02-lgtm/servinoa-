@@ -86,6 +86,7 @@ export async function POST() {
       gastosRows, cajaRows, chequesRows, transferenciasRows,
       usuarioCajaRows, formaPagoRows,
       otRows, maquinaRows, marcaRows, modeloRows, tecnicoRows, fallaRows,
+      empresaRows,
     ] = await Promise.all([
       fetchSheet("Cliente"), fetchSheet("Presupuestos"), fetchSheet("Descripcion"),
       fetchSheet("Cobranzas"), fetchSheet("Gastos"), fetchSheet("Caja"),
@@ -93,11 +94,12 @@ export async function POST() {
       fetchSheet("UsuarioCaja"), fetchSheet("FormaDePago"),
       fetchSheet("OT"), fetchSheet("XMaquina"), fetchSheet("XMarca"),
       fetchSheet("XModelo"), fetchSheet("Tecnico"), fetchSheet("Falla"),
+      fetchSheet("Empresa"),
     ]);
 
     // ── Mapas de lookup ───────────────────────────────────────────────────
-    const cajaNombreById  = Object.fromEntries(usuarioCajaRows.map(r => [r.IdUsuarioCaja, r.UsuarioCaja]));
-    const formaPagoById   = Object.fromEntries(formaPagoRows.map(r => [r.IDFormaDePago, r.FormaDePago]));
+    const cajaNombreById = Object.fromEntries(usuarioCajaRows.map(r => [r.IdUsuarioCaja, r.UsuarioCaja]));
+    const formaPagoById  = Object.fromEntries(formaPagoRows.map(r => [r.IDFormaDePago, r.FormaDePago]));
 
     function resolveFormaPago(val: string) {
       if (!val) return "Efectivo";
@@ -111,6 +113,16 @@ export async function POST() {
 
     function resolveCajaNombre(val: string) {
       return cajaNombreById[val] || val || null;
+    }
+
+    // ── FIX 2: Auto-crear Cajas desde UsuarioCaja ────────────────────────
+    const nombresUnicos = Array.from(new Set(Object.values(cajaNombreById).filter(Boolean)));
+    for (const nombre of nombresUnicos) {
+      await prisma.caja.upsert({
+        where: { nombre },
+        update: {},
+        create: { nombre },
+      });
     }
 
     const cajasDb = await prisma.caja.findMany();
@@ -127,12 +139,30 @@ export async function POST() {
     });
     if (!adminUser) throw new Error("No se encontró un usuario ADMIN en la base de datos.");
 
-    // Mapas para OTs
+    // ── Mapas para OTs ────────────────────────────────────────────────────
     const maquinaMap = Object.fromEntries(maquinaRows.map(r => [r['ID Maquina'], r.Maquina]));
     const marcaMap   = Object.fromEntries(marcaRows.map(r => [r.IDMarca, r.Marca]));
     const modeloMap  = Object.fromEntries(modeloRows.map(r => [r.IDModelo, r.Modelo]));
     const tecnicoMap = Object.fromEntries(tecnicoRows.map(r => [r.IDTecnico, r.Nombre]));
     const fallaMap   = Object.fromEntries(fallaRows.map(r => [r.ID, r.Falla]));
+
+    // FIX 5: Mapa técnicos → usuario DB por nombre (case-insensitive)
+    const usuariosDb = await prisma.usuario.findMany({ select: { id: true, nombre: true } });
+    const usuarioIdByNombre = Object.fromEntries(
+      usuariosDb.map(u => [u.nombre.toLowerCase().trim(), u.id])
+    );
+
+    // FIX 1: Mapa de Empresas desde la hoja Empresa
+    const empresaSheetMap = Object.fromEntries(
+      empresaRows
+        .filter(r => r.IDEmpresa && r.NombreEmpresa)
+        .map(r => [r.IDEmpresa, {
+          nombre:    r.NombreEmpresa.trim(),
+          cuit:      r.Cuit      || null,
+          domicilio: r.Domicilio || null,
+          telefono:  r.Telefono  || null,
+        }])
+    );
 
     function mapEstadoOT(str: string) {
       const s = (str || '').toLowerCase().trim();
@@ -169,17 +199,53 @@ export async function POST() {
     await prisma.marca.deleteMany();
     await prisma.maquina.deleteMany();
     await prisma.cliente.deleteMany();
+    // FIX 1: Eliminar empresas después de clientes (FK: cliente → empresa)
+    await prisma.empresa.deleteMany();
+
+    // ── FIX 1: Upsert de Empresas referenciadas por clientes ─────────────
+    const empresaIdsReferenciados = new Set(
+      clienteRows.filter(r => r.Empresa).map(r => r.Empresa)
+    );
+
+    // Recopilar datos únicos por nombre de empresa (evitar duplicados)
+    const empresasPorNombre = new Map<string, { nombre: string; cuit: string | null; domicilio: string | null; telefono: string | null }>();
+    for (const idEmpresa of empresaIdsReferenciados) {
+      const datos = empresaSheetMap[idEmpresa];
+      if (datos && !empresasPorNombre.has(datos.nombre)) {
+        empresasPorNombre.set(datos.nombre, datos);
+      }
+    }
+
+    if (empresasPorNombre.size > 0) {
+      await prisma.empresa.createMany({
+        data: Array.from(empresasPorNombre.values()),
+        skipDuplicates: true,
+      });
+    }
+
+    // Construir mapa IDEmpresa → DB empresa.id
+    const empresasEnDb = await prisma.empresa.findMany({ select: { id: true, nombre: true } });
+    const empresaDbIdByNombre = Object.fromEntries(empresasEnDb.map(e => [e.nombre, e.id]));
+    const empresaIdMap: Record<string, string> = {};
+    for (const idEmpresa of empresaIdsReferenciados) {
+      const datos = empresaSheetMap[idEmpresa];
+      if (datos && empresaDbIdByNombre[datos.nombre]) {
+        empresaIdMap[idEmpresa] = empresaDbIdByNombre[datos.nombre];
+      }
+    }
 
     // ── Clientes ──────────────────────────────────────────────────────────
     await prisma.cliente.createMany({
       data: clienteRows.filter(r => r.IDCLIENTE).map(r => ({
-        nombre:      r.Nombre || "Sin nombre",
-        dni:         r.DNI    || null,
-        email:       r.mail   || null,
+        nombre:      r.Nombre    || "Sin nombre",
+        dni:         r.DNI       || null,
+        email:       r.mail      || null,
         domicilio:   r.domicilio || null,
         telefono:    r.telefono  || null,
-        iva:         r.IVA    || "NO incluyen IVA",
+        iva:         r.IVA       || "NO incluyen IVA",
         codigoExcel: r.IDCLIENTE,
+        // FIX 1: linkear empresa si existe en el mapa
+        empresaId:   r.Empresa ? (empresaIdMap[r.Empresa] ?? null) : null,
       })),
     });
     const clientesDb = await prisma.cliente.findMany({ select: { id: true, codigoExcel: true } });
@@ -216,7 +282,7 @@ export async function POST() {
     const modelosDb = await prisma.modelo.findMany();
     const modeloIdByNameMarca = Object.fromEntries(modelosDb.map(m => [`${m.nombre}-${m.marcaId}`, m.id]));
 
-    // ── Órdenes de Trabajo (OT) - Inserción Masiva ────────────────────────
+    // ── Órdenes de Trabajo (OT) ───────────────────────────────────────────
     const otData = otRows.map(row => {
       const numStr = row.OTN || '';
       const numero = parseInt(numStr.replace('OT-', ''));
@@ -226,8 +292,14 @@ export async function POST() {
       const marName = marcaMap[row.Marca];
       const modName = modeloMap[row.Modelo];
       const maquinaId = maquinaIdByName[maqName] || null;
-      const marcaId = maquinaId ? (marcaIdByNameMaq[`${marName}-${maquinaId}`] || null) : null;
-      const modeloId = marcaId ? (modeloIdByNameMarca[`${modName}-${marcaId}`] || null) : null;
+      const marcaId   = maquinaId ? (marcaIdByNameMaq[`${marName}-${maquinaId}`] || null) : null;
+      const modeloId  = marcaId   ? (modeloIdByNameMarca[`${modName}-${marcaId}`] || null) : null;
+
+      // FIX 5: Asignar técnico cruzando nombre de la hoja con usuario DB
+      const tecnicoNombre = tecnicoMap[row.Tecnico];
+      const tecnicoId = tecnicoNombre
+        ? (usuarioIdByNombre[tecnicoNombre.toLowerCase().trim()] ?? null)
+        : null;
 
       return {
         numero,
@@ -239,6 +311,7 @@ export async function POST() {
         accesorios:     row.Check || null,
         clienteId:      clienteMap[row.Cliente] || '',
         creadorId:      adminUser.id,
+        tecnicoId,
         maquinaId, marcaId, modeloId,
       };
     }).filter(Boolean) as any[];
@@ -252,8 +325,8 @@ export async function POST() {
       data: chequesRows.filter(r => r.IdCheques).map(row => ({
         estado:       mapEstadoCheque(row.EstadoCheque),
         numeroCheque: row.NumeroDeCheque || null,
-        banco:        row.Banco    || null,
-        librador:     row.Librador || null,
+        banco:        row.Banco          || null,
+        librador:     row.Librador       || null,
         importe:      parseFloat(row.Importe) || 0,
         fechaIngreso: parseDate(row.FechaDeIngreso) || new Date(),
         fechaEmision: parseDate(row.FechaDeEmision),
@@ -264,7 +337,7 @@ export async function POST() {
       }))
     });
     const chequesDb = await prisma.cheque.findMany({ select: { id: true, importe: true, numeroCheque: true } });
-    const chequeMap: Record<string, string> = {}; 
+    const chequeMap: Record<string, string> = {};
     chequesRows.forEach(row => {
       const match = chequesDb.find(c => c.importe === parseFloat(row.Importe) && c.numeroCheque === row.NumeroDeCheque);
       if (match) chequeMap[row.IdCheques] = match.id;
@@ -276,7 +349,7 @@ export async function POST() {
       estado: "APROBADO" | "PRESUPUESTADO" | "RECHAZADO" | "BORRADOR";
       estadoCobro: "PENDIENTE"; facturaNumero: string | null;
       observaciones: string | null; formaPago: string; validezDias: number;
-      moneda: string; clienteId: string; usuarioId: string;
+      moneda: string; clienteId: string; usuarioId: string; ordenId: string | null;
     };
 
     const presupuestosData: PptoData[] = presupuestosRows
@@ -288,8 +361,8 @@ export async function POST() {
         const ordenId = otNumeroMap[row.Num_OT] || null;
 
         return [{
-          _key: row.Num_Presupuesto,
-          numero, incluyeIva,
+          _key:          row.Num_Presupuesto,
+          numero,        incluyeIva,
           fecha:         parseDate(row.Fecha) || new Date(),
           estado:        mapEstadoPresupuesto(row.Estado),
           estadoCobro:   "PENDIENTE" as const,
@@ -339,14 +412,15 @@ export async function POST() {
           formaPago:     resolveFormaPago(row.FormaDePago),
           clienteId:     clienteMap[row.Cliente] || null,
           presupuestoId: presupuestoMap[row.PresupuestoCobrado] || null,
-          cajaId, usuarioId: adminUser.id,
+          cajaId,
+          usuarioId:     adminUser.id,
           chequeId:      row.IDCheque ? (chequeMap[row.IDCheque] ?? null) : null,
         };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await prisma.cobranza.createMany({ data: cobranzasData });
 
-    // Actualizar estadoCobro
+    // Actualizar estadoCobro de presupuestos
     const cobranzasPorPpto = await prisma.cobranza.groupBy({
       by: ["presupuestoId"],
       _sum: { importe: true },
@@ -355,26 +429,33 @@ export async function POST() {
     const cobradoByPptoId = Object.fromEntries(
       cobranzasPorPpto.map(r => [r.presupuestoId!, r._sum.importe ?? 0])
     );
+
+    // FIX 3: Extender query para incluir estado, clienteId y fecha (necesario para CuentaCorriente)
     const pptosConItems = await prisma.presupuesto.findMany({
-      select: { id: true, incluyeIva: true, items: { select: { total: true } } },
+      select: {
+        id: true, incluyeIva: true, estado: true, clienteId: true, fecha: true,
+        items: { select: { total: true } },
+      },
     });
+
     for (const p of pptosConItems) {
       const subtotal = p.items.reduce((s, i) => s + i.total, 0);
       const total    = p.incluyeIva ? subtotal * 1.21 : subtotal;
       const cobrado  = cobradoByPptoId[p.id] ?? 0;
       let estadoCobro: "COBRADO" | "PARCIAL" | undefined;
       if (total > 0 && cobrado >= total * 0.99) estadoCobro = "COBRADO";
-      else if (cobrado > 0) estadoCobro = "PARCIAL";
+      else if (cobrado > 0)                      estadoCobro = "PARCIAL";
       if (estadoCobro) await prisma.presupuesto.update({ where: { id: p.id }, data: { estadoCobro } });
     }
 
-    // ── Gastos ────────────────────────────────────────────────────────────
+    // ── FIX 4: Gastos (tipo corregido: includes en lugar de ===) ──────────
     const gastosData = gastosRows
       .map(row => {
         const cajaId = getCajaId(row.UsuarioCaja);
         if (!cajaId) return null;
         return {
-          tipo:        (row.Tipo || "").toLowerCase() === "sueldo" ? "SUELDO" as const : "GASTO_VARIOS" as const,
+          // FIX 4: "Sueldos" (plural) no matcheaba con === "sueldo"
+          tipo:        (row.Tipo || "").toLowerCase().includes("sueldo") ? "SUELDO" as const : "GASTO_VARIOS" as const,
           fecha:       parseDate(row.Fecha) || new Date(),
           descripcion: row.Descripcion || row.NumRecibo || "Sin descripción",
           importe:     parseFloat(row.Importe) || 0,
@@ -383,7 +464,8 @@ export async function POST() {
           empleado:    row.Empleado   || null,
           desde:       parseDate(row.Desde),
           hasta:       parseDate(row.Hasta),
-          cajaId, usuarioId: adminUser.id,
+          cajaId,
+          usuarioId:   adminUser.id,
           chequeId:    row.IDCheque ? (chequeMap[row.IDCheque] ?? null) : null,
         };
       })
@@ -399,7 +481,7 @@ export async function POST() {
         return {
           fecha:       parseDate(row.Fecha) || new Date(),
           descripcion: row.Descripcion || "-",
-          ingreso:     parseFloat(row.Ingreso) || 0,
+          ingreso:     parseFloat(row.Ingreso)   || 0,
           egreso:      parseFloat(row["Egreso"]) || 0,
           formaPago:   resolveFormaPago(row.FormaDePago),
           cajaId,
@@ -435,13 +517,63 @@ export async function POST() {
           descripcion:      row.Descripcion || null,
           formaPagoOrigen:  resolveFormaPago(row.FormaDePagoOrigen),
           formaPagoDestino: resolveFormaPago(row.FormaDePagoDestino),
-          cajaOrigenId, cajaDestinoId,
+          cajaOrigenId,
+          cajaDestinoId,
         };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     await prisma.transferenciaCaja.createMany({ data: transferenciasData });
 
-    // Resetear secuencias de autoincrement
+    // ── FIX 3: Reconstruir CuentaCorriente ────────────────────────────────
+    // DEBE: un registro por presupuesto APROBADO con total > 0
+    // HABER: un registro por cada cobranza registrada
+    const cuentaCorrienteData: {
+      clienteId: string;
+      tipo: "DEBE" | "HABER";
+      origen: "PRESUPUESTO" | "COBRANZA";
+      monto: number;
+      fecha: Date;
+      presupuestoId: string | null;
+      cobranzaId: string | null;
+    }[] = [];
+
+    for (const p of pptosConItems) {
+      if (p.estado !== "APROBADO") continue;
+      const subtotal = p.items.reduce((s, i) => s + i.total, 0);
+      const total    = p.incluyeIva ? subtotal * 1.21 : subtotal;
+      if (total <= 0) continue;
+      cuentaCorrienteData.push({
+        clienteId:     p.clienteId,
+        tipo:          "DEBE",
+        origen:        "PRESUPUESTO",
+        monto:         total,
+        fecha:         p.fecha,
+        presupuestoId: p.id,
+        cobranzaId:    null,
+      });
+    }
+
+    const cobranzasEnDb = await prisma.cobranza.findMany({
+      select: { id: true, clienteId: true, importe: true, fecha: true, presupuestoId: true },
+    });
+    for (const c of cobranzasEnDb) {
+      if (!c.clienteId || c.importe <= 0) continue;
+      cuentaCorrienteData.push({
+        clienteId:     c.clienteId,
+        tipo:          "HABER",
+        origen:        "COBRANZA",
+        monto:         c.importe,
+        fecha:         c.fecha,
+        presupuestoId: c.presupuestoId ?? null,
+        cobranzaId:    c.id,
+      });
+    }
+
+    if (cuentaCorrienteData.length > 0) {
+      await prisma.cuentaCorriente.createMany({ data: cuentaCorrienteData });
+    }
+
+    // ── Resetear secuencias de autoincrement ──────────────────────────────
     await prisma.$executeRawUnsafe(`
       SELECT setval(
         pg_get_serial_sequence('"Presupuesto"', 'numero'),
@@ -461,15 +593,17 @@ export async function POST() {
       ok: true,
       duracion: `${elapsed}s`,
       totales: {
-        clientes:      clientesDb.length,
-        ordenes:       Object.keys(otNumeroMap).length,
-        presupuestos:  presupuestosData.length,
-        items:         itemsData.length,
-        cobranzas:     cobranzasData.length,
-        gastos:        gastosData.length,
-        movimientos:   movimientosData.length,
-        cheques:       Object.keys(chequeMap).length,
-        transferencias: transferenciasData.length,
+        clientes:        clientesDb.length,
+        empresas:        empresasEnDb.length,
+        ordenes:         Object.keys(otNumeroMap).length,
+        presupuestos:    presupuestosData.length,
+        items:           itemsData.length,
+        cobranzas:       cobranzasData.length,
+        gastos:          gastosData.length,
+        movimientos:     movimientosData.length,
+        cheques:         Object.keys(chequeMap).length,
+        transferencias:  transferenciasData.length,
+        cuentaCorriente: cuentaCorrienteData.length,
       },
     });
   } catch (err: any) {
