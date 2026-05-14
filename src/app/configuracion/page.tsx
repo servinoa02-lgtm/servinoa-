@@ -50,6 +50,7 @@ export default function ConfiguracionPage() {
   const [sincronizando, setSincronizando] = useState(false);
   const [syncResultado, setSyncResultado] = useState<{
     ok: boolean; duracion?: string; totales?: Record<string, number>; error?: string;
+    debug_empresas?: Record<string, any>;
   } | null>(null);
 
   // Accesorios
@@ -693,6 +694,14 @@ export default function ConfiguracionPage() {
                                 <p className="text-xl font-bold text-gray-900">{val.toLocaleString("es-AR")}</p>
                               </div>
                             ))}
+                          </div>
+                        )}
+                        {syncResultado.debug_empresas && (
+                          <div className="mt-3 pt-3 border-t border-emerald-200">
+                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Debug Empresas</p>
+                            <div className="bg-gray-900 text-green-400 text-xs font-mono rounded-lg p-3 overflow-x-auto whitespace-pre">
+                              {JSON.stringify(syncResultado.debug_empresas, null, 2)}
+                            </div>
                           </div>
                         )}
                       </div>
