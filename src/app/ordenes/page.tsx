@@ -1,217 +1,215 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
+import { Search, Plus, ArrowLeft, Wrench, Calendar, ClipboardList } from "lucide-react";
+import { useSort } from "@/hooks/useSort";
+import { SortHeader } from "@/components/ui/SortHeader";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { useToast } from "@/context/ToastContext";
+import { useDebounce } from "@/hooks/useDebounce";
+import Link from "next/link";
+import { formatFecha } from "@/lib/dateUtils";
 
 interface Orden {
   id: string;
   numero: number;
   estado: string;
-  falla: string | null;
-  observaciones: string | null;
-  nroSerie: string | null;
-  accesorios: string | null;
+  falla: string;
   fechaRecepcion: string;
-  maquina: { nombre: string } | null;
-  marca: { nombre: string } | null;
-  modelo: { nombre: string } | null;
-  cliente: { nombre: string; empresa: { nombre: string } | null };
-  tecnico: { nombre: string } | null;
-  presupuestos: { id: string; numero: number; estado: string }[];
+  cliente: { nombre: string; empresa?: { nombre: string } | null } | null;
+  tecnico?: { nombre: string } | null;
+  maquina?: { nombre: string } | null;
+  marca?: { nombre: string } | null;
+  modelo?: { nombre: string } | null;
 }
-
-const ESTADOS: Record<string, { label: string; color: string }> = {
-  RECIBIDO: { label: "Recibido", color: "bg-gray-100 text-gray-700" },
-  PARA_REVISAR: { label: "Para revisar", color: "bg-yellow-100 text-yellow-700" },
-  EN_REVISION: { label: "En revisión", color: "bg-blue-100 text-blue-700" },
-  REVISADO: { label: "Revisado", color: "bg-blue-200 text-blue-800" },
-  PARA_PRESUPUESTAR: { label: "Para presupuestar", color: "bg-orange-100 text-orange-700" },
-  PRESUPUESTADO: { label: "Presupuestado", color: "bg-purple-100 text-purple-700" },
-  APROBADO: { label: "Aprobado", color: "bg-green-100 text-green-700" },
-  EN_REPARACION: { label: "En reparación", color: "bg-green-200 text-green-800" },
-  REPARADO: { label: "Reparado", color: "bg-teal-100 text-teal-700" },
-  PARA_ENTREGAR: { label: "Para entregar", color: "bg-cyan-100 text-cyan-700" },
-  ENTREGADO_REALIZADO: { label: "Entregada realizada", color: "bg-emerald-100 text-emerald-700" },
-  ENTREGADO_SIN_REALIZAR: { label: "Entregada sin realizar", color: "bg-red-100 text-red-700" },
-  RECHAZADO: { label: "Rechazado", color: "bg-red-200 text-red-800" },
-};
 
 export default function OrdenesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [ordenes, setOrdenes] = useState<Orden[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [filtroEstado, setFiltroEstado] = useState("TODOS");
   const [busqueda, setBusqueda] = useState("");
-
-  const [clientes, setClientes] = useState<any[]>([]);
-  const [tecnicos, setTecnicos] = useState<any[]>([]);
-  const [form, setForm] = useState({
-    clienteId: "",
-    tecnicoId: "",
-    maquina: "",
-    marca: "",
-    modelo: "",
-    nroSerie: "",
-    falla: "",
-    accesorios: "",
-    observaciones: "",
-  });
+  const [debouncedSearch] = useDebounce(busqueda, 500);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
 
-  useEffect(() => {
-    fetchOrdenes();
-    fetchClientes();
-    fetchTecnicos();
-  }, []);
-
-  const fetchOrdenes = async () => {
-    const res = await fetch("/api/ordenes");
-    const data = await res.json();
-    setOrdenes(data);
-    setLoading(false);
+  const cargar = () => {
+    setLoading(true);
+    fetch(`/api/ordenes?page=${page}&limit=20&search=${debouncedSearch}`)
+      .then((r) => {
+        if (!r.ok) throw new Error("Error al cargar órdenes");
+        return r.json();
+      })
+      .then((res) => { 
+        setOrdenes(res.data); 
+        setTotal(res.total);
+        setTotalPages(res.totalPages);
+        setLoading(false); 
+      })
+      .catch((e) => {
+        setLoading(false);
+        showToast(e.message || "Error al cargar órdenes", "error");
+      });
   };
 
-  const fetchClientes = async () => {
-    const res = await fetch("/api/clientes");
-    if (res.ok) setClientes(await res.json());
-  };
+  useEffect(() => { setPage(1); }, [debouncedSearch]);
+  useEffect(() => { cargar(); }, [page, debouncedSearch]);
+  useAutoRefresh(cargar);
 
-  const fetchTecnicos = async () => {
-    const res = await fetch("/api/tecnicos");
-    if (res.ok) setTecnicos(await res.json());
-  };
+  // Filtramos solo por búsqueda si queremos mantener coherencia,
+  // pero ya viene filtrado del servidor.
+  const filtradas = ordenes;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const res = await fetch("/api/ordenes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...form,
-        creadorId: (session?.user as any)?.id,
-      }),
-    });
-    if (res.ok) {
-      setShowForm(false);
-      setForm({ clienteId: "", tecnicoId: "", maquina: "", marca: "", modelo: "", nroSerie: "", falla: "", accesorios: "", observaciones: "" });
-      fetchOrdenes();
-    }
-  };
-
-  const ordenesFiltradas = ordenes.filter((o) => {
-    const matchEstado = filtroEstado === "TODOS" || o.estado === filtroEstado;
-    const texto = busqueda.toLowerCase();
-    const matchBusqueda =
-      !texto ||
-      o.numero.toString().includes(texto) ||
-      o.cliente.nombre.toLowerCase().includes(texto) ||
-      (o.cliente.empresa?.nombre || "").toLowerCase().includes(texto) ||
-      (o.maquina?.nombre || "").toLowerCase().includes(texto) ||
-      (o.falla || "").toLowerCase().includes(texto);
-    return matchEstado && matchBusqueda;
+  const { sorted: ordenadas, sortKey, sortDirection, toggle } = useSort(filtradas, {
+    numero: (o) => o.numero,
+    cliente: (o) => o.cliente?.nombre || "",
+    equipo: (o) => [o.maquina?.nombre, o.marca?.nombre, o.modelo?.nombre].filter(Boolean).join(" ") || "",
+    estado: (o) => o.estado,
+    recepcion: (o) => o.fechaRecepcion,
   });
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Cargando...</p>
+      <div className="flex flex-col items-center justify-center p-40">
+        <div className="w-12 h-1 bg-red-600 rounded-full animate-pulse mb-4" />
+        <div className="text-gray-400 font-medium text-sm animate-pulse">Cargando órdenes...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={() => router.push("/dashboard")} className="text-gray-500 hover:text-gray-700">
-            ← Menú
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 md:h-20 flex items-center justify-between">
+          <div className="flex items-center gap-3 md:gap-6">
+            <Link href="/dashboard" className="hidden md:flex p-2 text-gray-400 hover:text-red-600 hover:bg-gray-50 rounded-xl transition-all">
+              <ArrowLeft size={24} />
+            </Link>
+            <div className="pl-10 lg:pl-0">
+              <p className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Operaciones</p>
+              <h1 className="text-lg md:text-2xl font-bold text-gray-900 tracking-tight">Órdenes de Trabajo</h1>
+            </div>
+          </div>
+          <button
+            onClick={() => router.push("/ordenes/nueva")}
+            className="bg-red-600 text-white px-3 md:px-5 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/10 flex items-center gap-1.5 md:gap-2"
+          >
+            <Plus size={16} /> <span className="hidden sm:inline">Nueva</span> OT
           </button>
-          <h1 className="text-xl font-bold text-gray-900">Órdenes de Trabajo</h1>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
-        >
-          + Nueva OT
-        </button>
       </header>
 
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="flex flex-col md:flex-row gap-3 mb-6">
-          <input
-            type="text"
-            placeholder="Buscar por N°, cliente, equipo, falla..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-red-500"
-          />
-          <select
-            value={filtroEstado}
-            onChange={(e) => setFiltroEstado(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg outline-none"
-          >
-            <option value="TODOS">Todos los estados</option>
-            {Object.entries(ESTADOS).map(([key, val]) => (
-              <option key={key} value={key}>{val.label}</option>
-            ))}
-          </select>
+      <main className="flex-1 max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-10 w-full space-y-6 md:space-y-8">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-3 md:p-4 rounded-2xl border border-gray-200 shadow-sm">
+           <div className="relative w-full max-w-lg">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <input 
+                type="text" 
+                placeholder="Buscar por n°, cliente o equipo..." 
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="w-full pl-12 pr-4 py-2.5 bg-gray-50 border border-transparent focus:border-red-600 rounded-xl text-sm font-medium outline-none transition-all"
+              />
+           </div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50 px-3 py-2 rounded-lg border border-gray-100 italic">
+               {total} órdenes en total
+            </div>
+         </div>
+
+        {/* ─── Mobile: Cards ─── */}
+        <div className="md:hidden space-y-3">
+          {ordenadas.map((o) => (
+            <div
+              key={o.id}
+              className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 cursor-pointer hover:border-red-200 transition-all"
+              onClick={() => router.push(`/ordenes/${o.id}`)}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-bold text-red-600 text-lg tracking-tight">#{o.numero}</span>
+                <StatusBadge status={o.estado} />
+              </div>
+              <p className="font-bold text-gray-900 uppercase text-sm leading-none mb-1">{o.cliente?.nombre}</p>
+              {o.cliente?.empresa?.nombre && (
+                <p className="text-[10px] text-gray-400 font-bold uppercase mb-2">{o.cliente.empresa.nombre}</p>
+              )}
+              <div className="flex items-center justify-between mt-3">
+                <div className="text-gray-600 font-medium uppercase text-[10px] bg-gray-100/50 px-2 py-1 rounded-lg border border-gray-100 inline-block">
+                  {[o.maquina?.nombre, o.marca?.nombre, o.modelo?.nombre].filter(Boolean).join(" — ") || "Sin equipo"}
+                </div>
+                <div className="flex items-center gap-1 text-gray-400 font-mono text-[10px] font-bold">
+                  <Calendar size={12} />
+                  {formatFecha(o.fechaRecepcion)}
+                </div>
+              </div>
+            </div>
+          ))}
+          {ordenadas.length === 0 && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center text-gray-400 font-medium italic">
+              No se encontraron órdenes con esos criterios
+            </div>
+          )}
         </div>
 
-        <p className="text-sm text-gray-500 mb-4">{ordenesFiltradas.length} órdenes encontradas</p>
-
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        {/* ─── Desktop: Tabla ─── */}
+        <div className="hidden md:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">OT</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Cliente</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Equipo</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Falla</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Estado</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Técnico</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Fecha</th>
+              <thead>
+                <tr className="bg-gray-50/50 border-b border-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                  <SortHeader label="N° Orden" sortKey="numero" currentKey={sortKey} direction={sortDirection} onToggle={toggle} />
+                  <SortHeader label="Cliente / Empresa" sortKey="cliente" currentKey={sortKey} direction={sortDirection} onToggle={toggle} />
+                  <SortHeader label="Equipo / Marca" sortKey="equipo" currentKey={sortKey} direction={sortDirection} onToggle={toggle} />
+                  <SortHeader label="Estado" sortKey="estado" currentKey={sortKey} direction={sortDirection} onToggle={toggle} />
+                  <SortHeader label="Recepción" sortKey="recepcion" currentKey={sortKey} direction={sortDirection} onToggle={toggle} align="right" />
                 </tr>
               </thead>
-              <tbody>
-                {ordenesFiltradas.map((orden) => (
+              <tbody className="divide-y divide-gray-50">
+                {ordenadas.map((o) => (
                   <tr
-                    key={orden.id}
-                    className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
-                    onClick={() => router.push(`/ordenes/${orden.id}`)}
+                    key={o.id}
+                    className="hover:bg-gray-50 group transition-all cursor-pointer"
+                    onClick={() => router.push(`/ordenes/${o.id}`)}
                   >
-                    <td className="px-4 py-3 font-medium">OT-{orden.numero}</td>
-                    <td className="px-4 py-3">
-                      <div>{orden.cliente.empresa?.nombre || "Particular"}</div>
-                      <div className="text-gray-500 text-xs">{orden.cliente.nombre}</div>
+                    <td className="px-6 py-5">
+                       <span className="font-bold text-red-600 text-lg tracking-tight">#{o.numero}</span>
                     </td>
-                    <td className="px-4 py-3">
-                      {orden.maquina?.nombre || "-"}
-                      {orden.marca && <span className="text-gray-500"> - {orden.marca.nombre}</span>}
-                      {orden.modelo && <span className="text-gray-400"> {orden.modelo.nombre}</span>}
+                    <td className="px-6 py-5">
+                      <p className="font-bold text-gray-900 uppercase text-sm leading-none mb-1">{o.cliente?.nombre}</p>
+                      {o.cliente?.empresa?.nombre && (
+                        <p className="text-[10px] text-gray-400 font-bold uppercase">{o.cliente.empresa.nombre}</p>
+                      )}
                     </td>
-                    <td className="px-4 py-3 text-gray-600 max-w-[200px] truncate">{orden.falla || "-"}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${ESTADOS[orden.estado]?.color || "bg-gray-100"}`}>
-                        {ESTADOS[orden.estado]?.label || orden.estado}
-                      </span>
+                    <td className="px-6 py-5">
+                      <div className="text-gray-600 font-medium uppercase text-[11px] bg-gray-100/50 px-2.5 py-1 rounded-lg border border-gray-100 inline-block">
+                        {[o.maquina?.nombre, o.marca?.nombre, o.modelo?.nombre]
+                          .filter(Boolean)
+                          .join(" — ") || "Sin especificar"}
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{orden.tecnico?.nombre || "-"}</td>
-                    <td className="px-4 py-3 text-gray-500">
-                      {new Date(orden.fechaRecepcion).toLocaleDateString("es-AR")}
+                    <td className="px-6 py-5">
+                      <StatusBadge status={o.estado} />
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                       <div className="flex items-center justify-end gap-2 text-gray-900 font-bold font-mono text-xs">
+                          <Calendar size={14} className="text-gray-300" />
+                          {formatFecha(o.fechaRecepcion)}
+                       </div>
                     </td>
                   </tr>
                 ))}
-                {ordenesFiltradas.length === 0 && (
+                {filtradas.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
-                      No hay órdenes
+                    <td colSpan={5} className="px-6 py-20 text-center text-gray-400 font-medium italic bg-gray-50/20">
+                       No se encontraron órdenes con esos criterios
                     </td>
                   </tr>
                 )}
@@ -219,129 +217,32 @@ export default function OrdenesPage() {
             </table>
           </div>
         </div>
-      </div>
 
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-start justify-end z-50">
-          <div className="bg-white w-full max-w-lg h-full overflow-y-auto p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold">Nueva Orden de Trabajo</h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-xl">
-                ✕
-              </button>
+        {/* ─── Paginación ─── */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 disabled:opacity-50 transition-all border border-gray-100"
+            >
+              Anterior
+            </button>
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+              Página <span className="text-gray-900">{page}</span> de <span className="text-gray-900">{totalPages}</span>
             </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
-                <select
-                  value={form.clienteId}
-                  onChange={(e) => setForm({ ...form, clienteId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"
-                  required
-                >
-                  <option value="">Seleccionar cliente...</option>
-                  {clientes.map((c: any) => (
-                    <option key={c.id} value={c.id}>
-                      {c.empresa?.nombre || "Particular"} - {c.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Técnico</label>
-                <select
-                  value={form.tecnicoId}
-                  onChange={(e) => setForm({ ...form, tecnicoId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"
-                >
-                  <option value="">Sin asignar</option>
-                  {tecnicos.map((t: any) => (
-                    <option key={t.id} value={t.id}>{t.nombre}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Máquina</label>
-                  <input
-                    type="text"
-                    value={form.maquina}
-                    onChange={(e) => setForm({ ...form, maquina: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"
-                    placeholder="Ej: Soldadora Inverter"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Marca</label>
-                  <input
-                    type="text"
-                    value={form.marca}
-                    onChange={(e) => setForm({ ...form, marca: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"
-                    placeholder="Ej: ESAB"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Modelo</label>
-                  <input
-                    type="text"
-                    value={form.modelo}
-                    onChange={(e) => setForm({ ...form, modelo: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"
-                    placeholder="Ej: LHN 242i"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">N° de Serie</label>
-                  <input
-                    type="text"
-                    value={form.nroSerie}
-                    onChange={(e) => setForm({ ...form, nroSerie: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Falla</label>
-                <textarea
-                  value={form.falla}
-                  onChange={(e) => setForm({ ...form, falla: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"
-                  rows={2}
-                  placeholder="Descripción de la falla..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Accesorios incluidos</label>
-                <input
-                  type="text"
-                  value={form.accesorios}
-                  onChange={(e) => setForm({ ...form, accesorios: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"
-                  placeholder="Ej: Torcha, pinza masa"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
-                <textarea
-                  value={form.observaciones}
-                  onChange={(e) => setForm({ ...form, observaciones: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"
-                  rows={2}
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700"
-              >
-                Crear Orden de Trabajo
-              </button>
-            </form>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 disabled:opacity-50 transition-all border border-gray-100"
+            >
+              Siguiente
+            </button>
           </div>
-        </div>
-      )}
+        )}
+      </main>
+
+      {/* Toast global ya manejado por ToastProvider */}
     </div>
   );
 }
