@@ -77,8 +77,8 @@ export function Sidebar() {
       <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
         {filteredItems.map((item) => {
           const isActive = item.activeFor
-          ? item.activeFor.some((p) => pathname.startsWith(p))
-          : pathname.startsWith(item.href);
+          ? item.activeFor.some((p) => pathname === p || pathname.startsWith(p + "/"))
+          : pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.name}

@@ -99,7 +99,7 @@ export default function OrdenesServicioPage() {
 
   useEffect(() => {
     fetchOrdenes();
-    fetch("/api/clientes").then(r => r.ok ? r.json() : []).then(setClientes);
+    fetch("/api/clientes?limit=1000").then(r => r.ok ? r.json() : { data: [] }).then(res => setClientes(res.data ?? res));
     fetch("/api/tecnicos").then(r => r.ok ? r.json() : []).then(setTecnicos);
   }, [fetchOrdenes]);
 
