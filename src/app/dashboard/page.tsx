@@ -52,7 +52,8 @@ export default async function DashboardPage() {
   const otsEnProceso = await prisma.ordenTrabajo.findMany({
     where: { estado: { notIn: ["ENTREGADO_REALIZADO", "ENTREGADO_SIN_REALIZAR", "RECHAZADO"] } },
     include: { cliente: { select: { nombre: true } } },
-    orderBy: { fechaRecepcion: "desc" }
+    orderBy: { fechaRecepcion: "desc" },
+    take: 50,
   });
 
   // 3. Seguimientos y Alertas
@@ -112,12 +113,24 @@ export default async function DashboardPage() {
   // Cajas para el desglose lateral
   const cajasConSaldo = await obtenerSaldosCajas();
 
-  // 7. Gráfico e Historial Taller (Inicialmente "Total")
+  // 7. Gráfico e Historial Taller (Inicialmente últimos 24 meses para SSR)
   const fetchInitialChartData = async () => {
-    // Reutilizamos la lógica del API para el SSR inicial (modo "total")
+    const desde24meses = new Date();
+    desde24meses.setMonth(desde24meses.getMonth() - 23);
+    desde24meses.setDate(1);
+    desde24meses.setHours(0, 0, 0, 0);
+
     const [movs, ots] = await Promise.all([
-      prisma.movimientoCaja.findMany({ select: { fecha: true, ingreso: true, egreso: true }, orderBy: { fecha: 'asc' } }),
-      prisma.ordenTrabajo.findMany({ select: { fechaRecepcion: true }, orderBy: { fechaRecepcion: 'asc' } })
+      prisma.movimientoCaja.findMany({
+        where: { fecha: { gte: desde24meses } },
+        select: { fecha: true, ingreso: true, egreso: true },
+        orderBy: { fecha: 'asc' },
+      }),
+      prisma.ordenTrabajo.findMany({
+        where: { fechaRecepcion: { gte: desde24meses } },
+        select: { fechaRecepcion: true },
+        orderBy: { fechaRecepcion: 'asc' },
+      }),
     ]);
     
     if (movs.length === 0 && ots.length === 0) return { finance: [], workshop: { chartData: [], topClientes: [] } };

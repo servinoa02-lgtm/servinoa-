@@ -9,8 +9,8 @@ export async function GET(req: NextRequest) {
 
   try {
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+    const limit = Math.min(Math.max(1, parseInt(searchParams.get("limit") || "20")), 100);
     const search = searchParams.get("search") || "";
     const skip = (page - 1) * limit;
 
@@ -78,13 +78,17 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
+    const importeNum = parseFloat(body.importe);
+    if (!Number.isFinite(importeNum) || importeNum <= 0) {
+      return NextResponse.json({ error: "El importe debe ser un número mayor a 0" }, { status: 400 });
+    }
     const cheque = await prisma.cheque.create({
       data: {
         clienteId: body.clienteId || null,
         numeroCheque: body.numeroCheque || null,
         banco: body.banco || null,
         librador: body.librador || null,
-        importe: parseFloat(body.importe),
+        importe: importeNum,
         fechaEmision: body.fechaEmision ? new Date(body.fechaEmision) : null,
         fechaCobro: body.fechaCobro ? new Date(body.fechaCobro) : null,
         endosadoA: body.endosadoA || null,

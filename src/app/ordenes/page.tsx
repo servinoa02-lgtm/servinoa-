@@ -71,7 +71,7 @@ export default function OrdenesPage() {
 
   const { sorted: ordenadas, sortKey, sortDirection, toggle } = useSort(filtradas, {
     numero: (o) => o.numero,
-    cliente: (o) => o.cliente?.nombre || "",
+    cliente: (o) => `${o.cliente?.nombre || ""} ${o.cliente?.empresa?.nombre || ""}`.trim(),
     equipo: (o) => [o.maquina?.nombre, o.marca?.nombre, o.modelo?.nombre].filter(Boolean).join(" ") || "",
     estado: (o) => o.estado,
     recepcion: (o) => o.fechaRecepcion,
@@ -137,9 +137,13 @@ export default function OrdenesPage() {
                 <span className="font-bold text-red-600 text-lg tracking-tight">#{o.numero}</span>
                 <StatusBadge status={o.estado} />
               </div>
-              <p className="font-bold text-gray-900 uppercase text-sm leading-none mb-1">{o.cliente?.nombre}</p>
+              <p className="font-bold text-gray-900 uppercase text-sm leading-none">
+                {o.cliente?.nombre ?? "—"}
+              </p>
               {o.cliente?.empresa?.nombre && (
-                <p className="text-[10px] text-gray-400 font-bold uppercase mb-2">{o.cliente.empresa.nombre}</p>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+                  {o.cliente.empresa.nombre}
+                </p>
               )}
               <div className="flex items-center justify-between mt-3">
                 <div className="text-gray-600 font-medium uppercase text-[10px] bg-gray-100/50 px-2 py-1 rounded-lg border border-gray-100 inline-block">
@@ -183,9 +187,13 @@ export default function OrdenesPage() {
                        <span className="font-bold text-red-600 text-lg tracking-tight">#{o.numero}</span>
                     </td>
                     <td className="px-6 py-5">
-                      <p className="font-bold text-gray-900 uppercase text-sm leading-none mb-1">{o.cliente?.nombre}</p>
+                      <p className="font-bold text-gray-900 uppercase text-sm leading-none">
+                        {o.cliente?.nombre ?? "—"}
+                      </p>
                       {o.cliente?.empresa?.nombre && (
-                        <p className="text-[10px] text-gray-400 font-bold uppercase">{o.cliente.empresa.nombre}</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+                          {o.cliente.empresa.nombre}
+                        </p>
                       )}
                     </td>
                     <td className="px-6 py-5">

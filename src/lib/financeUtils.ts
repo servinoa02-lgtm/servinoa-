@@ -5,38 +5,21 @@ import { prisma } from "./prisma";
  * @param cutoffDate Opcional. Si se provee, calcula el saldo hasta esa fecha inclusive.
  */
 export async function obtenerSaldosCajas(cutoffDate?: Date) {
-  const cajas = await prisma.caja.findMany({
-    select: {
-      id: true,
-      nombre: true,
-    },
+  const [cajas, grouped] = await Promise.all([
+    prisma.caja.findMany({ select: { id: true, nombre: true } }),
+    prisma.movimientoCaja.groupBy({
+      by: ["cajaId"],
+      where: cutoffDate ? { fecha: { lte: cutoffDate } } : undefined,
+      _sum: { ingreso: true, egreso: true },
+    }),
+  ]);
+
+  return cajas.map((caja) => {
+    const g = grouped.find((r) => r.cajaId === caja.id);
+    const ingreso = Number(g?._sum.ingreso || 0);
+    const egreso = Number(g?._sum.egreso || 0);
+    return { id: caja.id, nombre: caja.nombre, saldo: ingreso - egreso };
   });
-
-  const res = await Promise.all(
-    cajas.map(async (caja) => {
-      const summary = await prisma.movimientoCaja.aggregate({
-        where: {
-          cajaId: caja.id,
-          ...(cutoffDate ? { fecha: { lte: cutoffDate } } : {}),
-        },
-        _sum: {
-          ingreso: true,
-          egreso: true,
-        },
-      });
-
-      const ingreso = Number(summary._sum.ingreso || 0);
-      const egreso = Number(summary._sum.egreso || 0);
-
-      return {
-        id: caja.id,
-        nombre: caja.nombre,
-        saldo: ingreso - egreso,
-      };
-    })
-  );
-
-  return res;
 }
 
 /**

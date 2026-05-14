@@ -8,8 +8,8 @@ export async function GET(req: NextRequest) {
 
   try {
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "15");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+    const limit = Math.min(Math.max(1, parseInt(searchParams.get("limit") || "15")), 100);
     const search = searchParams.get("search") || "";
     const skip = (page - 1) * limit;
 
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
           tipo: body.tipo || "GASTO_VARIOS",
           descripcion: body.descripcion || "",
           importe: importeNum,
-          formaPago: body.formaPago || "EFECTIVO",
+          formaPago: body.formaPago || "Efectivo",
           cajaId: body.cajaId,
           usuarioId: body.usuarioId,
           proveedorId: body.proveedorId || null,
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
           descripcion: body.descripcion || "Gasto",
           ingreso: 0,
           egreso: importeNum,
-          formaPago: body.formaPago || "EFECTIVO",
+          formaPago: body.formaPago || "Efectivo",
           gastoId: nuevoGasto.id,
         },
       });

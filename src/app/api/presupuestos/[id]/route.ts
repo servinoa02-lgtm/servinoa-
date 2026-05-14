@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { presupuestoService } from "@/services/presupuestoService";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { requireAuth } from "@/lib/requireAuth";
 import { calcularTotalConIVA } from "@/lib/constants";
 
@@ -73,22 +71,41 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
     } else {
       // Para otros cambios (RECHAZADO, cambio de facturaNumero, etc.)
-      await prisma.presupuesto.update({
-        where: { id },
-        data: {
-          ...(body.estado && { estado: body.estado }),
-          ...(body.estadoCobro && { estadoCobro: body.estadoCobro }),
-          ...(body.facturaNumero !== undefined && { facturaNumero: body.facturaNumero }),
-          ...(body.observaciones !== undefined && { observaciones: body.observaciones }),
-        },
-      });
 
-      // Si rechazado, cambiar OT también
+      // Si se está rechazando un presupuesto que estaba APROBADO, revertir el DEBE en CuentaCorriente
       if (body.estado === "RECHAZADO") {
-        const ppto = await prisma.presupuesto.findUnique({ where: { id }, select: { ordenId: true } });
-        if (ppto?.ordenId) {
-          await prisma.ordenTrabajo.update({ where: { id: ppto.ordenId }, data: { estado: "RECHAZADO" } });
-        }
+        const pptoActual = await prisma.presupuesto.findUnique({
+          where: { id },
+          select: { estado: true, ordenId: true },
+        });
+
+        await prisma.$transaction(async (tx) => {
+          if (pptoActual?.estado === "APROBADO") {
+            await tx.cuentaCorriente.deleteMany({ where: { presupuestoId: id, tipo: "DEBE" } });
+          }
+
+          await tx.presupuesto.update({
+            where: { id },
+            data: { estado: "RECHAZADO", estadoCobro: "PENDIENTE" },
+          });
+
+          if (pptoActual?.ordenId) {
+            await tx.ordenTrabajo.update({
+              where: { id: pptoActual.ordenId },
+              data: { estado: "RECHAZADO" },
+            });
+          }
+        });
+      } else {
+        await prisma.presupuesto.update({
+          where: { id },
+          data: {
+            ...(body.estado && { estado: body.estado }),
+            ...(body.estadoCobro && { estadoCobro: body.estadoCobro }),
+            ...(body.facturaNumero !== undefined && { facturaNumero: body.facturaNumero }),
+            ...(body.observaciones !== undefined && { observaciones: body.observaciones }),
+          },
+        });
       }
     }
 
@@ -118,8 +135,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  const session = await requireAuth(["ADMIN", "JEFE"]);
+  if (session instanceof NextResponse) return session;
 
   const { id } = await params;
   try {

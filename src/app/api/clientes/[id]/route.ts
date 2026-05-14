@@ -45,7 +45,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "Cliente no encontrado" }, { status: 404 });
     }
 
-    // Calcular totales (aplica IVA si corresponde)
+    // Calcular totales por presupuesto (para la vista de detalle)
     const presupuestosConTotal = cliente.presupuestos.map((p) => {
       const subtotal = p.items.reduce((sum, item) => sum + item.total, 0);
       const total = calcularTotalConIVA(subtotal, p.incluyeIva);
@@ -53,17 +53,19 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return { ...p, subtotal, total, cobrado, saldo: total - cobrado };
     });
 
-    const totalPresupuestado = presupuestosConTotal
-      .filter((p) => p.estado === "APROBADO")
-      .reduce((sum, p) => sum + p.total, 0);
-    const totalCobrado = cliente.cobranzas.reduce((sum, c) => sum + c.importe, 0);
-    const saldoPendiente = totalPresupuestado - totalCobrado;
+    // Saldo real desde CuentaCorriente (fuente de verdad del sistema)
+    const ccAgg = await prisma.cuentaCorriente.groupBy({
+      by: ["tipo"],
+      where: { clienteId: id },
+      _sum: { monto: true },
+    });
+    const totalDebe = ccAgg.find((g) => g.tipo === "DEBE")?._sum.monto || 0;
+    const totalHaber = ccAgg.find((g) => g.tipo === "HABER")?._sum.monto || 0;
+    const saldoPendiente = totalDebe - totalHaber;
 
     return NextResponse.json({
       ...cliente,
       presupuestos: presupuestosConTotal,
-      totalPresupuestado,
-      totalCobrado,
       saldoPendiente,
     });
   } catch (error) {

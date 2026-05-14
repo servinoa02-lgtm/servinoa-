@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireAuth } from "@/lib/requireAuth";
 import { prisma } from "@/lib/prisma";
 
 import { adjustDateForBusinessCycle } from "@/lib/businessCycle";
@@ -29,12 +28,8 @@ function getARPartsFromDate(d: Date) {
 }
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return NextResponse.json({ error: "no auth" }, { status: 401 });
-  const role = (session.user as any).rol;
-  if (!["ADMIN", "JEFE", "ADMINISTRACION"].includes(role)) {
-    return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  }
+  const session = await requireAuth(["ADMIN", "JEFE", "ADMINISTRACION"]);
+  if (session instanceof NextResponse) return session;
 
   const periodo = (req.nextUrl.searchParams.get("periodo") || "dia") as
     | "dia" | "mes" | "ano" | "total" | "custom" | "rango";
@@ -64,9 +59,22 @@ export async function GET(req: NextRequest) {
   };
 
   if (periodo === "total") {
+    const desde36meses = new Date();
+    desde36meses.setMonth(desde36meses.getMonth() - 35);
+    desde36meses.setDate(1);
+    desde36meses.setHours(0, 0, 0, 0);
+
     const [movs, ots] = await Promise.all([
-      prisma.movimientoCaja.findMany({ select: { fecha: true, ingreso: true, egreso: true }, orderBy: { fecha: 'asc' } }),
-      prisma.ordenTrabajo.findMany({ select: { fechaRecepcion: true }, orderBy: { fechaRecepcion: 'asc' } })
+      prisma.movimientoCaja.findMany({
+        where: { fecha: { gte: desde36meses } },
+        select: { fecha: true, ingreso: true, egreso: true },
+        orderBy: { fecha: 'asc' },
+      }),
+      prisma.ordenTrabajo.findMany({
+        where: { fechaRecepcion: { gte: desde36meses } },
+        select: { fechaRecepcion: true },
+        orderBy: { fechaRecepcion: 'asc' },
+      }),
     ]);
     
     if (movs.length === 0 && ots.length === 0) return NextResponse.json({ data: [], workshop: { chartData: [], topClientes: [] } });

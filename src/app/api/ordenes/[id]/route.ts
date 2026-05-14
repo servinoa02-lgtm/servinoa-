@@ -48,28 +48,40 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params;
   try {
     const body = await req.json();
-    const orden = await prisma.ordenTrabajo.update({
-      where: { id },
-      data: {
-        ...(body.estado && { estado: body.estado }),
-        ...(body.tecnicoId !== undefined && { tecnicoId: body.tecnicoId || null }),
-        ...(body.observaciones !== undefined && { observaciones: body.observaciones }),
-        ...(body.revisionTecnica !== undefined && { revisionTecnica: body.revisionTecnica }),
-        ...(body.fechaEntrega && { fechaEntrega: new Date(body.fechaEntrega) }),
-        ...(body.fechaEstimadaEntrega && { fechaEstimadaEntrega: new Date(body.fechaEstimadaEntrega) }),
-        ...(body.firmaCliente !== undefined && { firmaCliente: body.firmaCliente }),
-      },
-      include: {
-        cliente: { include: { empresa: true } },
-        tecnico: true,
-        creador: true,
-        maquina: true,
-        marca: true,
-        modelo: true,
-        presupuestos: { include: { items: true }, orderBy: { createdAt: "desc" } },
-        notas: { include: { usuario: true }, orderBy: { fecha: "desc" } },
-        fotos: true,
-      },
+    const orden = await prisma.$transaction(async (tx) => {
+      // Si cambia el estado, registrar en historial
+      if (body.estado) {
+        const actual = await tx.ordenTrabajo.findUnique({ where: { id }, select: { estado: true } });
+        if (actual && actual.estado !== body.estado) {
+          await tx.historialOT.create({
+            data: { ordenId: id, estadoAnterior: actual.estado, estadoNuevo: body.estado },
+          });
+        }
+      }
+
+      return tx.ordenTrabajo.update({
+        where: { id },
+        data: {
+          ...(body.estado && { estado: body.estado }),
+          ...(body.tecnicoId !== undefined && { tecnicoId: body.tecnicoId || null }),
+          ...(body.observaciones !== undefined && { observaciones: body.observaciones }),
+          ...(body.revisionTecnica !== undefined && { revisionTecnica: body.revisionTecnica }),
+          ...(body.fechaEntrega && { fechaEntrega: new Date(body.fechaEntrega) }),
+          ...(body.fechaEstimadaEntrega && { fechaEstimadaEntrega: new Date(body.fechaEstimadaEntrega) }),
+          ...(body.firmaCliente !== undefined && { firmaCliente: body.firmaCliente }),
+        },
+        include: {
+          cliente: { include: { empresa: true } },
+          tecnico: true,
+          creador: true,
+          maquina: true,
+          marca: true,
+          modelo: true,
+          presupuestos: { include: { items: true }, orderBy: { createdAt: "desc" } },
+          notas: { include: { usuario: true }, orderBy: { fecha: "desc" } },
+          fotos: true,
+        },
+      });
     });
     return NextResponse.json(orden);
   } catch (error) {

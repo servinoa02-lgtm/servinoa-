@@ -1,41 +1,26 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/requireAuth";
+import { whatsappService } from "@/lib/whatsapp";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const token = process.env.WHATSAPP_TOKEN;
-  const phoneId = process.env.WHATSAPP_PHONE_ID;
+export async function POST(req: NextRequest) {
+  const session = await requireAuth(["ADMIN", "JEFE"]);
+  if (session instanceof NextResponse) return session;
 
-  // Listar todas las keys que contengan "WHATSAPP" para detectar nombres incorrectos
-  const waKeys = Object.keys(process.env).filter(k => k.includes("WHATSAPP") || k.includes("whatsapp"));
-
-  if (!token || !phoneId) {
-    return NextResponse.json({
-      ok: false,
-      token: token ? "presente" : "FALTA",
-      phoneId: phoneId ? "presente" : "FALTA",
-      keysEncontradas: waKeys,
-    });
+  const { telefono } = await req.json();
+  if (!telefono || typeof telefono !== "string" || !telefono.trim()) {
+    return NextResponse.json({ error: "Se requiere el campo telefono" }, { status: 400 });
   }
 
-  try {
-    const res = await fetch(`https://graph.facebook.com/v19.0/${phoneId}/messages`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to: "543872239277",
-        type: "text",
-        text: { body: "🔔 ServiNOA — Test desde producción" },
-      }),
-    });
-
-    const data = await res.json();
-    return NextResponse.json({ ok: res.ok, status: res.status, data });
-  } catch (error: any) {
-    return NextResponse.json({ ok: false, error: error.message });
+  if (!whatsappService.estaConfigurado()) {
+    return NextResponse.json({ ok: false, error: "WhatsApp no está configurado (faltan variables de entorno)" }, { status: 503 });
   }
+
+  const ok = await whatsappService.enviarMensaje(
+    telefono.trim(),
+    "🔔 *ServiNOA* — Test de configuración exitoso."
+  );
+
+  return NextResponse.json({ ok });
 }

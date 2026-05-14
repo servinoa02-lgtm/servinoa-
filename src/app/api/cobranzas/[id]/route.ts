@@ -13,7 +13,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       // Guardar info antes de eliminar
       const cobranza = await tx.cobranza.findUnique({
         where: { id },
-        select: { presupuestoId: true, importe: true },
+        select: { presupuestoId: true, importe: true, chequeId: true },
       });
       if (!cobranza) throw new Error("Cobranza no encontrada");
 
@@ -21,6 +21,11 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       await tx.cuentaCorriente.deleteMany({ where: { cobranzaId: id } });
       await tx.movimientoCaja.deleteMany({ where: { cobranzaId: id } });
       await tx.cobranza.delete({ where: { id } });
+
+      // Si la cobranza tenía cheque asociado, eliminarlo también
+      if (cobranza.chequeId) {
+        await tx.cheque.delete({ where: { id: cobranza.chequeId } });
+      }
 
       // Recalcular estadoCobro del presupuesto asociado
       if (cobranza.presupuestoId) {

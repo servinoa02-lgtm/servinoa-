@@ -1,19 +1,24 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/requireAuth";
 import { tareaService } from "@/services/tareaService";
 
-export async function GET(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function GET(req: NextRequest) {
+  const session = await requireAuth();
+  if (session instanceof NextResponse) return session;
 
-  const tareas = await tareaService.getTodas(true);
+  const user = session.user as { id?: string; rol?: string };
+  const rolAdmin = ["ADMIN", "JEFE"].includes(user.rol || "");
+
+  const tareas = rolAdmin
+    ? await tareaService.getTodas(true)
+    : await tareaService.getPorUsuario(user.id!);
+
   return NextResponse.json(tareas);
 }
 
-export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function POST(req: NextRequest) {
+  const session = await requireAuth();
+  if (session instanceof NextResponse) return session;
 
   try {
     const data = await req.json();

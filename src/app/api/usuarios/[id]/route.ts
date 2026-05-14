@@ -28,6 +28,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (nombre !== undefined) data.nombre = nombre;
     if (email !== undefined) data.email = email;
     if (rol !== undefined && ROLES_VALIDOS.includes(rol)) data.rol = rol;
+    if (activo !== undefined) data.activo = Boolean(activo);
     if (password) {
       data.password = await bcrypt.hash(password, 10);
     }

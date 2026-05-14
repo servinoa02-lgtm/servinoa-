@@ -10,6 +10,13 @@ export async function POST(req: Request) {
   try {
     const { nota } = await req.json();
 
+    if (nota !== null && nota !== undefined && typeof nota !== "string") {
+      return NextResponse.json({ error: "Formato de nota inválido" }, { status: 400 });
+    }
+    if (nota && nota.length > 1000) {
+      return NextResponse.json({ error: "La nota no puede superar los 1000 caracteres" }, { status: 400 });
+    }
+
     const config = await prisma.configuracion.upsert({
       where: { clave: "NOTA_GLOBAL" },
       update: { valor: nota },

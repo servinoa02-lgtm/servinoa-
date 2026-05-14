@@ -16,7 +16,10 @@ export async function POST(req: Request) {
 
   try {
     const { nombre } = await req.json();
-    const newAcc = await prisma.accesorioCatalogo.create({ data: { nombre } });
+    if (!nombre || typeof nombre !== "string" || !nombre.trim()) {
+      return NextResponse.json({ error: "El nombre es obligatorio" }, { status: 400 });
+    }
+    const newAcc = await prisma.accesorioCatalogo.create({ data: { nombre: nombre.trim() } });
     return NextResponse.json(newAcc);
   } catch (error: any) {
     if (error.code === 'P2002') return NextResponse.json({ error: "Ya existe." }, { status: 400 });

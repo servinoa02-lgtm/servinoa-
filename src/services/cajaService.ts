@@ -6,32 +6,26 @@ export const cajaService = {
    * El saldo se calcula como SUM(ingresos) - SUM(egresos) en base a la fecha de filtro.
    */
   async getSaldosCajas(hastaFecha?: Date) {
-    const cajas = await prisma.caja.findMany();
-    
-    const saldos = await Promise.all(cajas.map(async (caja) => {
-      const movimientos = await prisma.movimientoCaja.aggregate({
-        where: {
-          cajaId: caja.id,
-          ...(hastaFecha ? { fecha: { lte: hastaFecha } } : {})
-        },
-        _sum: {
-          ingreso: true,
-          egreso: true,
-        }
-      });
+    const [cajas, grouped] = await Promise.all([
+      prisma.caja.findMany(),
+      prisma.movimientoCaja.groupBy({
+        by: ["cajaId"],
+        where: hastaFecha ? { fecha: { lte: hastaFecha } } : undefined,
+        _sum: { ingreso: true, egreso: true },
+      }),
+    ]);
 
-      const ingreso = movimientos._sum.ingreso || 0;
-      const egreso = movimientos._sum.egreso || 0;
-
+    return cajas.map((caja) => {
+      const g = grouped.find((r) => r.cajaId === caja.id);
+      const ingreso = g?._sum.ingreso || 0;
+      const egreso = g?._sum.egreso || 0;
       return {
         ...caja,
         saldo: ingreso - egreso,
         ingresosTotales: ingreso,
         egresosTotales: egreso,
       };
-    }));
-
-    return saldos;
+    });
   },
 
   /**
