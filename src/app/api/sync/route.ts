@@ -152,21 +152,29 @@ export async function POST() {
       usuariosDb.map(u => [u.nombre.toLowerCase().trim(), u.id])
     );
 
-    // FIX 1: Mapa de Empresas desde la hoja Empresa (headers flexibles)
+    // FIX 1: Mapa de Empresas desde la hoja Empresa
+    // Acceso posicional porque la hoja puede tener headers con texto concatenado (ej: "IDEmpresa EM-0001 EM-0002...")
     const empresaHeaders = empresaRows[0] ? Object.keys(empresaRows[0]) : [];
-    const colEmpresaId   = empresaHeaders.find(h => /^id.?empresa$/i.test(h.trim())) || "IDEmpresa";
-    const colEmpresaNom  = empresaHeaders.find(h => /^nombre.?empresa$/i.test(h.trim()) || /^nombre$/i.test(h.trim())) || "NombreEmpresa";
 
-    const empresaSheetMap = Object.fromEntries(
-      empresaRows
-        .filter(r => r[colEmpresaId] && r[colEmpresaNom])
-        .map(r => [r[colEmpresaId].trim(), {
-          nombre:    r[colEmpresaNom].trim(),
-          cuit:      r.Cuit      || r.CUIT      || null,
-          domicilio: r.Domicilio || r.domicilio || null,
-          telefono:  r.Telefono  || r.telefono  || null,
-        }])
-    );
+    // Intentar acceso por nombre primero; si los headers están "contaminados" usar posición
+    const colEmpresaId  = empresaHeaders.find(h => /^id.?empresa$/i.test(h.trim()));
+    const colEmpresaNom = empresaHeaders.find(h => /^nombre.?empresa$/i.test(h.trim()) || /^nombre$/i.test(h.trim()));
+    const usePositional = !colEmpresaId || !colEmpresaNom;
+
+    type EmpresaDatos = { nombre: string; cuit: string | null; domicilio: string | null; telefono: string | null };
+    const empresaSheetMap: Record<string, EmpresaDatos> = {};
+    for (const r of empresaRows) {
+      const vals = Object.values(r) as string[];
+      const id     = (usePositional ? vals[0] : r[colEmpresaId!])?.trim();
+      const nombre = (usePositional ? vals[1] : r[colEmpresaNom!])?.trim();
+      if (!id || !nombre) continue;
+      empresaSheetMap[id] = {
+        nombre,
+        cuit:      ((usePositional ? vals[2] : r.Cuit || r.CUIT) || "").trim() || null,
+        domicilio: ((usePositional ? vals[3] : r.Domicilio || r.domicilio) || "").trim() || null,
+        telefono:  ((usePositional ? vals[4] : r.Telefono || r.telefono) || "").trim() || null,
+      };
+    }
 
     function mapEstadoOT(str: string) {
       const s = (str || '').toLowerCase().trim();
@@ -600,14 +608,17 @@ export async function POST() {
       ok: true,
       duracion: `${elapsed}s`,
       debug_empresas: {
-        filas_en_hoja:    empresaRows.length,
-        col_id_detectada: colEmpresaId,
-        col_nom_detectada: colEmpresaNom,
+        filas_en_hoja:       empresaRows.length,
+        acceso_posicional:   usePositional,
+        col_id_detectada:    colEmpresaId || "(posicional: vals[0])",
+        col_nom_detectada:   colEmpresaNom || "(posicional: vals[1])",
         col_cliente_empresa: colClienteEmpresa,
-        ids_en_clientes:  empresaIdsReferenciados.size,
-        ids_matcheados:   Object.keys(empresaIdMap).length,
-        empresas_creadas: empresasEnDb.length,
-        headers_empresa_sheet: empresaHeaders,
+        ids_en_sheet:        Object.keys(empresaSheetMap).length,
+        ids_en_clientes:     empresaIdsReferenciados.size,
+        ids_matcheados:      Object.keys(empresaIdMap).length,
+        empresas_creadas:    empresasEnDb.length,
+        muestra_ids_sheet:   Object.keys(empresaSheetMap).slice(0, 5),
+        muestra_ids_clientes: Array.from(empresaIdsReferenciados).slice(0, 5),
       },
       totales: {
         clientes:        clientesDb.length,
