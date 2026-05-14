@@ -152,15 +152,19 @@ export async function POST() {
       usuariosDb.map(u => [u.nombre.toLowerCase().trim(), u.id])
     );
 
-    // FIX 1: Mapa de Empresas desde la hoja Empresa
+    // FIX 1: Mapa de Empresas desde la hoja Empresa (headers flexibles)
+    const empresaHeaders = empresaRows[0] ? Object.keys(empresaRows[0]) : [];
+    const colEmpresaId   = empresaHeaders.find(h => /^id.?empresa$/i.test(h.trim())) || "IDEmpresa";
+    const colEmpresaNom  = empresaHeaders.find(h => /^nombre.?empresa$/i.test(h.trim()) || /^nombre$/i.test(h.trim())) || "NombreEmpresa";
+
     const empresaSheetMap = Object.fromEntries(
       empresaRows
-        .filter(r => r.IDEmpresa && r.NombreEmpresa)
-        .map(r => [r.IDEmpresa, {
-          nombre:    r.NombreEmpresa.trim(),
-          cuit:      r.Cuit      || null,
-          domicilio: r.Domicilio || null,
-          telefono:  r.Telefono  || null,
+        .filter(r => r[colEmpresaId] && r[colEmpresaNom])
+        .map(r => [r[colEmpresaId].trim(), {
+          nombre:    r[colEmpresaNom].trim(),
+          cuit:      r.Cuit      || r.CUIT      || null,
+          domicilio: r.Domicilio || r.domicilio || null,
+          telefono:  r.Telefono  || r.telefono  || null,
         }])
     );
 
@@ -203,8 +207,11 @@ export async function POST() {
     await prisma.empresa.deleteMany();
 
     // ── FIX 1: Upsert de Empresas referenciadas por clientes ─────────────
+    const clienteHeaders = clienteRows[0] ? Object.keys(clienteRows[0]) : [];
+    const colClienteEmpresa = clienteHeaders.find(h => /^empresa/i.test(h.trim()) || /^id.?empresa$/i.test(h.trim())) || "Empresa";
+
     const empresaIdsReferenciados = new Set(
-      clienteRows.filter(r => r.Empresa).map(r => r.Empresa)
+      clienteRows.filter(r => r[colClienteEmpresa]).map(r => r[colClienteEmpresa].trim())
     );
 
     // Recopilar datos únicos por nombre de empresa (evitar duplicados)
@@ -245,7 +252,7 @@ export async function POST() {
         iva:         r.IVA       || "NO incluyen IVA",
         codigoExcel: r.IDCLIENTE,
         // FIX 1: linkear empresa si existe en el mapa
-        empresaId:   r.Empresa ? (empresaIdMap[r.Empresa] ?? null) : null,
+        empresaId:   r[colClienteEmpresa] ? (empresaIdMap[r[colClienteEmpresa].trim()] ?? null) : null,
       })),
     });
     const clientesDb = await prisma.cliente.findMany({ select: { id: true, codigoExcel: true } });
@@ -592,6 +599,16 @@ export async function POST() {
     return NextResponse.json({
       ok: true,
       duracion: `${elapsed}s`,
+      debug_empresas: {
+        filas_en_hoja:    empresaRows.length,
+        col_id_detectada: colEmpresaId,
+        col_nom_detectada: colEmpresaNom,
+        col_cliente_empresa: colClienteEmpresa,
+        ids_en_clientes:  empresaIdsReferenciados.size,
+        ids_matcheados:   Object.keys(empresaIdMap).length,
+        empresas_creadas: empresasEnDb.length,
+        headers_empresa_sheet: empresaHeaders,
+      },
       totales: {
         clientes:        clientesDb.length,
         empresas:        empresasEnDb.length,
