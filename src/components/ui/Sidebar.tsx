@@ -3,18 +3,19 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { 
-  BarChart3, 
-  Wrench, 
-  FileText, 
-  Wallet, 
-  Users, 
-  Settings, 
-  CheckSquare, 
+import {
+  BarChart3,
+  Wrench,
+  FileText,
+  Wallet,
+  Users,
+  Settings,
+  CheckSquare,
   ChevronLeft,
   ChevronRight,
   Menu,
-  X
+  X,
+  MapPin
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { LogoutButton } from "./LogoutButton";
@@ -22,6 +23,7 @@ import { LogoutButton } from "./LogoutButton";
 const menuItems = [
   { name: "Dashboard", icon: <BarChart3 size={20} />, href: "/dashboard", activeFor: ["/dashboard"] },
   { name: "Taller (OT)", icon: <Wrench size={20} />, href: "/ordenes", activeFor: ["/ordenes"] },
+  { name: "Órdenes de Servicio", icon: <MapPin size={20} />, href: "/ordenes-servicio", activeFor: ["/ordenes-servicio"] },
   { name: "Presupuestos", icon: <FileText size={20} />, href: "/presupuestos", activeFor: ["/presupuestos"] },
   { name: "Finanzas", icon: <Wallet size={20} />, href: "/finanzas", activeFor: ["/finanzas", "/cobranzas", "/gastos", "/cajas", "/cheques"] },
   { name: "Clientes", icon: <Users size={20} />, href: "/clientes", activeFor: ["/clientes"] },
@@ -57,7 +59,7 @@ export function Sidebar() {
   // Filtrar items según rol (mientras carga no mostramos nada para evitar saltos)
   const filteredItems = status === "loading" ? [] : menuItems.filter(item => {
     if (userRole === "TECNICO") {
-      return ["Dashboard", "Taller (OT)", "Tareas"].includes(item.name);
+      return ["Dashboard", "Taller (OT)", "Órdenes de Servicio", "Tareas"].includes(item.name);
     }
     if (userRole === "ADMINISTRACION") {
       return item.name !== "Configuración";
