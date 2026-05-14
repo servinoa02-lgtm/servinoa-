@@ -3,7 +3,6 @@
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, Mail, ChevronRight, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -24,7 +23,7 @@ export default function LoginPage() {
     });
 
     if (result?.error) {
-      setError("Credenciales inválidas");
+      setError("Email o contraseña incorrectos");
       setLoading(false);
     } else {
       router.push("/dashboard");
@@ -32,80 +31,29 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 font-sans">
-      <div className="w-full max-w-md px-6">
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-xl p-10 relative overflow-hidden">
-          {/* Top accent bar */}
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-red-600" />
-          
-          <div className="text-center mb-10">
-            <h1 className="text-4xl font-bold text-gray-900 tracking-tight">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full max-w-md">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">
               Servi<span className="text-red-600">NOA</span>
             </h1>
-            <p className="text-gray-500 text-sm mt-2 font-medium">Ingeniería Operativa</p>
+            <p className="text-gray-500 mt-2">Soluciones de Ingeniería</p>
           </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">
-                Usuario
-              </label>
-              <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-red-600 transition-colors" size={18} />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-600/10 focus:border-red-600 transition-all font-medium"
-                  placeholder="ejemplo@servinoa.com"
-                  required
-                />
-              </div>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none" placeholder="tu@servinoa.com" required />
             </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">
-                Contraseña
-              </label>
-              <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-red-600 transition-colors" size={18} />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-600/10 focus:border-red-600 transition-all font-medium"
-                  placeholder="••••••••"
-                  required
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none" placeholder="••••••••" required />
             </div>
-
-            {error && (
-              <div className="bg-red-50 border border-red-100 p-4 rounded-xl">
-                <p className="text-red-600 text-xs font-bold text-center">{error}</p>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-4 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-red-600/20"
-            >
-              {loading ? (
-                <Loader2 className="animate-spin" size={20} />
-              ) : (
-                <>
-                  Ingresar al Sistema <ChevronRight size={18} />
-                </>
-              )}
+            {error && <p className="text-red-600 text-sm text-center">{error}</p>}
+            <button type="submit" disabled={loading} className="w-full py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50">
+              {loading ? "Ingresando..." : "Ingresar"}
             </button>
           </form>
-
-          <div className="mt-10 pt-6 border-t border-gray-100 text-center">
-            <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">
-              © {new Date().getFullYear()} ServiNOA — v3.0.0
-            </p>
-          </div>
         </div>
       </div>
     </div>

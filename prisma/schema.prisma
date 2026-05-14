@@ -19,16 +19,18 @@ model Usuario {
   telefono         String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
-  cajaAsignada     Caja?          @relation("CajaUsuario")
-  cobranzas        Cobranza[]
-  gastos           Gasto[]
-  notas            Nota[]
-  ordenesCreadas   OrdenTrabajo[] @relation("CreadorOT")
-  ordenesAsignadas OrdenTrabajo[] @relation("TecnicoOT")
-  presupuestos     Presupuesto[]
-  servicios        Servicio[]
-  tareas           Tarea[]
-  ventas           Venta[]
+  cajaAsignada             Caja?           @relation("CajaUsuario")
+  cobranzas                Cobranza[]
+  gastos                   Gasto[]
+  notas                    Nota[]
+  ordenesCreadas           OrdenTrabajo[]  @relation("CreadorOT")
+  ordenesAsignadas         OrdenTrabajo[]  @relation("TecnicoOT")
+  ordenesServicioCreadas   OrdenServicio[] @relation("CreadorOS")
+  ordenesServicioAsignadas OrdenServicio[] @relation("TecnicoOS")
+  presupuestos             Presupuesto[]
+  servicios                Servicio[]
+  tareas                   Tarea[]
+  ventas                   Venta[]
 }
 
 model Empresa {
@@ -59,6 +61,7 @@ model Cliente {
   cobranzas       Cobranza[]
   cuentaCorriente CuentaCorriente[]
   ordenes         OrdenTrabajo[]
+  ordenesServicio OrdenServicio[]
   presupuestos    Presupuesto[]
   servicios       Servicio[]
   ventas          Venta[]
@@ -204,17 +207,20 @@ model Presupuesto {
   updatedAt       DateTime          @updatedAt
   clienteId       String
   ordenId         String?
+  ordenServicioId String?
   usuarioId       String
   cobranzas       Cobranza[]
   cuentaCorriente CuentaCorriente[]
   items           ItemPresupuesto[]
   cliente         Cliente           @relation(fields: [clienteId], references: [id])
   orden           OrdenTrabajo?     @relation(fields: [ordenId], references: [id])
+  ordenServicio   OrdenServicio?    @relation(fields: [ordenServicioId], references: [id])
   usuario         Usuario           @relation(fields: [usuarioId], references: [id])
 
   @@index([clienteId])
   @@index([usuarioId])
   @@index([ordenId])
+  @@index([ordenServicioId])
 }
 
 model ItemPresupuesto {
@@ -489,6 +495,62 @@ model ColaMensajes {
 model Configuracion {
   clave String @id
   valor String
+}
+
+// ==========================================
+// ÓRDENES DE SERVICIO (CAMPO)
+// ==========================================
+
+model OrdenServicio {
+  id              String    @id @default(cuid())
+  numero          Int       @unique @default(autoincrement())
+  fecha           DateTime  @default(now())
+  fechaProgramada DateTime?
+  estado          EstadoOS  @default(PENDIENTE)
+  descripcion     String?
+  ubicacion       String?
+  observaciones   String?
+  horasCampo      Float     @default(0)
+  kilometros      Float     @default(0)
+  imprevistos     Float     @default(0)
+  valorHora       Float     @default(55)
+  valorKm         Float     @default(1.7)
+  iva             Float     @default(0.21)
+  tipoCambio      Float     @default(1420)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  clienteId       String
+  tecnicoId       String?
+  creadorId       String
+  cliente         Cliente   @relation(fields: [clienteId], references: [id])
+  tecnico         Usuario?  @relation("TecnicoOS", fields: [tecnicoId], references: [id])
+  creador         Usuario   @relation("CreadorOS", fields: [creadorId], references: [id])
+  presupuestos    Presupuesto[]
+  historial       HistorialOS[]
+
+  @@index([clienteId])
+  @@index([creadorId])
+  @@index([tecnicoId])
+}
+
+model HistorialOS {
+  id             String    @id @default(cuid())
+  fecha          DateTime  @default(now())
+  estadoAnterior EstadoOS?
+  estadoNuevo    EstadoOS
+  comentario     String?
+  ordenId        String
+  orden          OrdenServicio @relation(fields: [ordenId], references: [id])
+
+  @@index([ordenId])
+}
+
+enum EstadoOS {
+  PENDIENTE
+  PROGRAMADO
+  EN_CURSO
+  REALIZADO
+  CANCELADO
 }
 
 enum Rol {

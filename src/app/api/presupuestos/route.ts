@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { clienteId, ordenId, usuarioId, items, observaciones, incluyeIva, formaPago, validezDias, moneda } = body;
+    const { clienteId, ordenId, ordenServicioId, usuarioId, items, observaciones, incluyeIva, formaPago, validezDias, moneda } = body;
 
     // ─── Validaciones ───
     if (!clienteId) {
@@ -137,6 +137,7 @@ export async function POST(req: NextRequest) {
         data: {
           clienteId,
           ordenId: ordenId || null,
+          ordenServicioId: ordenServicioId || null,
           usuarioId,
           observaciones: observaciones || null,
           incluyeIva: incluyeIva ?? true,

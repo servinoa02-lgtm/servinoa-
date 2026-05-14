@@ -268,6 +268,15 @@ export default async function DashboardPage() {
               </div>
             ))}
           </div>
+          <div className="mt-4 pt-3 border-t border-gray-100">
+            <Link
+              href="/ordenes-servicio"
+              className="flex items-center justify-between px-3 py-2 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-all group"
+            >
+              <span className="text-xs font-bold text-red-700 uppercase tracking-tight">Órdenes de Servicio (campo)</span>
+              <span className="text-[10px] font-black text-red-400 group-hover:text-red-600">→</span>
+            </Link>
+          </div>
         </Card>
 
         {canSeeFinances && (
