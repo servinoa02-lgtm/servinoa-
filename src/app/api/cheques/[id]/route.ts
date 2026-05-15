@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireAuth(["ADMIN", "JEFE", "ADMINISTRACION", "CAJA"]);
+  const session = await requireAuth(["ADMIN", "JEFE", "ADMINISTRACION"]);
   if (session instanceof NextResponse) return session;
 
   const { id } = await params;
@@ -39,7 +39,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
   const { id } = await params;
   try {
-    const cobranza = await prisma.cobranza.findUnique({ where: { chequeId: id } });
+    const cobranza = await prisma.cobranza.findFirst({ where: { chequeId: id } });
     if (cobranza) {
        return NextResponse.json({ error: "Este cheque pertenece a una Cobranza. Debe eliminar la cobranza para deshacer el pago." }, { status: 400 });
     }
