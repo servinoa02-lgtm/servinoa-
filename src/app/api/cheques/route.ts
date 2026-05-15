@@ -4,7 +4,7 @@ import { requireAuth } from "@/lib/requireAuth";
 
 
 export async function GET(req: NextRequest) {
-  const sesion = await requireAuth();
+  const sesion = await requireAuth(["ADMIN", "JEFE", "ADMINISTRACION", "CAJA"]);
   if (sesion instanceof NextResponse) return sesion;
 
   try {

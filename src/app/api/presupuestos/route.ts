@@ -28,7 +28,9 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    const [presupuestos, totalCount, allFiltered] = await Promise.all([
+    // Para el resumen global usamos aggregates por separado según incluyeIva,
+    // evitando cargar todos los registros en memoria (A-2: performance fix)
+    const [presupuestos, totalCount, itemsConIva, itemsSinIva, cobradoAgg] = await Promise.all([
       prisma.presupuesto.findMany({
         where,
         include: {
@@ -43,26 +45,27 @@ export async function GET(req: NextRequest) {
         take: limit,
       }),
       prisma.presupuesto.count({ where }),
-      prisma.presupuesto.findMany({
-        where,
-        select: {
-          incluyeIva: true,
-          items: { select: { total: true } },
-          cobranzas: { select: { importe: true } }
-        }
-      })
+      // Suma items de presupuestos CON IVA
+      prisma.itemPresupuesto.aggregate({
+        where: { presupuesto: { ...where, incluyeIva: true } },
+        _sum: { total: true },
+      }),
+      // Suma items de presupuestos SIN IVA
+      prisma.itemPresupuesto.aggregate({
+        where: { presupuesto: { ...where, incluyeIva: false } },
+        _sum: { total: true },
+      }),
+      // Suma de cobrado
+      prisma.cobranza.aggregate({
+        where: { presupuesto: where },
+        _sum: { importe: true },
+      }),
     ]);
 
-    // Resumen global del filtro
-    let globalTotal = 0;
-    let globalCobrado = 0;
-    allFiltered.forEach(p => {
-      const subtotal = p.items.reduce((sum, item) => sum + item.total, 0);
-      const total = calcularTotalConIVA(subtotal, p.incluyeIva);
-      const cobrado = p.cobranzas.reduce((sum, c) => sum + c.importe, 0);
-      globalTotal += total;
-      globalCobrado += cobrado;
-    });
+    const globalTotal =
+      calcularTotalConIVA(itemsConIva._sum.total || 0, true) +
+      calcularTotalConIVA(itemsSinIva._sum.total || 0, false);
+    const globalCobrado = cobradoAgg._sum.importe || 0;
 
     const data = presupuestos.map((p) => {
       const subtotal = p.items.reduce((sum, item) => sum + item.total, 0);

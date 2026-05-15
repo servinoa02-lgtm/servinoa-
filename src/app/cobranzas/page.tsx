@@ -9,7 +9,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { formatFecha, hoyISO } from "@/lib/dateUtils";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { formatoService } from "@/services/formatoService";
-import { formatMoney } from "@/lib/constants";
+import { formatMoney, FORMAS_PAGO } from "@/lib/constants";
 import { useDebounce } from "@/hooks/useDebounce";
 
 interface Cobranza {
@@ -23,7 +23,6 @@ interface Cliente { id: string; nombre: string; empresa?: { nombre: string } | n
 interface Presupuesto { id: string; numero: number; total: number; cobrado: number; saldo: number; clienteId?: string; estado?: string; }
 interface Caja { id: string; nombre: string; }
 
-const FORMAS_PAGO = ["Efectivo", "Transferencia", "Cheques", "Débito", "Mercado Pago", "Otro"];
 
 function CobranzasContent() {
   const { data: session, status } = useSession();
@@ -123,13 +122,21 @@ function CobranzasContent() {
     }
   }, [pptoIdParam, status]);
 
-  // Cargar presupuestos del cliente seleccionado
+  // Cargar presupuestos del cliente seleccionado usando el endpoint de detalle del cliente
+  // (evita cargar todos los presupuestos del sistema y filtrar en el cliente)
   useEffect(() => {
     if (clienteId && tipo === "PRESUPUESTO") {
-      fetch("/api/presupuestos").then(r => r.json()).then((d: any) => {
-        const list = Array.isArray(d) ? d : (d.data || []);
-        setPresupuestos(list.filter((p: any) => p.clienteId === clienteId && p.estado === "APROBADO" && p.saldo > 0));
-      });
+      fetch(`/api/clientes/${clienteId}`)
+        .then(r => r.json())
+        .then((d: any) => {
+          const lista = (d.presupuestos || []).filter(
+            (p: any) => p.estado === "APROBADO" && p.saldo > 0.01
+          );
+          setPresupuestos(lista);
+        })
+        .catch(() => setPresupuestos([]));
+    } else if (!clienteId) {
+      setPresupuestos([]);
     }
   }, [clienteId, tipo]);
 
@@ -173,7 +180,8 @@ function CobranzasContent() {
       await cargarCobranzas();
       if (pptoIdParam) router.push("/cobranzas");
     } else {
-      setErrorForm("Error al registrar el cobro");
+      const errData = await res.json().catch(() => ({}));
+      setErrorForm(errData.error || "Error al registrar el cobro");
     }
     setGuardando(false);
   };

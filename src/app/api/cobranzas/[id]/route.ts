@@ -4,7 +4,7 @@ import { requireAuth } from "@/lib/requireAuth";
 import { calcularTotalConIVA } from "@/lib/constants";
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const sesion = await requireAuth(["ADMIN", "CAJA"]);
+  const sesion = await requireAuth(["ADMIN", "JEFE"]);
   if (sesion instanceof NextResponse) return sesion;
 
   const { id } = await params;
@@ -22,9 +22,18 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       await tx.movimientoCaja.deleteMany({ where: { cobranzaId: id } });
       await tx.cobranza.delete({ where: { id } });
 
-      // Si la cobranza tenía cheque asociado, eliminarlo también
+      // Si la cobranza tenía cheque asociado, eliminarlo también (A MENOS QUE ESTÉ RECHAZADO)
       if (cobranza.chequeId) {
-        await tx.cheque.delete({ where: { id: cobranza.chequeId } });
+        const cheque = await tx.cheque.findUnique({ where: { id: cobranza.chequeId } });
+        if (cheque?.estado === "RECHAZADO") {
+           // Conservar el cheque por historial, pero actualizar su descripción
+           await tx.cheque.update({
+             where: { id: cobranza.chequeId },
+             data: { descripcion: `${cheque.descripcion || ''} (Cobranza Anulada)` }
+           });
+        } else {
+           await tx.cheque.delete({ where: { id: cobranza.chequeId } });
+        }
       }
 
       // Recalcular estadoCobro del presupuesto asociado
@@ -43,7 +52,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
           const estadoCobro =
             cobrado <= 0
               ? "COBRO_PENDIENTE"
-              : cobrado >= total
+              : cobrado >= total - 0.02
               ? "COBRADO"
               : "PARCIAL";
           await tx.presupuesto.update({

@@ -101,6 +101,8 @@ export default function CajasPage() {
                   </div>
                   {esRetencion
                     ? <span className="text-[8px] font-black text-gray-400 border border-gray-300 px-1.5 py-0.5 rounded uppercase tracking-wider">excluida</span>
+                    : caja.saldo < 0
+                    ? <span className="text-[8px] font-black text-red-600 border border-red-300 bg-red-50 px-1.5 py-0.5 rounded uppercase tracking-wider">⚠ negativo</span>
                     : <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-lg shadow-emerald-500/20" />
                   }
                 </div>

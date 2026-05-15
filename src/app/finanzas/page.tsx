@@ -211,15 +211,19 @@ export default function FinanzasPage() {
   useEffect(() => { cargar(); }, [cargar]);
   useAutoRefresh(() => cargar(true));
 
-  // Presupuestos del cliente seleccionado
+  // Presupuestos del cliente seleccionado — se carga el detalle del cliente
+  // para evitar depender de la paginación de /api/presupuestos (fix F-D1)
   useEffect(() => {
     if (cobroClienteId && cobroTipo === "PRESUPUESTO") {
-      fetch("/api/presupuestos")
+      fetch(`/api/clientes/${cobroClienteId}`)
         .then(r => r.json())
-        .then((res: any) => {
-          const d = res.data || res;
-          setPptosDeCiente(d.filter((p: any) => p.clienteId === cobroClienteId && p.estado === "APROBADO" && p.saldo > 0));
-        });
+        .then((d: any) => {
+          const lista = (d.presupuestos || []).filter(
+            (p: any) => p.estado === "APROBADO" && p.saldo > 0.01
+          );
+          setPptosDeCiente(lista);
+        })
+        .catch(() => setPptosDeCiente([]));
     } else {
       setPptosDeCiente([]);
     }
@@ -281,7 +285,8 @@ export default function FinanzasPage() {
     if (res.ok) {
       setMostrarCobro(false); resetCobro(); await cargar();
     } else {
-      setErrCobro("Error al registrar el cobro");
+      const errData = await res.json().catch(() => ({}));
+      setErrCobro(errData.error || "Error al registrar el cobro");
     }
     setGuardandoCobro(false);
   };

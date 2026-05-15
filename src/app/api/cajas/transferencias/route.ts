@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 
 export async function GET() {
-  const session = await requireAuth();
+  const session = await requireAuth(["ADMIN", "JEFE", "ADMINISTRACION"]);
   if (session instanceof NextResponse) return session;
 
   try {
@@ -75,6 +75,7 @@ export async function POST(req: NextRequest) {
           ingreso: 0,
           egreso: montoNum,
           formaPago: formaPagoOrigen || "Efectivo",
+          transferenciaId: nuevaTransferencia.id,
         },
       });
 
@@ -86,6 +87,7 @@ export async function POST(req: NextRequest) {
           ingreso: montoNum,
           egreso: 0,
           formaPago: formaPagoDestino || "Efectivo",
+          transferenciaId: nuevaTransferencia.id,
         },
       });
 

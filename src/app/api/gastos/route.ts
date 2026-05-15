@@ -13,6 +13,8 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get("search") || "";
     const skip = (page - 1) * limit;
 
+    const tipoFilter = searchParams.get("tipo");
+
     const where: any = {};
     if (search) {
       where.OR = [
@@ -20,8 +22,11 @@ export async function GET(req: NextRequest) {
         { proveedor: { nombre: { contains: search, mode: "insensitive" } } },
         { caja: { nombre: { contains: search, mode: "insensitive" } } },
         { empleado: { contains: search, mode: "insensitive" } },
-        { tipo: { contains: search, mode: "insensitive" } },
       ];
+    }
+    // tipo es un enum: debe filtrarse por igualdad exacta, no por contains
+    if (tipoFilter) {
+      where.tipo = tipoFilter;
     }
 
     const ahora = new Date();
@@ -94,6 +99,7 @@ export async function POST(req: NextRequest) {
           empleado: body.empleado || null,
           desde: body.desde ? new Date(body.desde) : null,
           hasta: body.hasta ? new Date(body.hasta) : null,
+          ...(body.fecha && { fecha: new Date(body.fecha) }),
         },
         include: {
           usuario: { select: { nombre: true } },

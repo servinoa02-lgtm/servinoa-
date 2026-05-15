@@ -111,26 +111,63 @@ export async function POST() {
       return val;
     }
 
+    // Pre-cargar usuarios para mapeo cruzado
+    const usuariosDb = await prisma.usuario.findMany({ select: { id: true, nombre: true } });
+    const usuarioIdByNombre = Object.fromEntries(
+      usuariosDb.map(u => [u.nombre.toLowerCase().trim(), u.id])
+    );
+
     function resolveCajaNombre(val: string) {
-      return cajaNombreById[val] || val || null;
+      if (!val) return null;
+      const v = val.trim();
+      return cajaNombreById[v] ? cajaNombreById[v].trim() : v;
     }
 
-    // ── FIX 2: Auto-crear Cajas desde UsuarioCaja ────────────────────────
-    const nombresUnicos = Array.from(new Set(Object.values(cajaNombreById).filter(Boolean)));
-    for (const nombre of nombresUnicos) {
+    // ── FIX 2: Auto-crear Cajas detectadas en TODAS las hojas ───────────
+    const allCajaNames = new Set<string>();
+
+    const checkCajaName = (val: string | undefined | null) => {
+      const nombre = resolveCajaNombre(val || "");
+      if (nombre) allCajaNames.add(nombre);
+    };
+
+    Object.values(cajaNombreById).forEach(checkCajaName);
+    cobranzasRows.forEach(r => checkCajaName(r.UsuarioCaja));
+    gastosRows.forEach(r => checkCajaName(r.UsuarioCaja));
+    cajaRows.forEach(r => checkCajaName(r.UsuarioCaja));
+    transferenciasRows.forEach(r => {
+      checkCajaName(r.UsuarioCajaOrigen);
+      checkCajaName(r.UsuarioCajaDestino);
+    });
+    allCajaNames.add("Cheques");
+
+    // Prevenir colisiones de constraint UNIQUE para usuarioId
+    const cajasExistentes = await prisma.caja.findMany();
+    const usuarioIdEnUso = new Set(cajasExistentes.map(c => c.usuarioId).filter(Boolean));
+
+    for (const nombre of allCajaNames) {
+      let usuarioIdAsignado = null;
+      const uid = usuarioIdByNombre[nombre.toLowerCase()];
+      // Validar si el usuario existe y no está ya asignado a OTRA caja (a menos que sea esta misma)
+      const cajaPropia = cajasExistentes.find(c => c.nombre === nombre);
+      if (uid && (!usuarioIdEnUso.has(uid) || cajaPropia?.usuarioId === uid)) {
+        usuarioIdAsignado = uid;
+        usuarioIdEnUso.add(uid);
+      }
+
       await prisma.caja.upsert({
         where: { nombre },
-        update: {},
-        create: { nombre },
+        update: usuarioIdAsignado ? { usuarioId: usuarioIdAsignado } : {},
+        create: { nombre, usuarioId: usuarioIdAsignado },
       });
     }
 
     const cajasDb = await prisma.caja.findMany();
-    const cajaIdByNombre = Object.fromEntries(cajasDb.map(c => [c.nombre.toLowerCase(), c.id]));
+    const cajaIdByNombre = Object.fromEntries(cajasDb.map(c => [c.nombre.toLowerCase().trim(), c.id]));
 
     function getCajaId(val: string): string | null {
       const nombre = resolveCajaNombre(val);
-      return nombre ? (cajaIdByNombre[nombre.toLowerCase()] ?? null) : null;
+      return nombre ? (cajaIdByNombre[nombre.toLowerCase().trim()] ?? null) : null;
     }
 
     const adminUser = await prisma.usuario.findFirst({
@@ -147,10 +184,7 @@ export async function POST() {
     const fallaMap   = Object.fromEntries(fallaRows.map(r => [r.ID, r.Falla]));
 
     // FIX 5: Mapa técnicos → usuario DB por nombre (case-insensitive)
-    const usuariosDb = await prisma.usuario.findMany({ select: { id: true, nombre: true } });
-    const usuarioIdByNombre = Object.fromEntries(
-      usuariosDb.map(u => [u.nombre.toLowerCase().trim(), u.id])
-    );
+    // (usuariosDb y usuarioIdByNombre ya fueron cargados arriba)
 
     // FIX 1: Mapa de Empresas desde la hoja Empresa
     // Acceso posicional porque la hoja puede tener headers con texto concatenado (ej: "IDEmpresa EM-0001 EM-0002...")
@@ -633,6 +667,10 @@ export async function POST() {
         empresas_creadas:    empresasEnDb.length,
         muestra_ids_sheet:   Object.keys(empresaSheetMap).slice(0, 5),
         muestra_ids_clientes: Array.from(empresaIdsReferenciados).slice(0, 5),
+      },
+      debug_cajas: {
+        total_creadas_o_vistas: allCajaNames.size,
+        cajas_detectadas: Array.from(allCajaNames),
       },
       totales: {
         clientes:        clientesDb.length,

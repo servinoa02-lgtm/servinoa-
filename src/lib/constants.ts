@@ -53,5 +53,7 @@ export function formatMoneyDisplay(amount: number, decimals: number = 0): string
 export const IVA_RATE = 1.21;
 
 export function calcularTotalConIVA(subtotal: number, incluyeIva: boolean): number {
-  return incluyeIva ? subtotal * IVA_RATE : subtotal;
+  const raw = incluyeIva ? subtotal * IVA_RATE : subtotal;
+  // Redondear a 2 decimales para evitar errores de punto flotante (ej: 1493.8176000000002)
+  return Math.round(raw * 100) / 100;
 }

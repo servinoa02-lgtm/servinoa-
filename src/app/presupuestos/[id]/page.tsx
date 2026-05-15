@@ -9,7 +9,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatFecha, anoActualAR } from "@/lib/dateUtils";
 import { formatoService } from "@/services/formatoService";
 import { useToast } from "@/context/ToastContext";
-import { formatMoney, formatNumeroPresupuesto, IVA_RATE } from "@/lib/constants";
+import { formatMoney, formatNumeroPresupuesto } from "@/lib/constants";
 
 interface Presupuesto {
   id: string;
@@ -23,6 +23,7 @@ interface Presupuesto {
   formaPago: string;
   validezDias: number;
   moneda: string;
+  subtotal: number;
   total: number;
   cobrado: number;
   saldo: number;
@@ -90,14 +91,22 @@ export default function PresupuestoDetallePage() {
   const cambiarEstado = async (nuevoEstado: string) => {
     if (!ppto) return;
     setActualizando(true);
-    const res = await fetch(`/api/presupuestos/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ estado: nuevoEstado }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setPpto(data);
+    try {
+      const res = await fetch(`/api/presupuestos/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPpto(data);
+        showToast(`Presupuesto ${nuevoEstado === "APROBADO" ? "aprobado" : "rechazado"} correctamente`, "success");
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        showToast(errData.error || "Error al cambiar el estado", "error");
+      }
+    } catch {
+      showToast("Error de conexión al cambiar el estado", "error");
     }
     setActualizando(false);
   };
@@ -279,7 +288,7 @@ export default function PresupuestoDetallePage() {
                           {ppto.incluyeIva && (
                              <div className="flex justify-between text-[10px] font-bold text-gray-400 border-b border-gray-200 pb-2">
                                 <span className="uppercase">Subtotal neto ({ppto.moneda})</span>
-                                <span>${formatMoney(ppto.total / IVA_RATE, 0)}</span>
+                                <span>${formatMoney(ppto.subtotal, 0)}</span>
                              </div>
                           )}
                           <div className="flex justify-between items-center pt-2">

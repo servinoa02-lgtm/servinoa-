@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { cuentaCorrienteService } from "@/services/cuentaCorrienteService";
 import { requireAuth } from "@/lib/requireAuth";
@@ -112,7 +113,7 @@ export async function POST(req: NextRequest) {
       chequeFechaCobro,
     } = body;
 
-    // ─── Validaciones de entrada ───
+    // ─── Validaciones básicas de entrada (sin consultar DB) ───
     const importeNum = parseFloat(importe);
     if (!Number.isFinite(importeNum) || importeNum <= 0) {
       return NextResponse.json(
@@ -136,50 +137,46 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ─── Validaciones críticas de presupuesto ───
-    let clienteIdFinal = clienteId || null;
-    if (presupuestoId) {
-      const ppto = await prisma.presupuesto.findUnique({
-        where: { id: presupuestoId },
-        include: {
-          items: true,
-          cobranzas: { select: { importe: true } },
-        },
-      });
-
-      if (!ppto) {
-        return NextResponse.json({ error: "Presupuesto no encontrado" }, { status: 404 });
-      }
-
-      // Solo se puede cobrar un presupuesto APROBADO
-      if (ppto.estado !== "APROBADO") {
-        return NextResponse.json(
-          { error: `No se puede cobrar: el presupuesto está en estado "${ppto.estado}". Solo se pueden cobrar presupuestos APROBADOS.` },
-          { status: 400 }
-        );
-      }
-
-      // No permitir cobrar más que el saldo pendiente
-      const subtotal = ppto.items.reduce((sum, item) => sum + item.total, 0);
-      const total = calcularTotalConIVA(subtotal, ppto.incluyeIva);
-      const cobrado = ppto.cobranzas.reduce((sum, c) => sum + c.importe, 0);
-      const saldoPendiente = total - cobrado;
-
-      if (importeNum > saldoPendiente + 0.01) {
-        return NextResponse.json(
-          { error: `El importe ($${importeNum.toFixed(2)}) supera el saldo pendiente ($${saldoPendiente.toFixed(2)})` },
-          { status: 400 }
-        );
-      }
-
-      // Derivar clienteId del presupuesto si no vino en el body
-      if (!clienteIdFinal && ppto.clienteId) {
-        clienteIdFinal = ppto.clienteId;
-      }
-    }
-
-    // ─── Todo dentro de una sola transacción ───
+    // ─── Todo dentro de una sola transacción Serializable ───
+    // La validación del saldo va DENTRO de la tx para evitar race conditions:
+    // dos requests simultáneas no pueden ambas pasar la validación y ambas persistir.
     const cobranza = await prisma.$transaction(async (tx) => {
+      let clienteIdFinal = clienteId || null;
+
+      // Validar presupuesto dentro de la tx
+      if (presupuestoId) {
+        const ppto = await tx.presupuesto.findUnique({
+          where: { id: presupuestoId },
+          include: {
+            items: true,
+            cobranzas: { select: { importe: true } },
+          },
+        });
+
+        if (!ppto) throw new Error("Presupuesto no encontrado");
+
+        if (ppto.estado !== "APROBADO") {
+          throw new Error(
+            `No se puede cobrar: el presupuesto está en estado "${ppto.estado}". Solo se pueden cobrar presupuestos APROBADOS.`
+          );
+        }
+
+        const subtotal = ppto.items.reduce((sum, item) => sum + item.total, 0);
+        const total = calcularTotalConIVA(subtotal, ppto.incluyeIva);
+        const cobrado = ppto.cobranzas.reduce((sum, c) => sum + c.importe, 0);
+        const saldoPendiente = total - cobrado;
+
+        if (importeNum > saldoPendiente + 0.01) {
+          throw new Error(
+            `El importe ($${importeNum.toFixed(2)}) supera el saldo pendiente ($${saldoPendiente.toFixed(2)})`
+          );
+        }
+
+        if (!clienteIdFinal && ppto.clienteId) {
+          clienteIdFinal = ppto.clienteId;
+        }
+      }
+
       let chequeId: string | null = null;
       if (formaPago === "Cheques") {
         const nuevoCheque = await tx.cheque.create({
@@ -209,6 +206,7 @@ export async function POST(req: NextRequest) {
           cajaId,
           usuarioId,
           chequeId,
+          ...(body.fecha && { fecha: new Date(body.fecha) }),
         },
         include: {
           cliente: { include: { empresa: true } },
@@ -233,7 +231,7 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Registrar HABER en CuentaCorriente (mismo tx)
+      // Registrar HABER en CuentaCorriente
       if (clienteIdFinal) {
         await cuentaCorrienteService.registrarMovimiento(tx, {
           clienteId: clienteIdFinal,
@@ -245,23 +243,22 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Actualizar estadoCobro del presupuesto
+      // Actualizar estadoCobro — el ppto ya incluye las cobranzas anteriores;
+      // sumamos importeNum manualmente para no hacer otro fetch
       if (presupuestoId) {
         const ppto = await tx.presupuesto.findUnique({
           where: { id: presupuestoId },
-          include: {
-            items: true,
-            cobranzas: { select: { importe: true } },
-          },
+          include: { items: true, cobranzas: { select: { importe: true } } },
         });
         if (ppto) {
           const subtotal = ppto.items.reduce((sum, item) => sum + item.total, 0);
           const total = calcularTotalConIVA(subtotal, ppto.incluyeIva);
+          // cobranzas ya incluye la nueva (misma tx en Postgres)
           const cobrado = ppto.cobranzas.reduce((sum, c) => sum + c.importe, 0);
           const estadoCobro =
             cobrado <= 0
               ? "COBRO_PENDIENTE"
-              : cobrado >= total
+              : cobrado >= total - 0.02
               ? "COBRADO"
               : "PARCIAL";
           await tx.presupuesto.update({
@@ -272,11 +269,20 @@ export async function POST(req: NextRequest) {
       }
 
       return nuevaCobranza;
+    }, {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
     });
 
     return NextResponse.json(cobranza);
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return NextResponse.json({ error: "Error al crear cobranza" }, { status: 500 });
+    // Serialization failures deben reintentarse desde el cliente
+    if (error?.code === "P2034") {
+      return NextResponse.json(
+        { error: "Operación en conflicto con otra simultánea. Por favor intentá de nuevo." },
+        { status: 409 }
+      );
+    }
+    return NextResponse.json({ error: error.message || "Error al crear cobranza" }, { status: 500 });
   }
 }
