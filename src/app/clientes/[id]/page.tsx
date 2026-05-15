@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, User, Phone, Mail, MapPin, CreditCard, FileText, Receipt, History, Printer, ChevronRight } from "lucide-react";
+import { ArrowLeft, User, Phone, Mail, MapPin, CreditCard, History, Printer } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatFecha } from "@/lib/dateUtils";
 import { formatMoney, formatNumeroPresupuesto } from "@/lib/constants";
@@ -29,7 +29,7 @@ interface ClienteDetalle {
 
 
 export default function ClienteDetallePage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;

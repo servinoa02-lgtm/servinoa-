@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
+import { calcularTotalConIVA } from "@/lib/constants";
 
 const SHEET_ID = "1qmGn4kUoyKg8Hzr6Px65CPAWKRQ2ebWKoQUnThxb8xw";
 const SHEET_BASE = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=`;
@@ -441,7 +442,8 @@ export async function POST() {
       });
 
     await prisma.presupuesto.createMany({
-      data: presupuestosData.map(({ _key: _, ...d }) => d),
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      data: presupuestosData.map(({ _key, ...d }) => d),
     });
 
     const pptosDb = await prisma.presupuesto.findMany({ select: { id: true, numero: true } });
@@ -503,7 +505,7 @@ export async function POST() {
 
     for (const p of pptosConItems) {
       const subtotal = p.items.reduce((s, i) => s + i.total, 0);
-      const total    = p.incluyeIva ? subtotal * 1.21 : subtotal;
+      const total    = calcularTotalConIVA(subtotal, p.incluyeIva);
       const cobrado  = cobradoByPptoId[p.id] ?? 0;
       let estadoCobro: "COBRADO" | "PARCIAL" | undefined;
       if (total > 0 && cobrado >= total * 0.99) estadoCobro = "COBRADO";
@@ -603,7 +605,7 @@ export async function POST() {
     for (const p of pptosConItems) {
       if (p.estado !== "APROBADO") continue;
       const subtotal = p.items.reduce((s, i) => s + i.total, 0);
-      const total    = p.incluyeIva ? subtotal * 1.21 : subtotal;
+      const total    = calcularTotalConIVA(subtotal, p.incluyeIva);
       if (total <= 0) continue;
       cuentaCorrienteData.push({
         clienteId:     p.clienteId,

@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Wallet, Repeat, History, Plus } from "lucide-react";
+import { ArrowLeft, Wallet, Repeat, History } from "lucide-react";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { formatMoney } from "@/lib/constants";
 import { useToast } from "@/context/ToastContext";
@@ -16,7 +16,7 @@ interface Caja {
 }
 
 export default function CajasPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const { showToast } = useToast();
   const [cajas, setCajas] = useState<Caja[]>([]);

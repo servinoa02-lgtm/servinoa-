@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/requireAuth";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const sesion = await requireAuth(["ADMIN", "JEFE", "ADMINISTRACION", "TECNICO"]);
+  if (sesion instanceof NextResponse) return sesion;
+
   const { id } = await params;
   const orden = await prisma.ordenServicio.findUnique({
     where: { id },
@@ -21,6 +25,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const sesion = await requireAuth(["ADMIN", "JEFE", "ADMINISTRACION", "TECNICO"]);
+  if (sesion instanceof NextResponse) return sesion;
+
   const { id } = await params;
   const body = await req.json();
 
@@ -59,6 +66,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const sesion = await requireAuth(["ADMIN", "JEFE"]);
+  if (sesion instanceof NextResponse) return sesion;
+
   const { id } = await params;
   await prisma.historialOS.deleteMany({ where: { ordenId: id } });
   await prisma.ordenServicio.delete({ where: { id } });

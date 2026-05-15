@@ -7,7 +7,7 @@ import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import Link from "next/link";
 import {
   ArrowLeft, Wallet, ArrowUpRight, ArrowDownLeft,
-  History, ArrowRightLeft, Tag, Plus, Trash2, X, Check
+  History, ArrowRightLeft, Tag, Plus, Trash2, Check
 } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { formatFecha } from "@/lib/dateUtils";
@@ -40,7 +40,7 @@ function parseCategoria(descripcion: string): { categoria: string | null; texto:
 }
 
 export default function CajaDetallePage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;

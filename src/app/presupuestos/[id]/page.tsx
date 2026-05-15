@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, FileText, Receipt, User, Wrench, CreditCard, Printer, Save, Trash2, CheckCircle2, XCircle, ChevronRight, AlertTriangle, Plus } from "lucide-react";
+import { ArrowLeft, FileText, User, Wrench, Printer, Save, Trash2, CheckCircle2, XCircle, Plus } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatFecha, anoActualAR } from "@/lib/dateUtils";
 import { formatoService } from "@/services/formatoService";
@@ -36,7 +36,7 @@ interface Presupuesto {
 
 
 export default function PresupuestoDetallePage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;

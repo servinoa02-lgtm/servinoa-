@@ -48,9 +48,6 @@ export const cajaService = {
    */
   async getChequesEstado() {
     const hoy = new Date();
-    // Aproximadamente 7 días hacia adelante
-    const proximaSemana = new Date(hoy.getTime() + 7 * 24 * 60 * 60 * 1000);
-
     const cheques = await prisma.cheque.findMany({
       where: {
         estado: 'EN_CARTERA', // Solo cheques que tenemos físicamente

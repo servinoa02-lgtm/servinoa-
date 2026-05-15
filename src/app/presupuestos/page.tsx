@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
-import { Trash2, ArrowLeft, Plus, Search, FileText, ChevronRight } from "lucide-react";
+import { Trash2, ArrowLeft, Plus, Search } from "lucide-react";
 import { useSort } from "@/hooks/useSort";
 import { SortHeader } from "@/components/ui/SortHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -30,25 +30,10 @@ interface Presupuesto {
   orden: { numero: number; id: string } | null;
 }
 
-const cobroColors: Record<string, string> = {
-  PENDIENTE: "text-gray-400",
-  APROBACION_PENDIENTE: "text-orange-600",
-  COBRO_PENDIENTE: "text-red-600",
-  COBRADO: "text-emerald-600",
-  PARCIAL: "text-blue-600",
-};
-
-const cobroLabel: Record<string, string> = {
-  PENDIENTE: "Pendiente",
-  APROBACION_PENDIENTE: "Aprobación pendiente",
-  COBRO_PENDIENTE: "Cobro pendiente",
-  COBRADO: "Cobrado",
-  PARCIAL: "Pago parcial",
-};
 
 
 export default function PresupuestosPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const [presupuestos, setPresupuestos] = useState<Presupuesto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,7 +44,7 @@ export default function PresupuestosPage() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [globalTotal, setGlobalTotal] = useState(0);
-  const [globalCobrado, setGlobalCobrado] = useState(0);
+  const [, setGlobalCobrado] = useState(0);
   const [globalSaldo, setGlobalSaldo] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; numero: number; fecha: string } | null>(null);
   const [eliminando, setEliminando] = useState(false);

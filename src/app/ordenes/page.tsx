@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
-import { Search, Plus, ArrowLeft, Wrench, Calendar, ClipboardList } from "lucide-react";
+import { Search, Plus, ArrowLeft, Calendar } from "lucide-react";
 import { useSort } from "@/hooks/useSort";
 import { SortHeader } from "@/components/ui/SortHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -27,7 +27,7 @@ interface Orden {
 }
 
 export default function OrdenesPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const [ordenes, setOrdenes] = useState<Orden[]>([]);
   const [loading, setLoading] = useState(true);

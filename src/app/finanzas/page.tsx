@@ -7,7 +7,7 @@ import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import Link from "next/link";
 import {
   ArrowLeft, TrendingUp, TrendingDown, DollarSign, Wallet,
-  ArrowUpRight, ArrowDownRight, Plus, Clock, ChevronRight,
+  ArrowUpRight, ArrowDownRight, Clock, ChevronRight,
   Receipt, CheckCircle2, Save, AlertTriangle,
 } from "lucide-react";
 import { RoleGuard } from "@/components/auth/RoleGuard";
@@ -17,15 +17,6 @@ import { formatFecha, hoyISO } from "@/lib/dateUtils";
 import { FORMAS_PAGO, formatMoney } from "@/lib/constants";
 import { formatoService } from "@/services/formatoService";
 
-
-function campo(label: string, children: React.ReactNode) {
-  return (
-    <div className="space-y-1.5">
-      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">{label}</label>
-      {children}
-    </div>
-  );
-}
 
 const inputCls = "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold outline-none focus:border-red-600 focus:bg-white transition-all";
 const selectCls = inputCls + " appearance-none cursor-pointer";
@@ -61,13 +52,13 @@ export default function FinanzasPage() {
   const [totalCajas, setTotalCajas] = useState(0);
   const [totalCobrosMes, setTotalCobrosMes] = useState(0);
   const [totalGastosMes, setTotalGastosMes] = useState(0);
-  const [totalDeudaClientes, setTotalDeudaClientes] = useState(0);
+  const [, setTotalDeudaClientes] = useState(0);
   const [cutoffMode, setCutoffMode] = useState(false); // Nuevo: Modo corte 10/04
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [usuarios, setUsuarios] = useState<{ id: string; nombre: string }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [errorCarga, setErrorCarga] = useState("");
+  const [, setErrorCarga] = useState("");
 
   const TIPOS_GASTO = [
     { value: "GASTO_VARIOS", label: "Gastos a clasificar / Varios" },

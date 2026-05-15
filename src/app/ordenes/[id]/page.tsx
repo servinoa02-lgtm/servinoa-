@@ -3,19 +3,19 @@
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import Link from "next/link";
-import { formatEstado, estadoColors, TODOS_ESTADOS, FLUJO_ESTADOS } from "@/lib/estados";
+import { formatEstado, TODOS_ESTADOS, FLUJO_ESTADOS } from "@/lib/estados";
 import { formatFecha, formatFechaHora } from "@/lib/dateUtils";
-import { Wrench, Phone, FileText, Send, AlertTriangle, ArrowLeft, Printer, User, Calendar, ChevronRight, CheckCircle2, MoreHorizontal, ShieldCheck, PenLine } from "lucide-react";
+import { Wrench, Phone, FileText, Send, AlertTriangle, ArrowLeft, Printer, User, CheckCircle2, ShieldCheck, PenLine } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { CierreOTModal } from "@/components/ot/CierreOTModal";
 import { FirmaRecepcionModal } from "@/components/ot/FirmaRecepcionModal";
 import { formatoService } from "@/services/formatoService";
 import { useToast } from "@/context/ToastContext";
+import { formatMoney } from "@/lib/constants";
 
 export default function OrdenDetallePage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
@@ -189,7 +189,6 @@ export default function OrdenDetallePage() {
   });
 
   const equipoStr = [orden.maquina?.nombre, orden.marca?.nombre, orden.modelo?.nombre].filter(Boolean).join(" - ");
-  const totalPresupuestado = orden.presupuestos?.reduce((sum: number, p: any) => sum + (p.total || 0), 0) || 0;
   const ultimoRetiro = orden.retiros?.[0];
 
   return (
@@ -371,7 +370,7 @@ export default function OrdenDetallePage() {
                         <p className="text-[10px] font-bold text-gray-900">#PQ-{p.numero}</p>
                         <p className="text-[8px] font-bold text-gray-400 uppercase">{p.estado}</p>
                       </div>
-                      <p className="text-xs font-bold text-red-600 tracking-tight">${p.total?.toLocaleString('es-AR')}</p>
+                      <p className="text-xs font-bold text-red-600 tracking-tight">${formatMoney(p.total ?? 0)}</p>
                     </div>
                   ))
                 )}

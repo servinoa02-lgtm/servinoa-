@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft, Search, Plus, CreditCard, Landmark,
-  History, AlertCircle, Calendar,
-  User, Building2, Timer
+  ArrowLeft, Search, Plus, Landmark,
+  Timer
 } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -38,7 +37,7 @@ interface Cheque {
 interface Cliente { id: string; nombre: string; empresa?: { nombre: string } | null; }
 
 export default function ChequesPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const [cheques, setCheques] = useState<Cheque[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,7 +60,7 @@ export default function ChequesPage() {
   const [fechaCobro, setFechaCobro] = useState("");
   const [endosadoA, setEndosadoA] = useState("");
   const [descripcion, setDescripcion] = useState("");
-  const [estadoForm, setEstadoForm] = useState("EN_CARTERA");
+  const [estadoForm] = useState("EN_CARTERA");
   const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {

@@ -7,8 +7,7 @@ import {
   FileText, 
   ThumbsUp, 
   Wrench, 
-  RotateCcw, 
-  Package, 
+  Package,
   CheckCircle2, 
   XCircle, 
   Ban,
@@ -38,7 +37,6 @@ import {
   ShoppingCart,
   Truck,
   Lightbulb,
-  CreditCard,
   Building2,
   LucideIcon
 } from "lucide-react";

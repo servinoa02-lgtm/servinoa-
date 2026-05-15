@@ -73,7 +73,7 @@ export function SortableAlertas({ seguimientos }: { seguimientos: Seguimiento[] 
                 <ExternalLink size={12} />
               </div>
             </div>
-            <p className="text-xs text-gray-700 leading-relaxed font-medium">"{s.texto}"</p>
+            <p className="text-xs text-gray-700 leading-relaxed font-medium">&quot;{s.texto}&quot;</p>
           </Link>
         ))
       )}

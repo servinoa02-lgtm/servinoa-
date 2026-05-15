@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/requireAuth";
 import { tareaService } from "@/services/tareaService";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const session = await requireAuth();
   if (session instanceof NextResponse) return session;
 

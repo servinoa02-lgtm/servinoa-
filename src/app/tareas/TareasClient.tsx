@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Check, Clock, AlertCircle, Search, User, Calendar, Activity } from "lucide-react";
+import { Plus, Check, AlertCircle, User, Calendar } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatFecha } from "@/lib/dateUtils";

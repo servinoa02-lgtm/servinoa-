@@ -3,8 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
-import { ArrowLeft, Plus, Trash2, Save, User, Wrench, CreditCard, ChevronRight, FileText, Receipt, AlertTriangle } from "lucide-react";
-import Link from "next/link";
+import { ArrowLeft, Plus, Trash2, Save, User, CreditCard, FileText, AlertTriangle } from "lucide-react";
 import { formatoService } from "@/services/formatoService";
 import { formatMoney } from "@/lib/constants";
 
@@ -152,8 +151,6 @@ function NuevoPresupuestoForm() {
       </div>
     );
   }
-
-  const clienteSeleccionado = clientes.find(c => c.id === clienteId);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">

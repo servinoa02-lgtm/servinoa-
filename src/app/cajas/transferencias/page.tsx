@@ -4,9 +4,9 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
-import { 
-  ArrowLeft, ArrowRightLeft, History, 
-  Calendar, ArrowRight, ArrowUpRight, ArrowDownLeft 
+import {
+  ArrowLeft, ArrowRightLeft,
+  Calendar, ArrowRight
 } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { formatFecha } from "@/lib/dateUtils";
@@ -30,7 +30,7 @@ interface Caja { id: string; nombre: string; }
 const FORMAS_PAGO = ["EFECTIVO", "TRANSFERENCIA", "CHEQUE", "TARJETA", "MERCADO PAGO", "OTRO"];
 
 function TransferenciasContent() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
@@ -45,6 +45,7 @@ function TransferenciasContent() {
   const [formaPagoOrigen, setFormaPagoOrigen] = useState("EFECTIVO");
   const [formaPagoDestino, setFormaPagoDestino] = useState("EFECTIVO");
   const [guardando, setGuardando] = useState(false);
+  const [eliminando, setEliminando] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -105,6 +106,23 @@ function TransferenciasContent() {
     cargar();
   };
 
+  const eliminarTransferencia = async (id: string) => {
+    if (!confirm("¿Eliminar esta transferencia? Se revertirán los movimientos en ambas cajas.")) return;
+    setEliminando(id);
+    try {
+      const res = await fetch(`/api/cajas/transferencias/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error || "Error al eliminar la transferencia", "error");
+      } else {
+        showToast("Transferencia eliminada correctamente", "success");
+        cargar();
+      }
+    } finally {
+      setEliminando(null);
+    }
+  };
+
   if (status === "loading" || loading) return (
     <div className="flex flex-col items-center justify-center p-40">
       <div className="w-12 h-1 bg-red-600 rounded-full animate-pulse mb-4" />
@@ -136,7 +154,7 @@ function TransferenciasContent() {
 
       <main className="flex-1 max-w-5xl mx-auto px-6 py-10 w-full space-y-8">
         <div className="space-y-4">
-          {transferencias.map((t, idx) => (
+          {transferencias.map((t) => (
             <div 
               key={t.id} 
               className="group bg-white p-6 rounded-2xl border border-gray-200 hover:shadow-md transition-all"

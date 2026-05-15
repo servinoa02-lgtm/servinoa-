@@ -8,7 +8,7 @@ import { ArrowLeft, Printer } from "lucide-react";
 import { formatMoney, formatNumeroPresupuesto, IVA_RATE } from "@/lib/constants";
 
 export default function PresupuestoImprimirPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;

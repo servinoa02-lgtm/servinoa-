@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, MessageCircle, CheckCircle2, XCircle, Users, ExternalLink } from "lucide-react";
+import { ArrowLeft, MessageCircle, CheckCircle2, XCircle, Users } from "lucide-react";
 
 const EMPLEADOS = [
   { nombre: "Maximiliano Alarcon", telefono: "3875059482" },

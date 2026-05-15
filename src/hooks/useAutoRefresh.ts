@@ -10,7 +10,8 @@ import { useEffect, useRef } from "react";
  *   useAutoRefresh(fetchDatos);          // cada 30s
  *   useAutoRefresh(fetchDatos, 15_000);  // cada 15s
  */
-export function useAutoRefresh(callback: () => void, intervalMs = 30_000) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function useAutoRefresh(callback: () => void, _intervalMs = 30_000) {
   const callbackRef = useRef(callback);
   callbackRef.current = callback;
 

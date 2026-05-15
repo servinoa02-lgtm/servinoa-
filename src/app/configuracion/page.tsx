@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import {
-  Settings, Trash2, Plus, Users, Shield, Wrench,
+  Settings, Trash2, Plus, Users, Wrench,
   ArrowLeft, Eye, EyeOff, Check, X, Edit2,
   AlertCircle, HardHat, Wallet, RefreshCw, CheckCircle2,
   CloudDownload

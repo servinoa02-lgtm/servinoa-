@@ -10,8 +10,6 @@ export const ROLES = {
   TECNICO: "TECNICO",
 } as const;
 
-type Role = keyof typeof ROLES;
-
 export const permissions = {
   /**
    * ADMIN y JEFE tienen control total del sistema.

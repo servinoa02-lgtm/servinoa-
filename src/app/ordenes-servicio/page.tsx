@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { formatMoney } from "@/lib/constants";
 
 interface OrdenServicio {
   id: string;
@@ -172,7 +173,7 @@ export default function OrdenesServicioPage() {
         ordenServicioId: orden.id,
         incluyeIva: true,
         moneda: "ARS",
-        observaciones: `Presupuesto generado desde OS-${orden.numero}. Total: USD ${resultado.totalUSD.toFixed(2)} / ARS ${resultado.totalARS.toLocaleString("es-AR")}`,
+        observaciones: `Presupuesto generado desde OS-${orden.numero}. Total: USD ${resultado.totalUSD.toFixed(2)} / ARS ${formatMoney(resultado.totalARS, 0)}`,
         items,
       }),
     });
@@ -202,7 +203,6 @@ export default function OrdenesServicioPage() {
   const resultCalc = calcular({ ...calc, ...params });
   const resultForm = calcular({ horasCampo: form.horasCampo, kilometros: form.kilometros, imprevistos: form.imprevistos, ...params });
 
-  const fmt = (n: number) => n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   if (status === "loading" || loading) {
     return <div className="min-h-screen flex items-center justify-center"><p className="text-gray-500">Cargando...</p></div>;
@@ -266,7 +266,7 @@ export default function OrdenesServicioPage() {
                     />
                   </div>
                 ))}
-                <p className="text-xs text-gray-400 pt-1">Mínimo garantizado: 2h × ${params.valorHora} = <strong>USD {(2 * params.valorHora).toFixed(0)}</strong> / <strong>ARS {((2 * params.valorHora) * params.tipoCambio).toLocaleString("es-AR")}</strong></p>
+                <p className="text-xs text-gray-400 pt-1">Mínimo garantizado: 2h × ${params.valorHora} = <strong>USD {(2 * params.valorHora).toFixed(0)}</strong> / <strong>ARS {formatMoney((2 * params.valorHora) * params.tipoCambio, 0)}</strong></p>
               </div>
             </div>
 
@@ -296,39 +296,39 @@ export default function OrdenesServicioPage() {
               <div className="mt-4 bg-gray-50 rounded-lg p-3 text-sm space-y-1">
                 <div className="flex justify-between text-gray-600">
                   <span>Base 2h</span>
-                  <span>USD {fmt(resultCalc.baseUSD)}</span>
+                  <span>USD {formatMoney(resultCalc.baseUSD)}</span>
                 </div>
                 {calc.horasCampo > 0 && (
                   <div className="flex justify-between text-gray-600">
                     <span>Horas campo</span>
-                    <span>USD {fmt(resultCalc.campoUSD)}</span>
+                    <span>USD {formatMoney(resultCalc.campoUSD)}</span>
                   </div>
                 )}
                 {calc.kilometros > 0 && (
                   <div className="flex justify-between text-gray-600">
                     <span>Kilómetros</span>
-                    <span>USD {fmt(resultCalc.kmUSD)}</span>
+                    <span>USD {formatMoney(resultCalc.kmUSD)}</span>
                   </div>
                 )}
                 {calc.imprevistos > 0 && (
                   <div className="flex justify-between text-gray-600">
                     <span>Imprevistos</span>
-                    <span>USD {fmt(calc.imprevistos)}</span>
+                    <span>USD {formatMoney(calc.imprevistos)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-gray-600 border-t border-gray-200 pt-1">
                   <span>Subtotal sin IVA</span>
-                  <span>USD {fmt(resultCalc.subtotalUSD)}</span>
+                  <span>USD {formatMoney(resultCalc.subtotalUSD)}</span>
                 </div>
                 <div className="flex justify-between text-gray-500 text-xs">
                   <span>IVA {(params.iva * 100).toFixed(0)}%</span>
-                  <span>USD {fmt(resultCalc.ivaUSD)}</span>
+                  <span>USD {formatMoney(resultCalc.ivaUSD)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-gray-900 border-t border-gray-300 pt-1">
                   <span>TOTAL</span>
                   <span className="text-right">
-                    <span className="text-red-600">USD {fmt(resultCalc.totalUSD)}</span>
-                    <span className="text-gray-400 font-normal text-xs ml-2">/ ARS {resultCalc.totalARS.toLocaleString("es-AR", { maximumFractionDigits: 0 })}</span>
+                    <span className="text-red-600">USD {formatMoney(resultCalc.totalUSD)}</span>
+                    <span className="text-gray-400 font-normal text-xs ml-2">/ ARS {formatMoney(resultCalc.totalARS, 0)}</span>
                   </span>
                 </div>
               </div>
@@ -407,7 +407,7 @@ export default function OrdenesServicioPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-gray-600">{orden.tecnico?.nombre || "—"}</td>
-                        <td className="px-4 py-3 font-medium text-red-700">USD {fmt(res.totalUSD)}</td>
+                        <td className="px-4 py-3 font-medium text-red-700">USD {formatMoney(res.totalUSD)}</td>
                         <td className="px-4 py-3 text-gray-500">
                           {new Date(orden.fecha).toLocaleDateString("es-AR")}
                           {orden.fechaProgramada && (
@@ -537,15 +537,15 @@ export default function OrdenesServicioPage() {
                 <div className="pt-2 border-t border-gray-200 space-y-1 text-sm">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal sin IVA</span>
-                    <span>USD {fmt(resultForm.subtotalUSD)}</span>
+                    <span>USD {formatMoney(resultForm.subtotalUSD)}</span>
                   </div>
                   <div className="flex justify-between font-bold text-gray-900">
                     <span>TOTAL c/ IVA</span>
-                    <span className="text-red-600">USD {fmt(resultForm.totalUSD)}</span>
+                    <span className="text-red-600">USD {formatMoney(resultForm.totalUSD)}</span>
                   </div>
                   <div className="flex justify-between text-gray-500 text-xs">
                     <span>En pesos</span>
-                    <span>ARS {resultForm.totalARS.toLocaleString("es-AR", { maximumFractionDigits: 0 })}</span>
+                    <span>ARS {formatMoney(resultForm.totalARS, 0)}</span>
                   </div>
                 </div>
               </div>
@@ -632,17 +632,17 @@ export default function OrdenesServicioPage() {
                 });
                 return (
                   <div className="space-y-1 text-sm">
-                    <div className="flex justify-between text-gray-600"><span>Base 2h (${showDetalle.valorHora} USD/h)</span><span>USD {fmt(r.baseUSD)}</span></div>
-                    {showDetalle.horasCampo > 0 && <div className="flex justify-between text-gray-600"><span>Campo {showDetalle.horasCampo}h</span><span>USD {fmt(r.campoUSD)}</span></div>}
-                    {showDetalle.kilometros > 0 && <div className="flex justify-between text-gray-600"><span>{showDetalle.kilometros} km ida</span><span>USD {fmt(r.kmUSD)}</span></div>}
-                    {showDetalle.imprevistos > 0 && <div className="flex justify-between text-gray-600"><span>Imprevistos</span><span>USD {fmt(showDetalle.imprevistos)}</span></div>}
-                    <div className="flex justify-between text-gray-600 border-t border-gray-200 pt-1"><span>Subtotal sin IVA</span><span>USD {fmt(r.subtotalUSD)}</span></div>
-                    <div className="flex justify-between text-gray-500 text-xs"><span>IVA {(showDetalle.iva * 100).toFixed(0)}%</span><span>USD {fmt(r.ivaUSD)}</span></div>
+                    <div className="flex justify-between text-gray-600"><span>Base 2h (${showDetalle.valorHora} USD/h)</span><span>USD {formatMoney(r.baseUSD)}</span></div>
+                    {showDetalle.horasCampo > 0 && <div className="flex justify-between text-gray-600"><span>Campo {showDetalle.horasCampo}h</span><span>USD {formatMoney(r.campoUSD)}</span></div>}
+                    {showDetalle.kilometros > 0 && <div className="flex justify-between text-gray-600"><span>{showDetalle.kilometros} km ida</span><span>USD {formatMoney(r.kmUSD)}</span></div>}
+                    {showDetalle.imprevistos > 0 && <div className="flex justify-between text-gray-600"><span>Imprevistos</span><span>USD {formatMoney(showDetalle.imprevistos)}</span></div>}
+                    <div className="flex justify-between text-gray-600 border-t border-gray-200 pt-1"><span>Subtotal sin IVA</span><span>USD {formatMoney(r.subtotalUSD)}</span></div>
+                    <div className="flex justify-between text-gray-500 text-xs"><span>IVA {(showDetalle.iva * 100).toFixed(0)}%</span><span>USD {formatMoney(r.ivaUSD)}</span></div>
                     <div className="flex justify-between font-bold text-gray-900 border-t border-gray-300 pt-1">
                       <span>TOTAL</span>
                       <span className="text-right">
-                        <span className="text-red-600">USD {fmt(r.totalUSD)}</span>
-                        <span className="text-gray-400 font-normal text-xs ml-1">/ ARS {r.totalARS.toLocaleString("es-AR", { maximumFractionDigits: 0 })}</span>
+                        <span className="text-red-600">USD {formatMoney(r.totalUSD)}</span>
+                        <span className="text-gray-400 font-normal text-xs ml-1">/ ARS {formatMoney(r.totalARS, 0)}</span>
                       </span>
                     </div>
                     <div className="text-xs text-gray-400 pt-1">T/C: ${showDetalle.tipoCambio} ARS/USD</div>

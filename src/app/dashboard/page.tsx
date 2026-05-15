@@ -138,7 +138,7 @@ export default async function DashboardPage() {
     const firstDateRaw = movs[0]?.fecha || ots[0]?.fechaRecepcion || new Date();
     const mesesLabels = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
     const buckets = new Map<string, { fecha: string; ingresos: number; egresos: number; ots: number }>();
-    let curr = new Date(firstDateRaw);
+    const curr = new Date(firstDateRaw);
     curr.setDate(1);
     while (curr <= hoy) {
       const k = `${curr.getFullYear()}-${curr.getMonth()}`;

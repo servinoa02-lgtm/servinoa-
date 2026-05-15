@@ -2,12 +2,12 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { formatFecha, formatFechaHora } from "@/lib/dateUtils";
 import { ArrowLeft, Printer } from "lucide-react";
 
 export default function OTImprimirPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();

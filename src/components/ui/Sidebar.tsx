@@ -12,7 +12,6 @@ import {
   Settings,
   CheckSquare,
   ChevronLeft,
-  ChevronRight,
   Menu,
   X,
   MapPin

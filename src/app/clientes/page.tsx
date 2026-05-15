@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
-import { Plus, Search, Building2, Phone, Mail, FileText, ArrowLeft, Trash2, ChevronRight, Contact, Briefcase } from "lucide-react";
+import { Plus, Search, Building2, Phone, Mail, FileText, ArrowLeft, Trash2, ChevronRight } from "lucide-react";
 import { useSort } from "@/hooks/useSort";
 import { SortHeader } from "@/components/ui/SortHeader";
 import { Drawer } from "@/components/ui/Drawer";

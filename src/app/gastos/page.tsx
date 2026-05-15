@@ -4,10 +4,9 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { 
-  Trash2, ArrowLeft, Plus, Receipt, 
-  User, Calendar, Search, Activity, 
-  Filter, ArrowUpRight
+import {
+  Trash2, ArrowLeft, Plus, Receipt,
+  Search
 } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Drawer } from "@/components/ui/Drawer";
@@ -234,7 +233,7 @@ export default function GastosPage() {
         </div>
 
         <div className="space-y-4">
-          {filteredGastos.map((g, idx) => (
+          {filteredGastos.map((g) => (
             <div 
               key={g.id} 
               className="group bg-white p-4 md:p-6 rounded-2xl border border-gray-200 hover:shadow-md transition-all flex items-start md:items-center gap-4 md:gap-6"
